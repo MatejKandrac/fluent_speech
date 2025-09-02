@@ -1,0 +1,16 @@
+
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  plugins:
+    - custom_lint
+
+linter:
+  rules:
+    always_declare_return_types: true
+    avoid_print: false
+    prefer_single_quotes: true
+    always_use_package_imports: false
+    unawaited_futures: true
+    unnecessary_await_in_return: true
+    prefer_expression_function_bodies: true
