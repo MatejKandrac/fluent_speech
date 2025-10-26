@@ -12,3 +12,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# I added this because i used custom gradle settings
+# I wanted the project to be working out of the box
+/gradle/wrapper/gradle-wrapper.properties

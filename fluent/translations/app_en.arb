@@ -1,0 +1,16 @@
+{
+  "startPreparing": "Start preparing",
+  "startExercise": "Start exercise",
+  "calibrate": "Calibrate",
+  "record": "Record",
+  "summary": "Summary",
+  "requiredLandmarks": "Required landmarks:",
+  "rightHip": "Right hip",
+  "leftHip": "Left hip",
+  "rightEye": "Right eye",
+  "leftEye": "Left eye",
+  "leftCheek": "Left cheek",
+  "rightCheek": "Right cheek",
+  "getReady": "Get ready",
+  "sendForAnalysis": "Send data for analysis"
+}

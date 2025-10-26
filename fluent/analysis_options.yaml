@@ -1,12 +1,13 @@
 
 include: package:flutter_lints/flutter.yaml
 
-analyzer:
-  plugins:
-    - custom_lint
+formatter:
+  trailing_commas: preserve
+  page_width: 120
 
 linter:
   rules:
+    require_trailing_commas: true
     always_declare_return_types: true
     avoid_print: false
     prefer_single_quotes: true
@@ -14,3 +15,4 @@ linter:
     unawaited_futures: true
     unnecessary_await_in_return: true
     prefer_expression_function_bodies: true
+    prefer_relative_imports: true

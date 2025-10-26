@@ -1,0 +1,8 @@
+arb-dir: translations
+template-arb-file: app_en.arb
+output-dir: lib/localizations
+output-localization-file: localizations.dart
+untranslated-messages-file: missing_translations.txt
+output-class: AppTexts
+nullable-getter: false
+use-named-parameters: true

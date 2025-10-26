@@ -1,5 +1,5 @@
-import 'package:fluent/config/typography.dart';
 import 'package:flutter/material.dart';
+import 'typography.dart';
 
 class MaterialTheme {
   const MaterialTheme();
@@ -15,7 +15,7 @@ class MaterialTheme {
     onSecondary: Color(0xffffffff),
     secondaryContainer: Color(0xffd5e3ff),
     onSecondaryContainer: Color(0xff254777),
-    tertiary: Color(0xff656015),
+    tertiary: Color(0xff3f5f90),
     onTertiary: Color(0xffffffff),
     tertiaryContainer: Color(0xffece68d),
     onTertiaryContainer: Color(0xff4c4800),
@@ -317,12 +317,21 @@ class MaterialTheme {
     textTheme: textTheme.apply(bodyColor: colorScheme.onSurface, displayColor: colorScheme.onSurface),
     scaffoldBackgroundColor: colorScheme.surface,
     canvasColor: colorScheme.surface,
-    buttonTheme: ButtonThemeData(
-      padding: EdgeInsets.all(14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(14)),
+    pageTransitionsTheme: PageTransitionsTheme(builders: {TargetPlatform.android: CustomPageTransitionBuilder()}),
+    filledButtonTheme: FilledButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: WidgetStatePropertyAll(Size(0, 60)),
+        padding: WidgetStatePropertyAll(EdgeInsets.all(14)),
+        shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(14))),
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
     ),
   );
+}
+
+final class CustomPageTransitionBuilder extends FadeForwardsPageTransitionsBuilder {
+  @override
+  Duration get transitionDuration => Duration(milliseconds: 400);
 }
