@@ -17,7 +17,10 @@ class SummariseView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: LargeAppBar(
-      title: Text(AppTexts.of(context).summary),
+      title: Text(
+        AppTexts.of(context).summary,
+        style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
+      ),
     ),
     body: SafeArea(
       child: Column(
@@ -28,7 +31,9 @@ class SummariseView extends StatelessWidget {
             ),
           ),
           FilledButton(
-            onPressed: () {},
+            onPressed: () {
+              // TODO: Send video file to backend for analysis
+            },
             child: Text(
               AppTexts.of(context).sendForAnalysis,
             ),

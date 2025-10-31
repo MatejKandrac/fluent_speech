@@ -11,5 +11,6 @@ abstract class Assets {
 abstract class Constants {
 
   static const probabilityThreshold = 0.2;
+  static const streamDebounce = 250; // 250 milliseconds
 
 }

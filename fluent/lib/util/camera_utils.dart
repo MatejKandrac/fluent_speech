@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 
+import 'print_utils.dart';
+
 Future<CameraController> initCamera(CameraController? currentController, CameraDescription selectedCamera) async {
   await currentController?.dispose();
   final controller = CameraController(
@@ -38,5 +40,9 @@ Future<void> startImageStream({
 
 Future<void> stopImageStream(CameraController? controller) async {
   if (controller == null) return;
-  if (controller.supportsImageStreaming()) await controller.stopImageStream();
+  try {
+    if (controller.supportsImageStreaming()) await controller.stopImageStream();
+  } on Exception catch (e) {
+    Log.e('CAMERA', 'Attempted to stop image stream failed');
+  }
 }

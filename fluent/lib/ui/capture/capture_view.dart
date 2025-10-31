@@ -120,7 +120,7 @@ class _CaptureViewState extends ConsumerState<CaptureView> with WidgetsBindingOb
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    disposeCamera(_controller, isCalibrating);
+    disposeCamera(_controller);
     _timer?.cancel();
     super.dispose();
   }
@@ -129,7 +129,7 @@ class _CaptureViewState extends ConsumerState<CaptureView> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive) {
       if (_controller == null || !_controller!.value.isInitialized) return;
-      disposeCamera(_controller, isCalibrating);
+      disposeCamera(_controller, true);
       setState(() {
         _controller = null;
       });
