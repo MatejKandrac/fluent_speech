@@ -1,4 +1,4 @@
-
+### Send video request
 POST http://localhost:8000/api/v1/videos/upload
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
@@ -8,3 +8,9 @@ Content-Type: video/mp4
 
 < C:/Users/matke/Videos/REC6766379630202934727.mp4
 --WebAppBoundary--
+
+### Video analysys microservice health check
+GET http://localhost:8001/api/v1/health
+
+### Video analysis microservice video analysis
+POST http://localhost:8001/api/v1/analyze/video/690cf86223cc728f7f3bd742/

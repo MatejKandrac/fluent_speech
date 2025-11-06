@@ -6,6 +6,7 @@ import com.kandrac.matej.fluentapigateway.repository.VideoRepository
 import com.kandrac.matej.fluentapigateway.utils.BadRequestException
 import com.kandrac.matej.fluentapigateway.utils.InternalServerErrorException
 import com.kandrac.matej.fluentapigateway.utils.NotFoundException
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -21,6 +22,8 @@ import java.util.UUID
 
 @Service
 class VideoStorageService {
+    private val logger = LoggerFactory.getLogger(VideoStorageService::class.java)
+
     @Value("\${video.storage.location}")
     private lateinit var storageLocation: String
 
@@ -28,6 +31,9 @@ class VideoStorageService {
 
     @Autowired
     private lateinit var repository: VideoRepository
+
+    @Autowired
+    private lateinit var videoAnalysisService: VideoAnalysisService
 
     @jakarta.annotation.PostConstruct
     fun init() {
@@ -49,6 +55,12 @@ class VideoStorageService {
 
         // Store the video and get the saved video record
         val savedVideo = storeVideo(file)
+
+        // Trigger video analysis asynchronously (fire and forget)
+        savedVideo.id?.let { videoId ->
+            logger.info("📤 Video uploaded successfully. ID: $videoId, Filename: ${savedVideo.filename}")
+            videoAnalysisService.triggerVideoAnalysis(videoId)
+        }
 
         // Create response
         val response =
