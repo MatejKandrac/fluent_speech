@@ -42,7 +42,7 @@ Future<void> stopImageStream(CameraController? controller) async {
   if (controller == null) return;
   try {
     if (controller.supportsImageStreaming()) await controller.stopImageStream();
-  } on Exception catch (e) {
+  } on Exception catch (_){
     Log.e('CAMERA', 'Attempted to stop image stream failed');
   }
 }

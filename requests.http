@@ -1,0 +1,10 @@
+
+POST http://localhost:8000/api/v1/videos/upload
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="video"; filename="REC6766379630202934727.mp4"
+Content-Type: video/mp4
+
+< C:/Users/matke/Videos/REC6766379630202934727.mp4
+--WebAppBoundary--
