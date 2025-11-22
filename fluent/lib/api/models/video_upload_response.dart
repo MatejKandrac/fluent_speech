@@ -6,7 +6,7 @@ part 'video_upload_response.g.dart';
 class VideoUploadResponse {
   final bool success;
   final String message;
-  final String? id;
+  final int? id;
   final String? filename;
   final int? fileSize;
   final String? uploadedAt;

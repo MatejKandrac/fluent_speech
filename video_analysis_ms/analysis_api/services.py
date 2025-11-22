@@ -8,10 +8,14 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from django.conf import settings
-from bson import ObjectId
 
 from .models import VideoAnalysis, FrameAnalysis, LandmarkData
-from .db_connection import get_videos_collection, get_analysis_collection
+from .db_connection import (
+    get_video_by_id,
+    insert_analysis,
+    insert_frame_data,
+    insert_landmarks_batch
+)
 
 
 # MediaPipe Pose landmark names
@@ -71,28 +75,26 @@ class VideoProcessingService:
         self.frame_interval = settings.VIDEO_PROCESSING_CONFIG['frame_interval']
         self.max_duration = settings.VIDEO_PROCESSING_CONFIG['max_video_duration']
 
-    def get_video_path(self, video_id: str) -> Optional[str]:
+    def get_video_path(self, video_id: int) -> Optional[str]:
         """
-        Get the file path for a video from MongoDB.
+        Get the file path for a video from PostgreSQL.
 
         Args:
-            video_id: The MongoDB ObjectId of the video
+            video_id: The ID of the video recording
 
         Returns:
             Full path to the video file, or None if not found
         """
-        videos_collection = get_videos_collection()
-
         try:
-            video_doc = videos_collection.find_one({'_id': ObjectId(video_id)})
+            video = get_video_by_id(video_id)
 
-            if not video_doc:
+            if not video:
                 print(f"Video with ID {video_id} not found in database")
                 return None
 
-            filename = video_doc.get('filename')
+            filename = video.get('filename')
             if not filename:
-                print(f"Video document {video_id} has no filename")
+                print(f"Video record {video_id} has no filename")
                 return None
 
             video_path = Path(settings.VIDEO_STORAGE_PATH) / filename
@@ -190,12 +192,12 @@ class VideoProcessingService:
             print(f"Error saving visualization: {e}")
             return None
 
-    def process_video(self, video_id: str) -> Dict[str, Any]:
+    def process_video(self, video_id: int) -> Dict[str, Any]:
         """
         Process a video and extract pose landmarks at regular intervals.
 
         Args:
-            video_id: The MongoDB ObjectId of the video to process
+            video_id: The ID of the video recording to process
 
         Returns:
             Dictionary with success status and analysis results
@@ -242,13 +244,11 @@ class VideoProcessingService:
             print(f"Processing every {frame_skip} frames ({self.frame_interval}s interval)")
             print(f"📸 Saving debug visualizations to debug_output/{video_id}/")
 
-            # Create analysis object
-            analysis = VideoAnalysis(video_id=video_id)
-
             frame_count = 0
             processed_count = 0
             max_x = 0.0
             max_y = 0.0
+            frames_data = []
 
             while cap.isOpened():
                 ret, frame = cap.read()
@@ -271,14 +271,15 @@ class VideoProcessingService:
                             max_x = max(max_x, landmark.x)
                             max_y = max(max_y, landmark.y)
 
-                        frame_analysis = FrameAnalysis(
-                            timestamp=timestamp,
-                            landmarks=landmarks
-                        )
-                        analysis.add_frame_analysis(frame_analysis)
+                        # Store frame data for batch insertion
+                        frames_data.append({
+                            'timestamp': timestamp,
+                            'frame_index': processed_count,
+                            'landmarks': landmarks
+                        })
 
                         # Save visualization for this processed frame
-                        self.save_visualization(frame, video_id, processed_count)
+                        self.save_visualization(frame, str(video_id), processed_count)
 
                         processed_count += 1
 
@@ -292,16 +293,27 @@ class VideoProcessingService:
             print(f"Video processing complete. Processed {processed_count} frames out of {frame_count} total frames")
             print(f"Max coordinates: x={max_x:.4f}, y={max_y:.4f}")
 
-            # Set max coordinates on analysis
-            analysis.max_x = max_x
-            analysis.max_y = max_y
+            # Save to PostgreSQL
+            # First, insert analysis record
+            analysis_id = insert_analysis(
+                recording_id=video_id,
+                total_frames=processed_count,
+                max_x=max_x,
+                max_y=max_y
+            )
 
-            # Save to MongoDB
-            analysis_collection = get_analysis_collection()
-            result = analysis_collection.insert_one(analysis.to_dict())
-            analysis_id = str(result.inserted_id)
+            # Then, insert frame data and landmarks
+            for frame_data in frames_data:
+                frame_data_id = insert_frame_data(
+                    analysis_id=analysis_id,
+                    timestamp=frame_data['timestamp'],
+                    frame_index=frame_data['frame_index']
+                )
 
-            print(f"Analysis saved to MongoDB with ID: {analysis_id}")
+                # Insert all landmarks for this frame in batch
+                insert_landmarks_batch(frame_data_id, frame_data['landmarks'])
+
+            print(f"Analysis saved to PostgreSQL with ID: {analysis_id}")
 
             return {
                 'success': True,

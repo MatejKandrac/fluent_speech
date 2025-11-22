@@ -70,12 +70,12 @@ DATABASES = {
     }
 }
 
-# MongoDB Configuration (accessed directly via pymongo)
-MONGODB_CONFIG = {
+# PostgreSQL Configuration (accessed directly via psycopg2)
+POSTGRES_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
-    'port': int(os.getenv('DB_PORT', 27017)),
+    'port': int(os.getenv('DB_PORT', 5432)),
     'database': os.getenv('DB_NAME', 'fluent'),
-    'username': os.getenv('DB_USERNAME', ''),
+    'user': os.getenv('DB_USERNAME', ''),
     'password': os.getenv('DB_PASSWORD', ''),
 }
 

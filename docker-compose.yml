@@ -1,23 +1,24 @@
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: my_mongodb
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: fluent_timescaledb
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
-      MONGO_INITDB_DATABASE: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - '${DB_PORT}:27017'
+      - '${DB_PORT}:5432'
     volumes:
-      - mongo-data:/data/db
+      - timescale-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     restart: always
     env_file:
       - .env
 
 volumes:
-  mongo-data:
+  timescale-data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /d/MongoData
+      device: /d/TimescaleData

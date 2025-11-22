@@ -10,7 +10,7 @@ VideoUploadResponse _$VideoUploadResponseFromJson(Map<String, dynamic> json) =>
     VideoUploadResponse(
       success: json['success'] as bool,
       message: json['message'] as String,
-      id: json['id'] as String?,
+      id: (json['id'] as num?)?.toInt(),
       filename: json['filename'] as String?,
       fileSize: (json['fileSize'] as num?)?.toInt(),
       uploadedAt: json['uploadedAt'] as String?,

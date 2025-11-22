@@ -7,9 +7,7 @@ class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
 
-  factory DatabaseHelper() {
-    return _instance;
-  }
+  factory DatabaseHelper() => _instance;
 
   DatabaseHelper._internal();
 
@@ -34,7 +32,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE video_records (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        mongo_id TEXT NOT NULL,
+        mongo_id INTEGER NOT NULL,
         name TEXT NOT NULL,
         filename TEXT NOT NULL,
         created_at TEXT NOT NULL
@@ -45,7 +43,7 @@ class DatabaseHelper {
   // Insert a video record
   Future<int> insertVideoRecord(VideoRecord record) async {
     final db = await database;
-    return await db.insert(
+    return db.insert(
       'video_records',
       record.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -78,13 +76,13 @@ class DatabaseHelper {
     return VideoRecord.fromMap(maps.first);
   }
 
-  // Get a video record by MongoDB id
-  Future<VideoRecord?> getVideoRecordByMongoId(String mongoId) async {
+  // Get a video record by server id
+  Future<VideoRecord?> getVideoRecordByServerId(int serverId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'video_records',
       where: 'mongo_id = ?',
-      whereArgs: [mongoId],
+      whereArgs: [serverId],
     );
 
     if (maps.isEmpty) return null;
@@ -112,13 +110,13 @@ class DatabaseHelper {
     );
   }
 
-  // Delete a video record by MongoDB id
-  Future<int> deleteVideoRecordByMongoId(String mongoId) async {
+  // Delete a video record by server id
+  Future<int> deleteVideoRecordByServerId(int serverId) async {
     final db = await database;
     return await db.delete(
       'video_records',
       where: 'mongo_id = ?',
-      whereArgs: [mongoId],
+      whereArgs: [serverId],
     );
   }
 

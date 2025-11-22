@@ -4,11 +4,13 @@ API views for video analysis endpoints.
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from bson import ObjectId
-from bson.errors import InvalidId
 
 from .services import VideoProcessingService
-from .db_connection import get_analysis_collection
+from .db_connection import (
+    get_analysis_by_id,
+    get_analyses_by_recording_id,
+    delete_analysis_by_id
+)
 
 
 @api_view(['POST'])
@@ -17,19 +19,19 @@ def analyze_video(request, video_id):
     Analyze a video and extract pose landmarks.
 
     Args:
-        video_id: The MongoDB ObjectId of the video to analyze
+        video_id: The ID of the video recording to analyze
 
     Returns:
         JSON response with analysis results
     """
     # Validate video_id format
     try:
-        ObjectId(video_id)
-    except InvalidId:
+        video_id = int(video_id)
+    except (ValueError, TypeError):
         return Response(
             {
                 'success': False,
-                'error': 'Invalid video ID format'
+                'error': 'Invalid video ID format - must be an integer'
             },
             status=status.HTTP_400_BAD_REQUEST
         )
@@ -68,28 +70,27 @@ def get_analysis(request, analysis_id):
     Retrieve analysis results by ID.
 
     Args:
-        analysis_id: The MongoDB ObjectId of the analysis document
+        analysis_id: The ID of the analysis record
 
     Returns:
         JSON response with analysis data
     """
     # Validate analysis_id format
     try:
-        obj_id = ObjectId(analysis_id)
-    except InvalidId:
+        analysis_id = int(analysis_id)
+    except (ValueError, TypeError):
         return Response(
             {
                 'success': False,
-                'error': 'Invalid analysis ID format'
+                'error': 'Invalid analysis ID format - must be an integer'
             },
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Get analysis from MongoDB
-    analysis_collection = get_analysis_collection()
-    analysis_doc = analysis_collection.find_one({'_id': obj_id})
+    # Get analysis from PostgreSQL
+    analysis = get_analysis_by_id(analysis_id)
 
-    if not analysis_doc:
+    if not analysis:
         return Response(
             {
                 'success': False,
@@ -98,13 +99,10 @@ def get_analysis(request, analysis_id):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    # Convert ObjectId to string for JSON serialization
-    analysis_doc['_id'] = str(analysis_doc['_id'])
-
     return Response(
         {
             'success': True,
-            'analysis': analysis_doc
+            'analysis': analysis
         },
         status=status.HTTP_200_OK
     )
@@ -116,30 +114,30 @@ def get_video_analyses(request, video_id):
     Get all analyses for a specific video.
 
     Args:
-        video_id: The MongoDB ObjectId of the video
+        video_id: The ID of the video recording
 
     Returns:
         JSON response with list of analyses
     """
     # Validate video_id format
     try:
-        ObjectId(video_id)
-    except InvalidId:
+        video_id = int(video_id)
+    except (ValueError, TypeError):
         return Response(
             {
                 'success': False,
-                'error': 'Invalid video ID format'
+                'error': 'Invalid video ID format - must be an integer'
             },
             status=status.HTTP_400_BAD_REQUEST
         )
 
     # Get all analyses for this video
-    analysis_collection = get_analysis_collection()
-    analyses = list(analysis_collection.find({'video_id': video_id}))
+    analyses = get_analyses_by_recording_id(video_id)
 
-    # Convert ObjectIds to strings
+    # Convert datetime objects to ISO format strings
     for analysis in analyses:
-        analysis['_id'] = str(analysis['_id'])
+        if 'created_at' in analysis:
+            analysis['created_at'] = analysis['created_at'].isoformat()
 
     return Response(
         {
@@ -157,28 +155,27 @@ def delete_analysis(request, analysis_id):
     Delete an analysis by ID.
 
     Args:
-        analysis_id: The MongoDB ObjectId of the analysis to delete
+        analysis_id: The ID of the analysis to delete
 
     Returns:
         JSON response with deletion status
     """
     # Validate analysis_id format
     try:
-        obj_id = ObjectId(analysis_id)
-    except InvalidId:
+        analysis_id = int(analysis_id)
+    except (ValueError, TypeError):
         return Response(
             {
                 'success': False,
-                'error': 'Invalid analysis ID format'
+                'error': 'Invalid analysis ID format - must be an integer'
             },
             status=status.HTTP_400_BAD_REQUEST
         )
 
     # Delete the analysis
-    analysis_collection = get_analysis_collection()
-    result = analysis_collection.delete_one({'_id': obj_id})
+    deleted = delete_analysis_by_id(analysis_id)
 
-    if result.deleted_count == 0:
+    if not deleted:
         return Response(
             {
                 'success': False,

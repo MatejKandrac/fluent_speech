@@ -1,6 +1,6 @@
 package com.kandrac.matej.fluentapigateway.repository
 
 import com.kandrac.matej.fluentapigateway.model.StoredVideo
-import org.springframework.data.mongodb.repository.MongoRepository
+import org.springframework.data.jpa.repository.JpaRepository
 
-interface VideoRepository : MongoRepository<StoredVideo, String>
+interface VideoRepository : JpaRepository<StoredVideo, Long>

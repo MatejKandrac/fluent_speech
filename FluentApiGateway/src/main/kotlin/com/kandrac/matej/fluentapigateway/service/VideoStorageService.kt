@@ -67,7 +67,7 @@ class VideoStorageService {
             VideoUploadResponse(
                 success = true,
                 message = "Video uploaded successfully",
-                id = savedVideo.id,
+                videoId = savedVideo.id,
                 filename = savedVideo.filename,
                 fileSize = file.size,
                 uploadedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),

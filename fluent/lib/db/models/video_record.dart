@@ -1,37 +1,33 @@
 class VideoRecord {
-  final String? id; // SQLite auto-increment id
-  final String mongoId; // ID from MongoDB
+  final int? id; // SQLite auto-increment id
+  final int remoteId; // ID from MongoDB
   final String name; // User-defined name
   final String filename; // Filename from backend
   final DateTime createdAt;
 
   VideoRecord({
     this.id,
-    required this.mongoId,
+    required this.remoteId,
     required this.name,
     required this.filename,
     required this.createdAt,
   });
 
   // Convert to Map for SQLite insertion
-  Map<String, dynamic> toMap() {
-    return {
+  Map<String, dynamic> toMap() => {
       'id': id,
-      'mongo_id': mongoId,
+      'video_id': remoteId,
       'name': name,
       'filename': filename,
       'created_at': createdAt.toIso8601String(),
     };
-  }
 
   // Convert from Map for SQLite query
-  factory VideoRecord.fromMap(Map<String, dynamic> map) {
-    return VideoRecord(
-      id: map['id']?.toString(),
-      mongoId: map['mongo_id'] as String,
+  factory VideoRecord.fromMap(Map<String, dynamic> map) => VideoRecord(
+      id: map['id'] as int?,
+      remoteId: map['video_id'] as int,
       name: map['name'] as String,
       filename: map['filename'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
-  }
 }

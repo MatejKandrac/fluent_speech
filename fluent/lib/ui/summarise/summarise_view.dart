@@ -57,7 +57,7 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
       // Save to local database
       if (state.response!.id != null && state.response!.filename != null) {
         final record = VideoRecord(
-          mongoId: state.response!.id!,
+          remoteId: state.response!.id!,
           name: _nameController.text.trim(),
           filename: state.response!.filename!,
           createdAt: DateTime.now(),

@@ -19,7 +19,7 @@ class VideoAnalysisService(
     private lateinit var videoAnalysisServiceUrl: String
 
     @Async
-    fun triggerVideoAnalysis(videoId: String) {
+    fun triggerVideoAnalysis(videoId: Long) {
         try {
             logger.info("Triggering video analysis for video ID: $videoId")
 
