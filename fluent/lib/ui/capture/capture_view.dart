@@ -11,7 +11,7 @@ import '../../util/camera_utils.dart';
 import '../../util/extensions.dart';
 import '../../core/detection_mode.dart';
 import 'providers/calibrate_providers.dart';
-import '../summarise/summarise_view.dart';
+import '../crop/crop_view.dart';
 import 'widget/missing_landmarks.dart';
 import 'widget/record_button.dart';
 import 'widget/start_counter.dart';
@@ -112,7 +112,7 @@ class _CaptureViewState extends ConsumerState<CaptureView> with WidgetsBindingOb
     if (!mounted) return;
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => SummariseView(mode: widget.mode, filePath: file.path),
+        builder: (context) => CropView(mode: widget.mode, filePath: file.path),
       ),
     );
   }

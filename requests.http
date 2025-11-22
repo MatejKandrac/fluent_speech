@@ -13,7 +13,7 @@ Content-Type: video/mp4
 GET http://localhost:8001/api/v1/health
 
 ### Video analysis microservice video analysis
-POST http://localhost:8001/api/v1/analyze/video/690cf86223cc728f7f3bd742/
+POST http://localhost:8001/api/v1/analyze/video/2/
 
 ### Hand movement analysis microservice health check
 GET http://localhost:8002/api/v1/health/
