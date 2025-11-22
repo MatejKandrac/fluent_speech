@@ -1,5 +1,5 @@
 """
-Django settings for video_analysis_service project.
+Django settings for hand_movement_service project.
 """
 
 import os
@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'analysis_api',
+    'movement_api',
 ]
 
 MIDDLEWARE = [
@@ -42,7 +42,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'video_analysis_service.urls'
+ROOT_URLCONF = 'hand_movement_service.urls'
 
 TEMPLATES = [
     {
@@ -60,9 +60,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'video_analysis_service.wsgi.application'
+WSGI_APPLICATION = 'hand_movement_service.wsgi.application'
 
-# Database - Using default SQLite for Django admin, MongoDB for actual data
+# Database - Using default SQLite for Django admin
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -78,10 +78,6 @@ MONGODB_CONFIG = {
     'username': os.getenv('DB_USERNAME', ''),
     'password': os.getenv('DB_PASSWORD', ''),
 }
-
-# API Gateway Configuration
-API_GATEWAY_URL = os.getenv('API_GATEWAY_URL', 'http://localhost:8000')
-VIDEO_STORAGE_PATH = os.getenv('VIDEO_STORAGE_PATH', 'D:/VideoData')
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -121,15 +117,9 @@ REST_FRAMEWORK = {
     ],
 }
 
-# MediaPipe Configuration
-MEDIAPIPE_CONFIG = {
-    'min_detection_confidence': 0.5,
-    'min_tracking_confidence': 0.5,
-    'model_complexity': 1,  # 0, 1, or 2 (higher = more accurate but slower)
-}
-
-# Video Processing Configuration
-VIDEO_PROCESSING_CONFIG = {
-    'frame_interval': float(os.getenv('FRAME_INTERVAL', '0.2')),  # Process frame every N seconds
-    'max_video_duration': 600,  # Maximum video duration in seconds (10 minutes)
+# Hand Movement Analysis Configuration
+MOVEMENT_ANALYSIS_CONFIG = {
+    'acceleration_threshold': float(os.getenv('ACCELERATION_THRESHOLD', '2.0')),
+    'min_segment_length': int(os.getenv('MIN_SEGMENT_LENGTH', '3')),
+    'change_point_penalty': float(os.getenv('CHANGE_POINT_PENALTY', '3')),
 }

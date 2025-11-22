@@ -58,7 +58,7 @@ class VideoStorageService {
 
         // Trigger video analysis asynchronously (fire and forget)
         savedVideo.id?.let { videoId ->
-            logger.info("📤 Video uploaded successfully. ID: $videoId, Filename: ${savedVideo.filename}")
+            logger.info("Video uploaded successfully. ID: $videoId, Filename: ${savedVideo.filename}")
             videoAnalysisService.triggerVideoAnalysis(videoId)
         }
 

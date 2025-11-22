@@ -9,8 +9,14 @@ Content-Type: video/mp4
 < C:/Users/matke/Videos/REC6766379630202934727.mp4
 --WebAppBoundary--
 
-### Video analysys microservice health check
+### Video analysis microservice health check
 GET http://localhost:8001/api/v1/health
 
 ### Video analysis microservice video analysis
 POST http://localhost:8001/api/v1/analyze/video/690cf86223cc728f7f3bd742/
+
+### Hand movement analysis microservice health check
+GET http://localhost:8002/api/v1/health/
+
+### Hand movement analysis microservice
+POST http://localhost:8002/api/v1/analyze/hand-movements/690dde36b15194e7316256c8/

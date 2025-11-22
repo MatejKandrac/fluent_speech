@@ -4,7 +4,7 @@ Multi-platform application for video recording and speech therapy analysis using
 
 ## Architecture
 
-The project consists of three main components:
+The project consists of five main components:
 
 ### 1. Flutter Mobile App (`fluent/`)
 - **Technology:** Flutter/Dart
@@ -23,6 +23,7 @@ The project consists of three main components:
   - Video upload endpoint with multipart support (up to 500MB)
   - Video storage to file system
   - MongoDB integration for video metadata
+  - Automatic triggering of video analysis
   - RESTful API with security configuration
 
 ### 3. Video Analysis Microservice (`video_analysis_ms/`)
@@ -33,9 +34,21 @@ The project consists of three main components:
   - MediaPipe pose detection (33 landmarks)
   - Frame-by-frame analysis at configurable intervals (default: 0.2s)
   - MongoDB storage for analysis results
+  - Debug visualizations with skeleton overlay
   - RESTful API for video analysis
 
-### 4. Database (MongoDB)
+### 4. Hand Movement Analysis Microservice (`hand_movement_analysis_ms/`)
+- **Technology:** Python + Django + ruptures
+- **Port:** 8002
+- **Purpose:** Analyze hand movements and detect significant changes
+- **Features:**
+  - Hand movement acceleration analysis
+  - Change point detection using ruptures library
+  - Identifies fast movements and sudden slowdowns
+  - Segments classification by importance
+  - RESTful API for movement analysis
+
+### 5. Database (MongoDB)
 - **Technology:** MongoDB (Docker container)
 - **Port:** 27017
 - **Collections:**
@@ -80,7 +93,28 @@ python manage.py runserver 8001
 
 Service will be available at `http://localhost:8001`
 
-### 4. Run Flutter App
+### 4. Start Hand Movement Analysis Microservice (Optional)
+
+**Windows:**
+```bash
+cd hand_movement_analysis_ms
+setup.bat        # First time only
+run.bat          # Start the service
+```
+
+**Linux/Mac:**
+```bash
+cd hand_movement_analysis_ms
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver 8002
+```
+
+Service will be available at `http://localhost:8002`
+
+### 5. Run Flutter App
 
 ```bash
 cd fluent
@@ -117,6 +151,13 @@ Replace the IP address with your machine's IP address.
 4. **Retrieve Results**
    - Get analysis: GET `/api/analysis/{analysis_id}/`
    - Get all analyses for a video: GET `/api/analysis/video/{video_id}/`
+
+5. **Analyze Hand Movements** (Optional - Manual Trigger)
+   - Call POST `/api/v1/analyze/hand-movements/{video_id}/` on Hand Movement service
+   - Service fetches pose data from MongoDB `analysis` collection
+   - Calculates hand velocity and acceleration
+   - Uses change point detection to find movement segments
+   - Returns timestamped segments with fast movements highlighted
 
 ## Data Structures
 
@@ -226,12 +267,12 @@ DELETE /api/v1/videos/{filename}
 
 #### Health Check
 ```
-GET /api/health/
+GET /api/v1/health/
 ```
 
 #### Analyze Video
 ```
-POST /api/analyze/video/{video_id}/
+POST /api/v1/analyze/video/{video_id}/
 
 Response:
 {
@@ -240,7 +281,9 @@ Response:
     "analysis_id": "65abc123def456789012345",
     "frames_processed": 150,
     "total_frames": 300,
-    "duration": 10.0
+    "duration": 10.0,
+    "max_x": 0.987,
+    "max_y": 0.923
 }
 ```
 
@@ -257,6 +300,43 @@ GET /api/analysis/video/{video_id}/
 #### Delete Analysis
 ```
 DELETE /api/analysis/{analysis_id}/delete/
+```
+
+### Hand Movement Analysis Service (Port 8002)
+
+#### Health Check
+```
+GET /api/v1/health/
+```
+
+#### Analyze Hand Movements
+```
+POST /api/v1/analyze/hand-movements/{video_id}/
+
+Response:
+{
+    "success": true,
+    "video_id": "507f1f77bcf86cd799439011",
+    "total_frames": 150,
+    "left_hand": {
+        "hand": "left",
+        "total_segments": 5,
+        "fast_movement_segments": 2,
+        "segments": [
+            {
+                "start_index": 25,
+                "end_index": 35,
+                "timestamp": "00:00:05.200000",
+                "mean_acceleration": 3.45,
+                "max_acceleration": 5.67,
+                "std_acceleration": 1.23,
+                "type": "fast_movement",
+                "importance": "high"
+            }
+        ]
+    },
+    "right_hand": { ... }
+}
 ```
 
 ## Development Tools
