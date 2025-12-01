@@ -1,5 +1,5 @@
 """
-Django settings for hand_movement_service project.
+Django settings for arm_movement_service project.
 """
 
 import os
@@ -42,7 +42,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'hand_movement_service.urls'
+ROOT_URLCONF = 'arm_movement_service.urls'
 
 TEMPLATES = [
     {
@@ -60,7 +60,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'hand_movement_service.wsgi.application'
+WSGI_APPLICATION = 'arm_movement_service.wsgi.application'
 
 # Database - Using default SQLite for Django admin
 DATABASES = {
@@ -70,12 +70,12 @@ DATABASES = {
     }
 }
 
-# MongoDB Configuration (accessed directly via pymongo)
-MONGODB_CONFIG = {
+# PostgreSQL Configuration (accessed directly via psycopg2)
+POSTGRES_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
-    'port': int(os.getenv('DB_PORT', 27017)),
+    'port': int(os.getenv('DB_PORT', 5432)),
     'database': os.getenv('DB_NAME', 'fluent'),
-    'username': os.getenv('DB_USERNAME', ''),
+    'user': os.getenv('DB_USERNAME', ''),
     'password': os.getenv('DB_PASSWORD', ''),
 }
 
@@ -117,9 +117,18 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Hand Movement Analysis Configuration
+# Arm Movement Analysis Configuration
 MOVEMENT_ANALYSIS_CONFIG = {
     'acceleration_threshold': float(os.getenv('ACCELERATION_THRESHOLD', '2.0')),
     'min_segment_length': int(os.getenv('MIN_SEGMENT_LENGTH', '3')),
     'change_point_penalty': float(os.getenv('CHANGE_POINT_PENALTY', '3')),
+    # Velocity thresholds for movement detection
+    'no_movement_velocity_threshold': float(os.getenv('NO_MOVEMENT_VELOCITY_THRESHOLD', '0.01')),
+    'excessive_movement_velocity_threshold': float(os.getenv('EXCESSIVE_MOVEMENT_VELOCITY_THRESHOLD', '0.15')),
+    'min_consecutive_frames': int(os.getenv('MIN_CONSECUTIVE_FRAMES', '3')),  # Minimum frames to consider a pattern
+    # Segmentation parameters
+    'segmentation_window_size': int(os.getenv('SEGMENTATION_WINDOW_SIZE', '15')),  # Frames in sliding window
+    'average_change_threshold': float(os.getenv('AVERAGE_CHANGE_THRESHOLD', '0.08')),  # Significant average change
+    'trend_change_threshold': float(os.getenv('TREND_CHANGE_THRESHOLD', '0.008')),  # Significant trend change
+    'min_segment_gap': int(os.getenv('MIN_SEGMENT_GAP', '20')),  # Minimum frames between segments
 }

@@ -1,5 +1,5 @@
 """
-URL configuration for hand_movement_service project.
+URL configuration for arm_movement_service project.
 """
 from django.contrib import admin
 from django.urls import path, include

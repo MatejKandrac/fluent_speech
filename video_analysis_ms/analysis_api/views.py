@@ -17,12 +17,6 @@ from .db_connection import (
 def analyze_video(request, video_id):
     """
     Analyze a video and extract pose landmarks.
-
-    Args:
-        video_id: The ID of the video recording to analyze
-
-    Returns:
-        JSON response with analysis results
     """
     # Validate video_id format
     try:
@@ -36,15 +30,12 @@ def analyze_video(request, video_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Process the video
     service = VideoProcessingService()
     result = service.process_video(video_id)
 
     if result['success']:
         return Response(
             {
-                'success': True,
-                'message': 'Video analysis completed successfully',
                 'analysis_id': result['analysis_id'],
                 'frames_processed': result['frames_processed'],
                 'total_frames': result['total_frames'],

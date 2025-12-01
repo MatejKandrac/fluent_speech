@@ -1,22 +1,21 @@
 """
 Video processing service using MediaPipe for landmark extraction.
 """
-import cv2
-import mediapipe as mp
-import os
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
+
+import cv2
+import mediapipe as mp
 from django.conf import settings
 
-from .models import VideoAnalysis, FrameAnalysis, LandmarkData
 from .db_connection import (
     get_video_by_id,
     insert_analysis,
     insert_frame_data,
     insert_landmarks_batch
 )
-
+from .models import LandmarkData
 
 # MediaPipe Pose landmark names
 POSE_LANDMARK_NAMES = [
@@ -76,15 +75,6 @@ class VideoProcessingService:
         self.max_duration = settings.VIDEO_PROCESSING_CONFIG['max_video_duration']
 
     def get_video_path(self, video_id: int) -> Optional[str]:
-        """
-        Get the file path for a video from PostgreSQL.
-
-        Args:
-            video_id: The ID of the video recording
-
-        Returns:
-            Full path to the video file, or None if not found
-        """
         try:
             video = get_video_by_id(video_id)
 
@@ -112,13 +102,6 @@ class VideoProcessingService:
     def extract_landmarks(self, frame) -> Optional[Dict[str, LandmarkData]]:
         """
         Extract pose landmarks from a single frame.
-
-        Args:
-            frame: OpenCV frame (BGR image)
-
-        Returns:
-            Dictionary mapping landmark names to LandmarkData objects,
-            or None if no pose detected
         """
         # Convert BGR to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -145,14 +128,6 @@ class VideoProcessingService:
     def save_visualization(self, frame, video_id: str, processed_frame_index: int) -> Optional[str]:
         """
         Save a frame with pose landmarks visualization.
-
-        Args:
-            frame: The video frame to annotate
-            video_id: The video ID (for subdirectory)
-            processed_frame_index: The index of the processed frame (0, 1, 2, ...)
-
-        Returns:
-            Path to saved image, or None if failed
         """
         try:
             # Create debug output directory for this video
@@ -195,12 +170,6 @@ class VideoProcessingService:
     def process_video(self, video_id: int) -> Dict[str, Any]:
         """
         Process a video and extract pose landmarks at regular intervals.
-
-        Args:
-            video_id: The ID of the video recording to process
-
-        Returns:
-            Dictionary with success status and analysis results
         """
         # Get video path
         video_path = self.get_video_path(video_id)
@@ -241,8 +210,9 @@ class VideoProcessingService:
             if frame_skip < 1:
                 frame_skip = 1
 
+            frames_per_second = fps / frame_skip
             print(f"Processing every {frame_skip} frames ({self.frame_interval}s interval)")
-            print(f"📸 Saving debug visualizations to debug_output/{video_id}/")
+            print(f"This will process {frames_per_second:.2f} frames per second of video")
 
             frame_count = 0
             processed_count = 0
@@ -260,8 +230,7 @@ class VideoProcessingService:
                 if frame_count % frame_skip == 0:
                     # Calculate timestamp for this frame
                     timestamp_seconds = frame_count / fps
-                    timestamp = (datetime.min + timedelta(seconds=timestamp_seconds)).time().isoformat()
-
+                    timestamp = (datetime.min + timedelta(seconds=timestamp_seconds)).time().isoformat(timespec='microseconds')
                     # Extract landmarks
                     landmarks = self.extract_landmarks(frame)
 
