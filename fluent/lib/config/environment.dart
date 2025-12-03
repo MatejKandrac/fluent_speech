@@ -7,6 +7,6 @@ class Environment {
 
   // Debug method to print the actual server URL
   static void printServerUrl() {
-    print('🔧 Environment.serverUrl = $serverUrl');
+    print('Environment.serverUrl = $serverUrl');
   }
 }

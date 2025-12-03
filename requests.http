@@ -12,11 +12,17 @@ Content-Type: video/mp4
 ### Video analysis microservice health check
 GET http://localhost:8001/api/v1/health
 
-### Video analysis microservice video analysis
-POST http://localhost:8001/api/v1/analyze/video/3/
-
 ### Hand movement analysis microservice health check
 GET http://localhost:8002/api/v1/health/
 
-### Hand movement analysis microservice
+### Eye analysis microservice health check
+GET http://localhost:8003/api/v1/health
+
+### Video analysis
+POST http://localhost:8001/api/v1/analyze/video/4/
+
+### Hand movement analysis
 POST http://localhost:8002/api/v1/analyze/arm-movements/3/
+
+### Eye anaysis
+POST http://localhost:8003/api/v1/analyze/eye-contact/4/

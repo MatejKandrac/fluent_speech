@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/calibration/calibrator_base.dart';
 import '../../core/calibration/calibrators.dart';
 import '../../core/detection/detector_base.dart';
@@ -47,6 +48,7 @@ class _CaptureViewState extends ConsumerState<CaptureView> with WidgetsBindingOb
     calibrator = widget.mode.getCalibrator();
     _missingLandmarks = calibrator.requiredLandmarks();
     WidgetsBinding.instance.addObserver(this);
+    WakelockPlus.enable();
   }
 
   Future<void> _initializeCamera() async {
@@ -119,6 +121,7 @@ class _CaptureViewState extends ConsumerState<CaptureView> with WidgetsBindingOb
 
   @override
   void dispose() {
+    WakelockPlus.disable();
     WidgetsBinding.instance.removeObserver(this);
     disposeCamera(_controller);
     _timer?.cancel();
