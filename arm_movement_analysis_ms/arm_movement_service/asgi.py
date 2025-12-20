@@ -1,7 +1,3 @@
-"""
-ASGI config for arm_movement_service project.
-"""
-
 import os
 
 from django.core.asgi import get_asgi_application

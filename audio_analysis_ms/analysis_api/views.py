@@ -1,6 +1,3 @@
-"""
-API views for audio analysis endpoints.
-"""
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,10 +7,6 @@ from .services import AudioAnalysisService
 
 @api_view(['POST'])
 def analyze_audio(request, recording_id):
-    """
-    Analyze audio from a recording.
-    """
-    # Convert recording_id from string to int
     try:
         recording_id = int(recording_id)
     except (ValueError, TypeError):
@@ -51,12 +44,6 @@ def analyze_audio(request, recording_id):
 
 @api_view(['GET'])
 def health_check(request):
-    """
-    Health check endpoint.
-
-    Returns:
-        JSON response indicating service health
-    """
     return Response(
         {
             'status': 'healthy',

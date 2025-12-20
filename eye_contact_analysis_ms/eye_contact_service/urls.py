@@ -1,4 +1,3 @@
-"""URL configuration for eye_contact_service."""
 from django.urls import path, include
 
 urlpatterns = [

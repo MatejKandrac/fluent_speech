@@ -1,6 +1,3 @@
-"""
-API views for arm movement analysis endpoints.
-"""
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,21 +7,6 @@ from .services import ArmMovementAnalysisService
 
 @api_view(['POST'])
 def analyze_arm_movements(request, recording_id):
-    """
-    Analyze arm movements for a recording.
-
-    Currently retrieves video data. Analysis will be built incrementally:
-    - Step 1: Data normalization relative to body position and scale
-    - Step 2: Velocity/acceleration calculation
-    - Step 3: Time series segmentation for sudden movements
-
-    Args:
-        recording_id: The ID of the recording to analyze
-
-    Returns:
-        JSON response with analysis results
-    """
-    # Validate recording_id format
     try:
         recording_id = int(recording_id)
     except (ValueError, TypeError):
@@ -36,7 +18,6 @@ def analyze_arm_movements(request, recording_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Analyze arm movements
     service = ArmMovementAnalysisService()
     result = service.analyze_arm_movements(recording_id)
 
@@ -51,12 +32,6 @@ def analyze_arm_movements(request, recording_id):
 
 @api_view(['GET'])
 def health_check(request):
-    """
-    Health check endpoint.
-
-    Returns:
-        JSON response indicating service health
-    """
     return Response(
         {
             'status': 'healthy',

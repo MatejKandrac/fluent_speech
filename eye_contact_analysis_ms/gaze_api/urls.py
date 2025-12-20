@@ -1,4 +1,3 @@
-"""URL configuration for gaze_api."""
 from django.urls import path
 from . import views
 

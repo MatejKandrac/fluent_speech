@@ -12,17 +12,11 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
-/**
- * SecurityConfiguration class handles setup of key Spring Security capabilities
- */
 @Configuration
 @EnableWebSecurity
 class SecurityConfig {
     private val logger = LoggerFactory.getLogger(SecurityConfig::class.java)
 
-    /**
-     * Security filter chain filters all incoming requests via set rules
-     */
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
@@ -33,9 +27,8 @@ class SecurityConfig {
                 disable() // Disable CORS
             }
             authorizeHttpRequests {
-                // Allowed requests
+                // for now authorize all
                 authorize("/api/v1/videos/upload", permitAll)
-                // All api endpoints require authentication
                 authorize(anyRequest, authenticated)
             }
             sessionManagement {
@@ -46,10 +39,6 @@ class SecurityConfig {
         return http.build()
     }
 
-    /**
-     * CORS configuration allows specific requests and methods to pass through.
-     * NODE: Do not use corsFilter. It is outdated
-     */
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource? {
         val source = UrlBasedCorsConfigurationSource()

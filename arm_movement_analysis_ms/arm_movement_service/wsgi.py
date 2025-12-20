@@ -1,7 +1,3 @@
-"""
-WSGI config for arm_movement_service project.
-"""
-
 import os
 
 from django.core.wsgi import get_wsgi_application

@@ -1,4 +1,3 @@
-"""App configuration for gaze_api."""
 from django.apps import AppConfig
 
 

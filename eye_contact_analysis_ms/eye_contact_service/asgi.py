@@ -1,5 +1,3 @@
-"""ASGI config for eye_contact_service."""
-
 import os
 
 from django.core.asgi import get_asgi_application

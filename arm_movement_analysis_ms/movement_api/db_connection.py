@@ -1,6 +1,3 @@
-"""
-PostgreSQL connection and operations for hand movement analysis.
-"""
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import SimpleConnectionPool
@@ -18,7 +15,6 @@ ARM_LANDMARKS = [
 
 
 class PostgreSQLConnection:
-    """Singleton class for managing PostgreSQL connection pool."""
 
     _instance: Optional['PostgreSQLConnection'] = None
     _lock = threading.Lock()
@@ -36,7 +32,6 @@ class PostgreSQLConnection:
             self._create_pool()
 
     def _create_pool(self):
-        """Create connection pool to PostgreSQL."""
         config = settings.POSTGRES_CONFIG
 
         self._pool = SimpleConnectionPool(
@@ -50,53 +45,35 @@ class PostgreSQLConnection:
         )
 
     def get_connection(self):
-        """Get a connection from the pool."""
         if self._pool is None:
             self._create_pool()
         return self._pool.getconn()
 
     def return_connection(self, conn):
-        """Return a connection to the pool."""
         if self._pool:
             self._pool.putconn(conn)
 
     def close_all(self):
-        """Close all connections in the pool."""
         if self._pool:
             self._pool.closeall()
             self._pool = None
 
 
 def get_db_connection():
-    """Get a database connection from the pool."""
     return PostgreSQLConnection().get_connection()
 
 
 def return_db_connection(conn):
-    """Return a database connection to the pool."""
     PostgreSQLConnection().return_connection(conn)
 
 
 def get_analysis_by_recording_id(recording_id: int) -> Optional[Dict[str, Any]]:
-    """
-    Get the most recent analysis for a recording with all arm-related landmark data.
-
-    This reconstructs a MongoDB-like document structure for compatibility with
-    the existing analysis code.
-
-    Args:
-        recording_id: The ID of the recording
-
-    Returns:
-        Dictionary with analysis data in MongoDB-compatible format, or None if not found
-    """
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
-                SELECT a.id, a.recording_id, a.total_frames, a.max_x, a.max_y,
-                       a.created_at
+                SELECT a.id, a.recording_id, a.total_frames, a.created_at
                 FROM analysis a
                 WHERE a.recording_id = %s
                 ORDER BY a.created_at DESC
@@ -146,8 +123,6 @@ def get_analysis_by_recording_id(recording_id: int) -> Optional[Dict[str, Any]]:
             result = {
                 'recording_id': recording_id,
                 'total_frames': analysis['total_frames'],
-                'max_x': float(analysis['max_x']),
-                'max_y': float(analysis['max_y']),
                 'created_at': analysis['created_at'].isoformat(),
                 'data': [frames[i] for i in sorted(frames.keys())]
             }
@@ -159,15 +134,6 @@ def get_analysis_by_recording_id(recording_id: int) -> Optional[Dict[str, Any]]:
 
 
 def get_recording_exists(recording_id: int) -> bool:
-    """
-    Check if a recording exists.
-
-    Args:
-        recording_id: The ID of the recording
-
-    Returns:
-        True if recording exists, False otherwise
-    """
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
@@ -181,15 +147,6 @@ def get_recording_exists(recording_id: int) -> bool:
 
 
 def get_landmark_types_for_analysis(analysis_id: int) -> List[str]:
-    """
-    Get all unique landmark types for an analysis.
-
-    Args:
-        analysis_id: The ID of the analysis
-
-    Returns:
-        List of landmark type names
-    """
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:

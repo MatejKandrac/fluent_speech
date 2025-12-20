@@ -1,4 +1,3 @@
-"""Arm movement analysis service."""
 from typing import Dict, Any, Optional, List
 from django.conf import settings
 import math
@@ -11,14 +10,12 @@ from .db_connection import get_analysis_by_recording_id
 
 
 class ArmMovementAnalysisService:
-    """Service for analyzing arm movements and detecting anomalous patterns."""
 
     def __init__(self):
         self.config = settings.MOVEMENT_ANALYSIS_CONFIG
         print(f"Loaded configuration: {self.config}")
 
     def get_video_analysis(self, recording_id: int) -> Optional[Dict[str, Any]]:
-        """Fetch video analysis data from PostgreSQL."""
         return get_analysis_by_recording_id(recording_id)
 
     def normalize_landmarks(self, frame_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:

@@ -13,8 +13,6 @@ CREATE TABLE analysis (
     id BIGSERIAL PRIMARY KEY,
     recording_id BIGINT NOT NULL REFERENCES recording(id) ON DELETE CASCADE,
     total_frames INTEGER NOT NULL,
-    max_x DOUBLE PRECISION NOT NULL,
-    max_y DOUBLE PRECISION NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT unique_recording_analysis UNIQUE(recording_id)
 );

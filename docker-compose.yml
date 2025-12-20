@@ -15,6 +15,43 @@ services:
     env_file:
       - .env
 
+  api-gw:
+    build: ./FluentApiGateway
+    ports:
+      - '${API_GW_PORT}:8000'
+    env_file:
+      - .env
+    depends_on:
+      - timescaledb
+
+  audio-analysis-ms:
+    build: ./audio_analysis_ms
+    ports:
+      - '${AUDIO_ANALYSIS_PORT}:8000'
+    env_file:
+      - .env
+
+  video-analysis-ms:
+    build: ./video_analysis_ms
+    ports:
+      - '${VIDEO_ANALYSIS_PORT}:8000'
+    env_file:
+      - .env
+
+  eye-contact-ms:
+    build: ./eye_contact_analysis_ms
+    ports:
+      - '${EYE_CONTACT_PORT}:8000'
+    env_file:
+      - .env
+
+  arm-movement-ms:
+    build: ./arm_movement_analysis_ms
+    ports:
+      - '${ARM_MOVEMENT_PORT}:8000'
+    env_file:
+      - .env
+
 volumes:
   timescale-data:
     driver: local

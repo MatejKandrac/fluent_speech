@@ -53,16 +53,13 @@ class VideoStorageService {
             throw BadRequestException("File must be a video (mp4, mov, avi, etc.)")
         }
 
-        // Store the video and get the saved video record
         val savedVideo = storeVideo(file)
 
-        // Trigger video analysis asynchronously (fire and forget)
         savedVideo.id?.let { videoId ->
             logger.info("Video uploaded successfully. ID: $videoId, Filename: ${savedVideo.filename}")
             videoAnalysisService.triggerVideoAnalysis(videoId)
         }
 
-        // Create response
         val response =
             VideoUploadResponse(
                 success = true,

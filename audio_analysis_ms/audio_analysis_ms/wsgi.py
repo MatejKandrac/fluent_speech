@@ -1,7 +1,3 @@
-"""
-WSGI config for audio_analysis_ms project.
-"""
-
 import os
 
 from django.core.wsgi import get_wsgi_application

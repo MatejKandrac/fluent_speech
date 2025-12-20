@@ -10,9 +10,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.servlet.NoHandlerFoundException
 
-/**
- * This file defines custom exception handlers for exceptions
- */
 @ControllerAdvice
 class CustomExceptionHandler {
     private val logger: Logger = LoggerFactory.getLogger(CustomExceptionHandler::class.java)
@@ -104,12 +101,6 @@ data class CustomErrorDetails(
     val errorDetails: String,
 )
 
-/**
- * Following classes contain custom definitions for exceptions.
- * These exceptions are captured in CustomExceptionHandler class and are assigned with specific status codes.
- * This approach makes it easier for services to not require ResponseEntity<RETURN_TYPE> wrapped and use RETURN_TYPE instead.
- * NOTE: There has to be a message in RuntimeException type, because Spring may wrap these errors in ServletException.
- */
 data class BadRequestException(
     val errorDetails: String,
 ) : RuntimeException(errorDetails)

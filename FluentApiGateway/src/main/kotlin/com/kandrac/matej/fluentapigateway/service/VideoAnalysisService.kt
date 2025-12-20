@@ -23,14 +23,13 @@ class VideoAnalysisService(
         try {
             logger.info("Triggering video analysis for video ID: $videoId")
 
-            val url = "$videoAnalysisServiceUrl/api/v1/analyze/video/$videoId/"
+            val url = "$videoAnalysisServiceUrl/api/v1/video/$videoId/analyze/"
 
             val headers = HttpHeaders()
             headers.contentType = MediaType.APPLICATION_JSON
 
             val entity = HttpEntity<String>(headers)
 
-            // Make POST request to video analysis microservice
             val response = restTemplate.postForEntity(url, entity, String::class.java)
 
             if (response.statusCode.is2xxSuccessful) {
@@ -41,7 +40,6 @@ class VideoAnalysisService(
             }
         } catch (e: Exception) {
             logger.error("Error triggering video analysis for video ID: $videoId", e)
-            // Don't throw - this is fire-and-forget
         }
     }
 }

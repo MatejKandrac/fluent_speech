@@ -22,7 +22,7 @@ GET http://localhost:8003/api/v1/health
 GET http://localhost:8004/api/v1/health/
 
 ### Video analysis
-POST http://localhost:8001/api/v1/analyze/video/1/
+POST http://localhost:8001/api/v1/video/1/analyze/
 
 ### Hand movement analysis
 POST http://localhost:8002/api/v1/analyze/arm-movements/1/
@@ -31,4 +31,4 @@ POST http://localhost:8002/api/v1/analyze/arm-movements/1/
 POST http://localhost:8003/api/v1/analyze/eye-contact/1/
 
 ### Audio analysis
-POST http://localhost:8004/api/v1/analyze/audio/1/
+POST http://localhost:8004/api/v1/audio/1/analyze/
