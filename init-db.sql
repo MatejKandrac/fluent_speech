@@ -27,6 +27,16 @@ CREATE TABLE frame_data (
     frame_index INTEGER NOT NULL
 );
 
+-- Create audio_features table (stores audio analysis data separately from video frames)
+CREATE TABLE audio_features (
+    id BIGSERIAL PRIMARY KEY,
+    analysis_id BIGINT NOT NULL REFERENCES analysis(id) ON DELETE CASCADE,
+    timestamp TIME NOT NULL,
+    pitch_hz DOUBLE PRECISION,
+    volume_db DOUBLE PRECISION,
+    pitch_confidence DOUBLE PRECISION
+);
+
 -- Create landmark table (stores individual landmark data)
 CREATE TABLE landmark (
     id BIGSERIAL PRIMARY KEY,
@@ -41,6 +51,7 @@ CREATE TABLE landmark (
 -- Create indexes for better query performance
 CREATE INDEX idx_analysis_recording ON analysis(recording_id);
 CREATE INDEX idx_frame_data_analysis ON frame_data(analysis_id);
+CREATE INDEX idx_audio_features_analysis ON audio_features(analysis_id);
 CREATE INDEX idx_landmark_frame ON landmark(frame_data_id);
 CREATE INDEX idx_landmark_type ON landmark(type);
 
@@ -54,4 +65,5 @@ CREATE INDEX idx_landmark_type ON landmark(type);
 COMMENT ON TABLE recording IS 'Stores video file metadata';
 COMMENT ON TABLE analysis IS 'Stores analysis metadata for each recording (1:1 relationship)';
 COMMENT ON TABLE frame_data IS 'Stores timestamp information for each analyzed frame (1:many with analysis)';
+COMMENT ON TABLE audio_features IS 'Stores audio analysis data (pitch, volume) independently from video frames (1:many with analysis)';
 COMMENT ON TABLE landmark IS 'Stores individual landmark coordinates (1:many with frame_data)';

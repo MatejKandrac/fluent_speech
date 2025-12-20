@@ -6,7 +6,7 @@ Content-Type: multipart/form-data; boundary=WebAppBoundary
 Content-Disposition: form-data; name="video"; filename="REC6766379630202934727.mp4"
 Content-Type: video/mp4
 
-< C:/Users/matke/Videos/REC6766379630202934727.mp4
+< C:/Users/matke/Videos/testVideo.mp4
 --WebAppBoundary--
 
 ### Video analysis microservice health check
@@ -18,11 +18,17 @@ GET http://localhost:8002/api/v1/health/
 ### Eye analysis microservice health check
 GET http://localhost:8003/api/v1/health
 
+### Audio analysis microservice health check
+GET http://localhost:8004/api/v1/health/
+
 ### Video analysis
-POST http://localhost:8001/api/v1/analyze/video/4/
+POST http://localhost:8001/api/v1/analyze/video/1/
 
 ### Hand movement analysis
-POST http://localhost:8002/api/v1/analyze/arm-movements/3/
+POST http://localhost:8002/api/v1/analyze/arm-movements/1/
 
 ### Eye anaysis
-POST http://localhost:8003/api/v1/analyze/eye-contact/4/
+POST http://localhost:8003/api/v1/analyze/eye-contact/1/
+
+### Audio analysis
+POST http://localhost:8004/api/v1/analyze/audio/1/

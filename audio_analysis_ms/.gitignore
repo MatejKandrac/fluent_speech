@@ -1,0 +1,20 @@
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+venv/
+env/
+
+# Django
+*.log
+db.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# Debug output
+debug_output/

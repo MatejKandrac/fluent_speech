@@ -191,6 +191,38 @@ def insert_landmarks_batch(frame_data_id: int, landmarks: dict):
         return_db_connection(conn)
 
 
+def insert_audio_features_batch(analysis_id: int, audio_features: list):
+    """
+    Insert multiple audio features in a single transaction.
+
+    Args:
+        analysis_id: Foreign key to analysis table
+        audio_features: List of dictionaries with keys: timestamp, pitch_hz, volume_db, pitch_confidence
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            # Prepare batch insert
+            audio_values = [
+                (analysis_id, af['timestamp'], af.get('pitch_hz'), af.get('volume_db'), af.get('pitch_confidence'))
+                for af in audio_features
+            ]
+
+            cursor.executemany(
+                """
+                INSERT INTO audio_features (analysis_id, timestamp, pitch_hz, volume_db, pitch_confidence)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                audio_values
+            )
+            conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        return_db_connection(conn)
+
+
 def get_analysis_by_id(analysis_id: int) -> Optional[dict]:
     """
     Get analysis by ID with all related data.
@@ -234,7 +266,7 @@ def get_analysis_by_id(analysis_id: int) -> Optional[dict]:
             )
             rows = cursor.fetchall()
 
-            # Organize data
+            # Organize frame data
             frames = {}
             for row in rows:
                 frame_idx = row['frame_index']
@@ -252,9 +284,32 @@ def get_analysis_by_id(analysis_id: int) -> Optional[dict]:
                         'visibility': float(row['visibility'])
                     }
 
+            # Get audio features separately
+            cursor.execute(
+                """
+                SELECT timestamp, pitch_hz, volume_db, pitch_confidence
+                FROM audio_features
+                WHERE analysis_id = %s
+                ORDER BY timestamp
+                """,
+                (analysis_id,)
+            )
+            audio_rows = cursor.fetchall()
+
+            audio_features = [
+                {
+                    'timestamp': str(row['timestamp']),
+                    'pitch_hz': float(row['pitch_hz']) if row['pitch_hz'] is not None else None,
+                    'volume_db': float(row['volume_db']) if row['volume_db'] is not None else None,
+                    'pitch_confidence': float(row['pitch_confidence']) if row['pitch_confidence'] is not None else None
+                }
+                for row in audio_rows
+            ]
+
             # Build result
             result = dict(analysis)
             result['data'] = [frames[i] for i in sorted(frames.keys())]
+            result['audio_features'] = audio_features
             result['created_at'] = result['created_at'].isoformat()
 
             return result

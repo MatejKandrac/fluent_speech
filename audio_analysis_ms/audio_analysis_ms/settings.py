@@ -1,5 +1,5 @@
 """
-Django settings for video_analysis_service project.
+Django settings for audio_analysis_ms project.
 """
 
 import os
@@ -42,7 +42,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'video_analysis_service.urls'
+ROOT_URLCONF = 'audio_analysis_ms.urls'
 
 TEMPLATES = [
     {
@@ -60,9 +60,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'video_analysis_service.wsgi.application'
+WSGI_APPLICATION = 'audio_analysis_ms.wsgi.application'
 
-# Database - Using default SQLite for Django admin, MongoDB for actual data
+# Database - Using default SQLite for Django admin
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -79,8 +79,7 @@ POSTGRES_CONFIG = {
     'password': os.getenv('DB_PASSWORD', ''),
 }
 
-# API Gateway Configuration
-API_GATEWAY_URL = os.getenv('API_GATEWAY_URL', 'http://localhost:8000')
+# Video Storage Path Configuration
 VIDEO_STORAGE_PATH = os.getenv('VIDEO_STORAGE_PATH', 'D:/VideoData')
 
 # Password validation
@@ -121,23 +120,3 @@ REST_FRAMEWORK = {
     ],
 }
 
-# MediaPipe Configuration
-MEDIAPIPE_CONFIG = {
-    'min_detection_confidence': 0.5,
-    'min_tracking_confidence': 0.5,
-    'model_complexity': 1,  # 0, 1, or 2 (higher = more accurate but slower)
-}
-
-# Video Processing Configuration
-VIDEO_PROCESSING_CONFIG = {
-    'frame_interval': float(os.getenv('FRAME_INTERVAL', '0.2')),  # Process frame every N seconds
-    'max_video_duration': 600,  # Maximum video duration in seconds (10 minutes)
-}
-
-# Audio Extraction Configuration
-AUDIO_EXTRACTION_CONFIG = {
-    'sample_rate': int(os.getenv('AUDIO_SAMPLE_RATE', '22050')),  # Audio sample rate in Hz
-}
-
-# Audio Analysis Service URL
-AUDIO_ANALYSIS_SERVICE_URL = os.getenv('AUDIO_ANALYSIS_SERVICE_URL', 'http://localhost:8004')
