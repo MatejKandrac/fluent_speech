@@ -1,9 +1,6 @@
-@echo off
+set -a
+source ../.env
+set +a
+
 echo Starting Audio Analysis Microservice...
-echo.
-
-REM Run Django development server
-cd audio_analysis_ms
-python manage.py runserver 8004
-
-pause
+python manage.py runserver ${AUDIO_ANALYSIS_PORT:8004}

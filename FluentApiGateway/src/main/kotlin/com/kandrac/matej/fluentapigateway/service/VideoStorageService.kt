@@ -35,6 +35,9 @@ class VideoStorageService {
     @Autowired
     private lateinit var videoAnalysisService: VideoAnalysisService
 
+    @Autowired
+    private lateinit var audioAnalysisService: AudioAnalysisService
+
     @jakarta.annotation.PostConstruct
     fun init() {
         rootLocation = Paths.get(storageLocation)
@@ -58,6 +61,7 @@ class VideoStorageService {
         savedVideo.id?.let { videoId ->
             logger.info("Video uploaded successfully. ID: $videoId, Filename: ${savedVideo.filename}")
             videoAnalysisService.triggerVideoAnalysis(videoId)
+            audioAnalysisService.triggerAudioAnalysis(videoId)
         }
 
         val response =

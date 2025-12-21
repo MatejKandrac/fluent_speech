@@ -1,8 +1,5 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -33,8 +30,6 @@ POSTGRES_CONFIG = {
     'user': os.getenv('DB_USERNAME', ''),
     'password': os.getenv('DB_PASSWORD', ''),
 }
-
-API_GATEWAY_URL = os.getenv('API_GATEWAY_URL', 'http://localhost:8000')
 
 TIME_ZONE = 'UTC'
 USE_I18N = True

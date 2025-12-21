@@ -1,8 +1,6 @@
-@echo off
-echo Starting Arm Movement Analysis Microservice...
-echo.
+set -a
+source ../.env
+set +a
 
-REM Start Django server
-cd arm_movement_analysis_ms
-echo Starting Django server on port 8002...
-python manage.py runserver 8002
+echo Starting Arm Analysis Service
+python manage.py runserver ${ARM_MOVEMENT_PORT:8002}

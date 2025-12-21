@@ -1,6 +1,5 @@
 Django==4.2.7
 djangorestframework==3.14.0
-python-dotenv==1.0.0
 psycopg2-binary==2.9.9
 numpy>=1.26.0
 matplotlib>=3.8.0

@@ -27,6 +27,8 @@ services:
       - '${API_GATEWAY_PORT}:8000'
     env_file:
       - .env
+    volumes:
+      - video-data:/app/video_data
     depends_on:
       timescaledb:
         condition: service_healthy

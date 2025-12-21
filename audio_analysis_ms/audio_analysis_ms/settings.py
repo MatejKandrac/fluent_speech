@@ -1,8 +1,5 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,6 +32,11 @@ POSTGRES_CONFIG = {
 }
 
 VIDEO_STORAGE_PATH = os.getenv('VIDEO_STORAGE_PATH', 'D:/VideoData')
+
+# Audio Extraction Configuration
+AUDIO_EXTRACTION_CONFIG = {
+    'sample_rate': int(os.getenv('AUDIO_SAMPLE_RATE', '22050')),  # Audio sample rate in Hz
+}
 
 TIME_ZONE = 'UTC'
 USE_I18N = True

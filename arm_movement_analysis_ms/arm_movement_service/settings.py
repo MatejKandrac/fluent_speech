@@ -1,8 +1,5 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -48,16 +45,12 @@ REST_FRAMEWORK = {
 }
 
 MOVEMENT_ANALYSIS_CONFIG = {
-    'acceleration_threshold': float(os.getenv('ACCELERATION_THRESHOLD', '2.0')),
-    'min_segment_length': int(os.getenv('MIN_SEGMENT_LENGTH', '3')),
-    'change_point_penalty': float(os.getenv('CHANGE_POINT_PENALTY', '3')),
-
     'no_movement_velocity_threshold': float(os.getenv('NO_MOVEMENT_VELOCITY_THRESHOLD', '0.01')),
     'excessive_movement_velocity_threshold': float(os.getenv('EXCESSIVE_MOVEMENT_VELOCITY_THRESHOLD', '0.15')),
-    'min_consecutive_frames': int(os.getenv('MIN_CONSECUTIVE_FRAMES', '3')),  # Minimum frames to consider a pattern
+    'min_consecutive_frames': int(os.getenv('MIN_CONSECUTIVE_FRAMES', '3')),
 
-    'segmentation_window_size': int(os.getenv('SEGMENTATION_WINDOW_SIZE', '15')),  # Frames in sliding window
-    'average_change_threshold': float(os.getenv('AVERAGE_CHANGE_THRESHOLD', '0.08')),  # Significant average change
-    'trend_change_threshold': float(os.getenv('TREND_CHANGE_THRESHOLD', '0.008')),  # Significant trend change
-    'min_segment_gap': int(os.getenv('MIN_SEGMENT_GAP', '20')),  # Minimum frames between segments
+    'segmentation_window_size': int(os.getenv('SEGMENTATION_WINDOW_SIZE', '15')),
+    'average_change_threshold': float(os.getenv('AVERAGE_CHANGE_THRESHOLD', '0.08')),
+    'trend_change_threshold': float(os.getenv('TREND_CHANGE_THRESHOLD', '0.008')),
+    'min_segment_gap': int(os.getenv('MIN_SEGMENT_GAP', '20')),
 }

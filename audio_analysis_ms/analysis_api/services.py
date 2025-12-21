@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional
+import subprocess
 
 import librosa
 import matplotlib
@@ -18,6 +19,36 @@ from .db_connection import (
 class AudioAnalysisService:
     def __init__(self):
         pass
+
+    def extract_audio_from_video(self, video_path: str, output_wav_path: str) -> bool:
+        try:
+            try:
+                subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                print("WARNING: ffmpeg not found in PATH. Cannot extract audio.")
+                return False
+
+            print(f"Extracting audio from video: {video_path}")
+
+            sample_rate = str(settings.AUDIO_EXTRACTION_CONFIG['sample_rate'])
+
+            result = subprocess.run(
+                ['ffmpeg', '-i', video_path, '-vn', '-acodec', 'pcm_s16le',
+                 '-ar', sample_rate, '-ac', '1', '-y', str(output_wav_path)],
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode != 0:
+                print(f"ffmpeg error: {result.stderr}")
+                return False
+
+            print(f"WAV file saved at: {output_wav_path}")
+            return True
+
+        except Exception as e:
+            print(f"Error extracting audio: {e}")
+            return False
 
     def save_amplitude_plot(self, audio: np.ndarray, sr: float, recording_id: str) -> Optional[str]:
 
@@ -48,6 +79,7 @@ class AudioAnalysisService:
 
     def analyze_audio(self, recording_id: int) -> dict:
         try:
+            # Get recording information
             recording = get_recording_by_id(recording_id)
             if not recording:
                 return {
@@ -55,16 +87,33 @@ class AudioAnalysisService:
                     'error': f'Recording with ID {recording_id} not found'
                 }
 
+            # Construct paths
             video_filename = recording['filename']
             wav_filename = Path(video_filename).stem + '.wav'
             wav_path = Path(settings.VIDEO_STORAGE_PATH) / wav_filename
+            video_path = Path(settings.VIDEO_STORAGE_PATH) / video_filename
 
+            # Check if WAV file exists, if not, extract it from video
             if not wav_path.exists():
-                return {
-                    'success': False,
-                    'error': f'WAV file not found at: {wav_path}'
-                }
+                print(f"WAV file not found at: {wav_path}")
+                print("Attempting to extract audio from video...")
 
+                # Check if video file exists
+                if not video_path.exists():
+                    return {
+                        'success': False,
+                        'error': f'Video file not found at: {video_path}'
+                    }
+
+                # Extract audio from video
+                extraction_success = self.extract_audio_from_video(str(video_path), str(wav_path))
+                if not extraction_success:
+                    return {
+                        'success': False,
+                        'error': 'Failed to extract audio from video'
+                    }
+
+            # Get analysis record
             analysis = get_analysis_by_recording_id(recording_id)
             if not analysis:
                 return {
@@ -74,6 +123,7 @@ class AudioAnalysisService:
 
             analysis_id = analysis['id']
 
+            # Load and analyze audio
             print(f"Loading audio from: {wav_path}")
             audio, sr = librosa.load(str(wav_path))
             audio = librosa.util.normalize(audio)
@@ -83,6 +133,7 @@ class AudioAnalysisService:
             )
             print(f"Audio loaded: {len(audio)} samples at {sr} Hz ({len(audio) / sr:.2f}s)")
 
+            # Create visualization
             self.save_amplitude_plot(audio, sr, str(recording_id))
 
             return {

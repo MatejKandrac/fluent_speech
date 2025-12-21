@@ -1,8 +1,5 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -61,7 +58,7 @@ EYE_CONTACT_ANALYSIS_CONFIG = {
     'audience_pitch_min': float(os.getenv('AUDIENCE_PITCH_MIN', '-15')),
     'audience_pitch_max': float(os.getenv('AUDIENCE_PITCH_MAX', '15')),
 
-    'min_consecutive_frames': int(os.getenv('MIN_CONSECUTIVE_FRAMES', '5')),
+    'min_consecutive_frames': int(os.getenv('EYE_CONTACT_MIN_CONSECUTIVE_FRAMES', '5')),
 
     'staring_angle_threshold': float(os.getenv('STARING_ANGLE_THRESHOLD', '3')),  # degrees
     'min_staring_frames': int(os.getenv('MIN_STARING_FRAMES', '30')),  # ~2 seconds at 15fps

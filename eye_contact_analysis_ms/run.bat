@@ -1,9 +1,6 @@
-@echo off
-echo Starting Eye Contact Analysis Microservice...
-echo .
+set -a
+source ../.env
+set +a
 
-REM Run Django development server
-cd eye_contact_analysis_ms
-python manage.py runserver 8003
-
-pause
+echo Starting Eye contact microservice
+python manage.py runserver ${EYE_CONTACT_PORT:8003}

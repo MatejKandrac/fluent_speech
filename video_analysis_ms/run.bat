@@ -1,8 +1,6 @@
-@echo off
-echo Starting Video Analysis Microservice...
-echo.
+set -a
+source ../.env
+set +a
 
-REM Start Django server
-cd video_analysis_ms
-echo Starting Django server on port 8001...
-python manage.py runserver 8001
+echo Starting Video Analysis microservice
+python manage.py runserver ${VIDEO_ANALYSIS_PORT:8001}

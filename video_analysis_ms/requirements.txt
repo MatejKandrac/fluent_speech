@@ -4,6 +4,5 @@ psycopg2-binary==2.9.10
 mediapipe==0.10.20
 opencv-python==4.10.0.84
 numpy==1.26.4
-python-dotenv==1.0.1
 requests==2.32.3
 setuptools>=65.5.0
