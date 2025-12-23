@@ -10,6 +10,8 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS_AUDIO', 'localhost,127.0.0.1').split(',')
 
 INSTALLED_APPS = [
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
     'rest_framework',
     'analysis_api',
 ]
@@ -29,6 +31,17 @@ POSTGRES_CONFIG = {
     'database': os.getenv('DB_NAME', 'fluent'),
     'user': os.getenv('DB_USERNAME', ''),
     'password': os.getenv('DB_PASSWORD', ''),
+}
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': POSTGRES_CONFIG['database'],
+        'USER': POSTGRES_CONFIG['user'],
+        'PASSWORD': POSTGRES_CONFIG['password'],
+        'HOST': POSTGRES_CONFIG['host'],
+        'PORT': POSTGRES_CONFIG['port'],
+    }
 }
 
 VIDEO_STORAGE_PATH = os.getenv('VIDEO_STORAGE_PATH', 'D:/VideoData')

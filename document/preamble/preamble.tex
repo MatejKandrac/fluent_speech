@@ -1,0 +1,94 @@
+\usepackage{titlesec}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[slovak]{babel}
+\usepackage[a4paper]{geometry}
+\usepackage{array}
+\usepackage[
+    left = \glqq,% 
+    right = \grqq,% 
+    leftsub = \glq,% 
+    rightsub = \grq%
+]{dirtytalk}
+
+\usepackage{geometry}
+\usepackage{lscape}
+\usepackage[parfill]{parskip}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{setspace}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage[backend=bibtex,defernums=true]{biblatex}
+\usepackage{listing}
+\usepackage{lscape}
+\usepackage{afterpage}
+\usepackage{hyphenat}
+\usepackage{lscape}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{pdfpages}
+\usepackage{listings}
+\usepackage{needspace}
+
+% SETTINGS - NAMES
+\newcommand{\myTitle}[0] {Inteligentný asistent trénovania prezentačných schopností}
+\newcommand{\myTitleEN}[0] {Intelligent assistant for training presentation skills}
+\newcommand{\myName}[0] {Matej Kandráč}
+\newcommand{\mySupervisor}[0] {Ing. Bahleda Miroslav, PhD.}
+\newcommand{\myEvidenceNumber}[0] {FIIT-XXXXX-116208}
+\newcommand{\myDate}[0] {Máj 2025}
+\newcommand{\myDateEng}[0] {May 2025}
+\newcommand{\myStudyProgram}[0] {Inteligentné softvérové systémy}
+\newcommand{\myStudyProgramEng}[0]{Inteligent software systems}
+\newcommand{\myDegreeCourse}[0] {18. Informatika}
+\newcommand{\myInstitute}[0] {Ústav informatiky, informačných systémov a softvérového inžinierstva, FIIT STU, Bratislava}
+
+
+% Spacing
+\setstretch{\mySpacing}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+\newsavebox\mybox
+\pagestyle{plain}
+\lhead{\nouppercase{\leftmark}}
+\chead{}
+\rhead{}
+\lfoot{}
+\cfoot{\thepage}
+\rfoot{}
+
+
+%style=iso-numeric
+%style=authortitle-dw
+\defbibheading{references}[Literatúra]{ 
+  \chapter*{#1}
+  \markboth{#1}{#1}
+}
+\defbibheading{referencessec}[Literatúra]{ 
+  \section*{#1}
+  \markboth{#1}{#1}
+}
+\bibliography{\myBibliography}
+
+
+% Listing as figure
+%\usepackage{libs/minted}
+%\usepackage[section]{minted}
+
+
+% openright does not work :(
+\let\tmp\oddsidemargin
+\let\oddsidemargin\evensidemargin
+\let\evensidemargin\tmp
+\reversemarginpar
+
+\titlespacing*{\section}{0pt}{10pt}{5pt}
+\titlespacing*{\subsection}{0pt}{8pt}{4pt}
+\titlespacing*{\chapter}{0pt}{0pt}{5pt}

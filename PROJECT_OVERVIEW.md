@@ -78,7 +78,7 @@ Service will be available at `http://localhost:8000`
 ```bash
 cd video_analysis_ms
 setup.bat        # First time only
-run.bat          # Start the service
+run.sh          # Start the service
 ```
 
 **Linux/Mac:**
@@ -99,7 +99,7 @@ Service will be available at `http://localhost:8001`
 ```bash
 cd hand_movement_analysis_ms
 setup.bat        # First time only
-run.bat          # Start the service
+run.sh          # Start the service
 ```
 
 **Linux/Mac:**

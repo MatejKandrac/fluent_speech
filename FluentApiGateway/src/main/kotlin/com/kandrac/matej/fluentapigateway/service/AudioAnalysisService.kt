@@ -23,7 +23,7 @@ class AudioAnalysisService(
         try {
             logger.info("Triggering audio analysis for recording ID: $recordingId")
 
-            val url = "$audioAnalysisServiceUrl/api/analyze/audio/$recordingId/"
+            val url = "$audioAnalysisServiceUrl/api/v1/audio/$recordingId/analyze/"
 
             val headers = HttpHeaders()
             headers.contentType = MediaType.APPLICATION_JSON

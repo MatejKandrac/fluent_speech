@@ -1,0 +1,88 @@
+% SETTINGS - LATEX
+% to change name, title, supervisor etc. go to preamble/preamble.tex
+\newcommand{\myFontSize}[0] {12pt}
+\newcommand{\mySpacing}[0] {1.5}
+\newcommand{\myBibliography}[0] {bib/refs}
+
+\documentclass[\myFontSize,a4paper,twoside,openright,slovak]{book}
+\include{preamble/preamble}
+
+\begin{document}
+
+% Minted
+% pygmentize -L styles
+%\usemintedstyle{autumn}
+% Title page
+\include{preamble/title}
+
+% Project description
+\include{preamble/project_description}
+
+% Declaration
+\include{preamble/declaration}
+
+% Acknowledgements
+% \include{preamble/acknowledgements}
+
+% Annotation
+\include{preamble/annotation}
+
+% Table of contents
+\tableofcontents
+\newpage
+\pagestyle{empty}
+
+% List of listings
+% \listoffigures\newpage{}
+% \renewcommand\listoflistingscaption{List of Listings}
+% \listoflistings\newpage{}
+
+% References segment
+\begin{refsegment}
+
+\titleformat{\chapter}[display]
+{\normalfont\bfseries}{}{0pt}{\Huge}
+
+% Uvod
+\clearpage\null
+\input{content/1uvod}
+
+% Analyza
+\clearpage\null\thispagestyle{empty}
+\input{content/2analyza}
+
+% Navrh
+\clearpage\null\thispagestyle{empty}
+\input{content/3navrh}
+
+% Zhodnotenie
+
+% \newpage\mbox{}\thispagestyle{empty}
+% \newpage\thispagestyle{empty}
+% \input{content/5zaver}
+
+% Bibliography
+\clearpage\null\thispagestyle{empty}
+\printbibliography[heading=references,segment=\therefsegment,resetnumbers=true]
+
+\end{refsegment}
+
+% % Appendix
+\appendix
+
+\null\thispagestyle{empty}\clearpage\thispagestyle{empty}
+\renewcommand{\thepage}{\Alph{chapter}-\arabic{page}}
+
+%\setcounter{page}{0}
+%\clearpage\null\thispagestyle{empty}
+%\include{appendices/tech_doc}
+
+%\setcounter{page}{0}
+%\clearpage\null\thispagestyle{empty}
+%\include{appendices/cdrom}
+
+\setcounter{page}{0}
+\clearpage\null\thispagestyle{empty}
+\include{appendices/plan}
+
+\end{document}

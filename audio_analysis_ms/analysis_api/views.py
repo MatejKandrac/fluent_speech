@@ -25,10 +25,11 @@ def analyze_audio(request, recording_id):
         return Response(
             {
                 'success': True,
-                'analysis_id': result['analysis_id'],
+                'recording_id': result['recording_id'],
                 'duration': result['duration'],
                 'sample_rate': result['sample_rate'],
-                'samples': result['samples']
+                'samples': result['samples'],
+                'audio_features_saved': result.get('audio_features_saved', 0)
             },
             status=status.HTTP_201_CREATED
         )

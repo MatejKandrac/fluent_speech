@@ -1,0 +1,28 @@
+\chapter{Technická dokumentácia \label{cha:technicalDocumentation}}
+\pagestyle{plain}
+
+\begin{table}[H]
+  \centering
+  \begin{tabularx}{\textwidth}{|X|X|X|X|}
+    \hline
+    \textbf{Stĺpec} & \textbf{Typ} & \textbf{Povinný údaj} & \textbf{Opis} \\
+    \hline
+    \specialrule{1.2pt}{0pt}{0pt}
+    code & VARCHAR(5) & Áno & Primárny kľúč reprezentujúci kód jazyka a kód štátu oddelený podčiarkovníkom \\ \hline
+    name & TEXT & Áno & Čitateľný názov jazyka \\ \hline
+    flag & TEXT & Áno & Odkaz na obrázok vlajky \\ \hline
+    iso\_639\_3 & TEXT & Áno & Označenie jazyka vo formáte ISO 139 3\\ \hline
+  \end{tabularx}
+  \caption{Tabuľka languages}
+  \label{tab:languages}
+\end{table}
+
+\begin{lstlisting}
+@RestApi(baseUrl: '/auth')
+abstract class AuthService {
+    ...
+    @POST('/register')
+    Future<HttpResponse<dynamic>> register(
+        @Body() RegisterRequest request);
+}
+\end{lstlisting}

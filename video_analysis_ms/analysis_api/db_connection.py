@@ -72,39 +72,17 @@ def get_video_by_id(video_id: int) -> Optional[dict]:
         return_db_connection(conn)
 
 
-def insert_analysis(recording_id: int, total_frames: int) -> int:
+def insert_frame_data(recording_id: int, timestamp: str, frame_index: int) -> int:
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO analysis (recording_id, total_frames)
-                VALUES (%s, %s)
-                RETURNING id
-                """,
-                (recording_id, total_frames)
-            )
-            analysis_id = cursor.fetchone()[0]
-            conn.commit()
-            return analysis_id
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        return_db_connection(conn)
-
-
-def insert_frame_data(analysis_id: int, timestamp: str, frame_index: int) -> int:
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                """
-                INSERT INTO frame_data (analysis_id, timestamp, frame_index)
+                INSERT INTO frame_data (recording_id, timestamp, frame_index)
                 VALUES (%s, %s, %s)
                 RETURNING id
                 """,
-                (analysis_id, timestamp, frame_index)
+                (recording_id, timestamp, frame_index)
             )
             frame_data_id = cursor.fetchone()[0]
             conn.commit()
@@ -140,19 +118,3 @@ def insert_landmarks_batch(frame_data_id: int, landmarks: dict):
         return_db_connection(conn)
 
 
-def delete_analysis_by_id(analysis_id: int) -> bool:
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "DELETE FROM analysis WHERE id = %s",
-                (analysis_id,)
-            )
-            deleted_count = cursor.rowcount
-            conn.commit()
-            return deleted_count > 0
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        return_db_connection(conn)

@@ -5,5 +5,4 @@ urlpatterns = [
     path('health/', views.health_check, name='health_check'),
 
     path('video/<str:video_id>/analyze/', views.analyze_video, name='analyze_video'),
-    path('video/<str:analysis_id>/', views.delete_analysis, name='delete_analysis'),
 ]

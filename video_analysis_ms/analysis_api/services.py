@@ -10,7 +10,6 @@ from django.conf import settings
 
 from .db_connection import (
     get_video_by_id,
-    insert_analysis,
     insert_frame_data,
     insert_landmarks_batch
 )
@@ -274,14 +273,9 @@ class VideoProcessingService:
 
             print(f"Video processing complete. Processed {processed_count} frames out of {frame_count} total frames")
 
-            analysis_id = insert_analysis(
-                recording_id=video_id,
-                total_frames=processed_count
-            )
-
             for frame_data in frames_data:
                 frame_data_id = insert_frame_data(
-                    analysis_id=analysis_id,
+                    recording_id=video_id,
                     timestamp=frame_data['timestamp'],
                     frame_index=frame_data['frame_index']
                 )
@@ -291,11 +285,11 @@ class VideoProcessingService:
             if wav_path:
                 self.trigger_audio_analysis(video_id)
 
-            print(f"Analysis saved to PostgreSQL with ID: {analysis_id}")
+            print(f"Frame data saved to PostgreSQL for recording ID: {video_id}")
 
             return {
                 'success': True,
-                'analysis_id': analysis_id,
+                'recording_id': video_id,
                 'frames_processed': processed_count,
                 'total_frames': frame_count,
                 'duration': duration
