@@ -1,0 +1,12 @@
+\chapter{Implementácia riešenia}
+
+\section{Spracovanie zvuku}
+Pri spracovaní zvuku som sa sústredil na extrakciu zvukových signálov z videa a následným spracovaním týchto údajov. Pred samotnou analýzou týchto údajov som najprv chcel zistiť, ako sa tieto dáta predspracúvajú.
+
+\subsection{Normalizácia}
+Najprv som dáta normalizoval na škálu od -1 do 1. Týmto zabezpečím, aby boli dáta v rovnakej škále, aby pri prípadnej budúcej práci boli použiteľné pre trénovanie modelov.
+
+\subsection{Vzorkovacia rýchlosť}
+Ďalší problém je takzvaná vzorkovacia rýchlosť. Tento parameter sa líši medzi zariadeniami, a reprezentuje počet meraných vzoriek za sekundu, ktoré nakoniec reprezentujú zvukový súbor. Pri analýze zvukových dát sa riadim prevažne počtom dátových rámcov. Napríklad ak sa výška hlasu nezmení na desiatich za sebou idúcich rámcov, označím rámec pre budúce spracovanie. Ak by bola vzorkovacia rýchlosť rozdielna, aj počet týchto rámcov by nebol normalizovaný. Preto som sa rozhodol vykonať takzvaný "resampling", ktorý upraví zvukový vstup tak, aby bol fixne 16Hz. Túto hodnotu som hľadal pomedzi viacerími zdrojmi a používa sa ako priemyselný štandard.\cite{sampleRate}
+
+\subsection{Bitová hĺbka}
