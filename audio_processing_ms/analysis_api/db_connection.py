@@ -72,36 +72,3 @@ def get_recording_by_id(recording_id: int) -> Optional[dict]:
         return_db_connection(conn)
 
 
-def insert_audio_features_batch(recording_id: int, audio_features: list):
-    """
-    Insert audio features (pitch, volume) in batch.
-
-    Args:
-        recording_id: The recording ID
-        audio_features: List of dicts with keys: timestamp, pitch_hz, volume_db, pitch_confidence
-    """
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            feature_values = [
-                (recording_id, feature['timestamp'], feature['pitch_hz'],
-                 feature['volume_db'], feature.get('pitch_confidence'))
-                for feature in audio_features
-            ]
-
-            cursor.executemany(
-                """
-                INSERT INTO audio_features (recording_id, timestamp, pitch_hz, volume_db, pitch_confidence)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                feature_values
-            )
-            conn.commit()
-            print(f"Inserted {len(feature_values)} audio feature records")
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        return_db_connection(conn)
-
-

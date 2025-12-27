@@ -9,26 +9,52 @@ Content-Type: video/mp4
 < C:/Users/matke/Videos/testVideo.mp4
 --WebAppBoundary--
 
-### Video analysis microservice health check
+###############################################
+# Health Checks
+###############################################
+
+### Video Processing MS - Health Check
 GET http://localhost:8001/api/v1/health
 
-### Hand movement analysis microservice health check
+### Arm Movement Analysis MS - Health Check
 GET http://localhost:8002/api/v1/health/
 
-### Eye analysis microservice health check
+### Eye Contact Analysis MS - Health Check
 GET http://localhost:8003/api/v1/health
 
-### Audio analysis microservice health check
+### Audio Processing MS - Health Check
 GET http://localhost:8004/api/v1/health/
 
-### Video analysis
+### Pitch Analysis MS - Health Check
+GET http://localhost:8005/api/v1/health/
+
+### Volume Analysis MS - Health Check
+GET http://localhost:8006/api/v1/health/
+
+### Hip Analysis MS - Health Check
+GET http://localhost:8007/api/v1/health/
+
+###############################################
+# Analysis Endpoints
+###############################################
+
+### Video Processing - Extract pose landmarks from video
 POST http://localhost:8001/api/v1/video/1/analyze/
 
-### Hand movement analysis
+### Audio Processing - Extract, normalize, and resample audio
+POST http://localhost:8004/api/v1/audio/1/process/
+
+### Pitch Analysis - Analyze pitch from processed audio
+POST http://localhost:8005/api/v1/pitch/1/analyze/
+
+### Volume Analysis - Analyze volume from processed audio
+POST http://localhost:8006/api/v1/volume/1/analyze/
+
+### Arm Movement Analysis - Analyze wrist kinematics and gestures
 POST http://localhost:8002/api/v1/analyze/arm-movements/1/
 
-### Eye anaysis
+### Eye Contact Analysis - Analyze gaze patterns
 POST http://localhost:8003/api/v1/analyze/eye-contact/1/
 
-### Audio analysis
-POST http://localhost:8004/api/v1/audio/1/analyze/
+### Hip Analysis - Analyze hip movement and sway
+POST http://localhost:8007/api/v1/hip/1/analyze/

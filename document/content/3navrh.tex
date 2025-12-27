@@ -23,6 +23,146 @@ Pred samotnou implementáciou som definoval niekoľko funkčných požiadaviek, 
 
 \newpage
 
+\section{Prípady použitia}
+
+Systém je navrhnutý pre podporu viacerých scenárov použitia. Na základe funkčných požiadaviek som identifikoval nasledujúce hlavné prípady použitia:
+
+\begin{itemize}
+    \item \textbf{UC1: Nahratie videa prezentácie} - Používateľ nahrá video svojej prezentácie pomocou mobilnej aplikácie a odošle ho na server
+    \item \textbf{UC2: Trénovanie konkrétneho javu} - Používateľ si vyberie konkrétny aspekt prezentácie (napr. očný kontakt) a systém ho analyzuje izolované
+    \item \textbf{UC3: Celková analýza prezentácie} - Systém vykoná komplexnú analýzu všetkých aspektov prezentácie
+    \item \textbf{UC4: Zobrazenie výsledkov analýzy} - Používateľ si prezerá detailné výsledky analýzy s grafmi a odporúčaniami
+    \item \textbf{UC5: Správa histórie nahrávok} - Používateľ môže prezerať a spravovať svoje predchádzajúce nahrávky
+\end{itemize}
+
+V nasledujúcich podkapitolách detailne popíšem tri najdôležitejšie prípady použitia.
+
+\subsection{UC1: Nahratie videa prezentácie}
+
+\textbf{Aktér:} Používateľ aplikácie
+
+\textbf{Predpoklady:}
+\begin{itemize}
+    \item Používateľ má nainštalovanú mobilnú aplikáciu
+    \item Zariadenie má funkčnú kameru
+    \item Zariadenie má pripojenie na internet
+    \item Server je dostupný a funkčný
+\end{itemize}
+
+\textbf{Hlavný tok:}
+\begin{enumerate}
+    \item Používateľ spustí mobilnú aplikáciu
+    \item Aplikácia požiada o povolenie k prístupu ku kamere
+    \item Používateľ udelí povolenie ku kamere
+    \item Používateľ stlačí tlačidlo pre spustenie nahrávania
+    \item Aplikácia začne nahrávať video z kamery
+    \item Používateľ vykoná svoju prezentáciu pred kamerou
+    \item Používateľ ukončí nahrávanie stlačením tlačidla
+    \item Aplikácia zobrazí náhľad nahratého videa
+    \item Používateľ zadá názov pre nahrávku
+    \item Používateľ potvrdí odoslanie videa
+    \item Aplikácia odošle video na API Gateway
+    \item API Gateway uloží video do súborového systému a metadata do databázy
+    \item Aplikácia zobrazí potvrdenie o úspešnom nahratí
+\end{enumerate}
+
+\textbf{Alternatívne toky:}
+\begin{itemize}
+    \item \textbf{A1:} Používateľ zamietne prístup ku kamere - aplikácia zobrazí chybovú hlášku a nemôže pokračovať
+    \item \textbf{A2:} Video je príliš veľké (nad 500MB) - aplikácia upozorní používateľa a neumožní odoslanie
+    \item \textbf{A3:} Počas nahrávania dôjde miesto v zariadení - aplikácia zastaví nahrávanie a upozorní používateľa
+    \item \textbf{A4:} Počas odosielania sa stratí internetové pripojenie - aplikácia zobrazí chybu a ponúkne opakovanie
+    \item \textbf{A5:} Server je nedostupný - aplikácia zobrazí chybovú hlášku a umožní používateľovi skúsiť neskôr
+\end{itemize}
+
+\textbf{Výsledok:} Video je úspešne nahrané na server a je pripravené na analýzu. Metadata videa sú uložené v databáze a používateľ môže pokračovať k analýze.
+
+\subsection{UC3: Celková analýza prezentácie}
+
+\textbf{Aktér:} Používateľ aplikácie, Systém (automaticky)
+
+\textbf{Predpoklady:}
+\begin{itemize}
+    \item Video je úspešne nahrané na serveri
+    \item Všetky mikroslužby pre analýzu sú dostupné
+    \item Video obsahuje ľudskú postavu rozpoznateľnú pre MediaPipe
+\end{itemize}
+
+\textbf{Hlavný tok:}
+\begin{enumerate}
+    \item API Gateway automaticky spustí Video Analysis Service pre spracovanie videa
+    \item Video Analysis Service extrahuje kľúčové body polohy (landmarks) pomocou MediaPipe
+    \item Video Analysis Service uloží extrahované landmarks do databázy
+    \item Video Analysis Service extrahuje zvukovú stopu z videa
+    \item Video Analysis Service spustí Audio Analysis Service
+    \item Audio Analysis Service analyzuje vlastnosti hlasu (pitch, hlasitosť)
+    \item Mediator Service spustí všetky špecializované analýzy paralelne:
+    \begin{itemize}
+        \item Eye Contact Analysis - analýza očného kontaktu
+        \item Arm Movement Analysis - analýza pohybov rúk
+        \item Hip Movement Analysis - analýza pohybov bokov (plánované)
+    \end{itemize}
+    \item Každá mikroslužba vykoná svoju analýzu na základe uložených landmarks
+    \item Mikroslužby detekujú anomálie a kritické body zmien
+    \item Mediator Service agreguje výsledky zo všetkých mikroslužieb
+    \item Výsledky sú uložené do databázy
+    \item Používateľ je notifikovaný o dokončení analýzy
+\end{enumerate}
+
+\textbf{Alternatívne toky:}
+\begin{itemize}
+    \item \textbf{A1:} MediaPipe nedetekuje ľudskú postavu - Video Analysis Service vráti chybu a analýza sa ukončí
+    \item \textbf{A2:} Niektoré landmarks nie sú viditeľné (napr. ruky mimo záberu) - príslušná mikroslužba analyzuje len dostupné dáta a upozorní používateľa
+    \item \textbf{A3:} Niektorá mikroslužba zlyhá - ostatné analýzy pokračujú, chýbajúce výsledky sú označené ako nedostupné
+    \item \textbf{A4:} Video nemá zvukovú stopu - Audio Analysis Service sa preskočí
+\end{itemize}
+
+\textbf{Výsledok:} Komplexné výsledky analýzy prezentácie sú dostupné pre používateľa, zahŕňajúce:
+\begin{itemize}
+    \item Štatistiky očného kontaktu (percentuálny čas pohľadu na publikum, heat mapa)
+    \item Analýzu pohybov rúk (priemerná rýchlosť, kritické body zmien)
+    \item Analýzu hlasu (monotónnosť, hlasitosť, pitch)
+    \item Detekované anomálie a odporúčania pre zlepšenie
+\end{itemize}
+
+\subsection{UC4: Zobrazenie výsledkov analýzy}
+
+\textbf{Aktér:} Používateľ aplikácie
+
+\textbf{Predpoklady:}
+\begin{itemize}
+    \item Analýza videa bola úspešne dokončená
+    \item Výsledky sú uložené v databáze
+    \item Používateľ má prístup k mobilnej aplikácii
+\end{itemize}
+
+\textbf{Hlavný tok:}
+\begin{enumerate}
+    \item Používateľ otvorí mobilnú aplikáciu
+    \item Aplikácia zobrazí zoznam nahrávok s indikátorom stavu analýzy
+    \item Používateľ vyberie nahrávku s dokončenou analýzou
+    \item Aplikácia požiada API Gateway o výsledky analýzy
+    \item API Gateway načíta agregované výsledky z databázy
+    \item Aplikácia zobrazí prehľadové štatistiky (skóre, hlavné metriky)
+    \item Používateľ si môže prezrieť detailné výsledky pre jednotlivé aspekty:
+    \begin{itemize}
+        \item Graf pohybov rúk s označenými kritickými bodmi
+        \item Heat mapu očného kontaktu
+        \item Graf pitch a hlasitosti v čase
+        \item Zoznam detekovaných anomálií s časovými značkami
+    \end{itemize}
+    \item Používateľ môže exportovať výsledky alebo zdieľať
+\end{enumerate}
+
+\textbf{Alternatívne toky:}
+\begin{itemize}
+    \item \textbf{A1:} Analýza ešte nie je dokončená - aplikácia zobrazí progress bar a odhadovaný čas dokončenia
+    \item \textbf{A2:} Analýza zlyhala - aplikácia zobrazí chybovú hlášku s popisom problému
+    \item \textbf{A3:} Niektoré časti analýzy nie sú dostupné - aplikácia zobrazí len dostupné výsledky s upozornením
+\end{itemize}
+
+\textbf{Výsledok:} Používateľ získa komplexný prehľad o svojich prezentačných schopnostiach s konkrétnymi odporúčaniami na zlepšenie.
+
 \section{Architektúra riešenia}
 Nakoľko som počas analýzy zistil, že nevhodných javov ktoré je možné detekovať je veľke množstvo, navrhujem mikroslužbovou architektúru, kde každá mikroslužba bude detekovať skupinu súvisiacich negatívnych javov. Dôvodom použitia mikroslužieb je ich vlastnosť jednoduchého nasadzovania, ktorá môže byť využitá pri pridávaní nových detekcií. Zároveň mikroslužbová architektúra umožnuje technologickú voľnosť, ktorá by sa v prípade rozširovania mojej práce zišla. Všeobecná architektúra by obsahovala:
 \begin{itemize}
@@ -68,11 +208,54 @@ Diatram je rozdelený na mobilnú aplikáciu a serverovú časť.
 
 \subsection{Použité technológie}
 
-Z hľadiska využitých technológií chcem pre mobilnú aplikáciu využiť framework \textbf{Flutter}, čim zabezpečím dostupnosť aplikácie pre hlavné platformy na mobilných zariadeniach. Pre serverovú časť chcem použiť framework \textbf{django}, ktorý je využíva programovací jazyk Python. Tento jazyk je štandardným jazykom pre strojové učenie a disponuje veľkým množstvom knižníc pre analýzu časových radov. Pre detekciu kľúčových bodov polohy využijem \textbf{Google ML Kit} a konkrétne \textbf{pose detection}, ktorá mi poskytne všetky potrebné kľúčové body. Nasledujúci obrázok zobrazuje všetky body, ktoré táto knižnica vie detekovať\cite{googleMLKit}.
+Riešenie je postavené na kombinácii moderných technológií pre mobilný vývoj, serverové spracovanie a analýzu údajov. Kľúčovým architektonickým rozhodnutím je, že \textbf{všetka analýza prebieha na serverovej strane}, čím sa minimalizujú výpočtové nároky na mobilné zariadenie a umožní sa budúce rozšírenie systému bez nutnosti aktualizácie mobilnej aplikácie.
+
+\subsubsection{Mobilná aplikácia}
+
+Pre mobilnú aplikáciu využívam framework \textbf{Flutter}, ktorý umožňuje vývoj cross-platform aplikácií pre iOS a Android z jedného kódového základu. Flutter poskytuje natívnu výkonnosť a integruje sa s kamerou mobilného zariadenia pre nahrávanie videa. Mobilná aplikácia má limitovanú úlohu - zabezpečuje nahrávanie videa, jeho upload na server a zobrazenie výsledkov analýzy.
+
+\subsubsection{Serverová časť - mikroslužby}
+
+Pre serverovú časť využívam framework \textbf{Django} s programovacím jazykom \textbf{Python 3.11}. Python je štandardným jazykom pre strojové učenie a počítačové videnie, disponuje rozsiahlym ekosystémom knižníc pre spracovanie multimediálneho obsahu a analýzu časových radov. Každá mikroslužba je samostatná Django aplikácia, čo umožňuje nezávislé nasadenie a škálovanie.
+
+\subsubsection{API Gateway}
+
+Pre API Gateway využívam \textbf{Spring Boot} s programovacím jazykom \textbf{Kotlin}. Spring Boot poskytuje robustnú platformu pre správu HTTP requestov, multipart file upload (až do 500MB) a orchestráciu volania mikroslužieb. API Gateway slúži ako jediný vstupný bod (single entry point) pre mobilnú aplikáciu.
+
+\subsubsection{Počítačové videnie - MediaPipe}
+
+Najdôležitejším nástrojom pre analýzu videa je knižnica \textbf{MediaPipe}\cite{mediapipe} od spoločnosti Google. MediaPipe je open-source framework určený pre real-time spracovanie multimediálneho obsahu. V mojom riešení využívam modul \textbf{MediaPipe Pose}, ktorý dokáže detekovať 33 kľúčových bodov ľudského tela (landmarks) v každom snímku videa. MediaPipe beží výhradne na serverovej strane v rámci Video Analysis Service.
+
+Výhodami MediaPipe sú:
+\begin{itemize}
+    \item Vysoká presnosť detekcie aj pri rôznom osvetlení
+    \item Real-time spracovanie (až 30 FPS na CPU)
+    \item Poskytovanie 3D pozícií landmarks (x, y, z súradnice)
+    \item Confidence score pre každý detekovaný bod
+    \item Cross-platform kompatibilita
+\end{itemize}
+
+Nasledujúci obrázok zobrazuje všetky kľúčové body, ktoré MediaPipe Pose detekuje:
 
 \begin{figure}[H]
 \begin{centering}
 \includegraphics[width=\textwidth]{assets/images/implementation/poseDetecion.png}
 \par\end{centering}
-\caption{Kľúčové body detekované Google ML kitom \label{fig:sequenceAllDetect}}
+\caption{33 kľúčových bodov detekovaných MediaPipe Pose\cite{mediapipe} \label{fig:mediapipeLandmarks}}
 \end{figure}
+
+\subsubsection{Spracovanie zvuku}
+
+Pre analýzu zvukových vlastností využívam knižnicu \textbf{librosa}\cite{librosa}, ktorá je štandardným nástrojom pre audio analýzu v Pythone. Librosa poskytuje funkcie pre extrakciu pitch (výšky tónu) pomocou YIN algoritmu a detekciu hlasitosti pomocou RMS (Root Mean Square) energie. Pre extrakciu zvukovej stopy z videa využívam nástroj \textbf{ffmpeg}.
+
+\subsubsection{Analýza časových radov}
+
+Pre segmentáciu a analýzu časových radov využívam knižnicu \textbf{NumPy} pre numerické výpočty a vlastné implementácie algoritmov pre detekciu zmien trendu. Pre vizualizáciu výsledkov používam knižnicu \textbf{matplotlib}.
+
+\subsubsection{Databáza}
+
+Pre ukladanie dát využívam relačnú databázu \textbf{PostgreSQL}, ktorá zabezpečuje ACID vlastnosti a podporuje efektívne ukladanie štruktúrovaných dát (landmarks, audio features, výsledky analýz). Pre súborové úložisko videí využívam súborový systém servera.
+
+\subsubsection{Kontajnerizácia}
+
+Pre nasadenie a orchestráciu služieb využívam \textbf{Docker} a \textbf{Docker Compose}, čo zabezpečuje reprodukovateľné prostredie a zjednodušuje deployment na rôzne platformy.

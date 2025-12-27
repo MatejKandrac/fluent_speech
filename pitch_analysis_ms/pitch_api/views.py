@@ -2,11 +2,11 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .services import AudioAnalysisService
+from .services import PitchAnalysisService
 
 
 @api_view(['POST'])
-def analyze_audio(request, recording_id):
+def analyze_pitch(request, recording_id):
     try:
         recording_id = int(recording_id)
     except (ValueError, TypeError):
@@ -18,20 +18,21 @@ def analyze_audio(request, recording_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    service = AudioAnalysisService()
-    result = service.analyze_audio(recording_id)
+    service = PitchAnalysisService()
+    result = service.analyze_pitch(recording_id)
 
     if result['success']:
         return Response(
             {
                 'success': True,
                 'recording_id': result['recording_id'],
-                'duration': result['duration'],
-                'sample_rate': result['sample_rate'],
-                'samples': result['samples'],
-                'audio_features_saved': result.get('audio_features_saved', 0)
+                'pitch_frames': result['pitch_frames'],
+                'pitch_mean': result['pitch_mean'],
+                'pitch_min': result['pitch_min'],
+                'pitch_max': result['pitch_max'],
+                'pitch_std': result['pitch_std']
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_200_OK
         )
     else:
         return Response(
@@ -48,7 +49,7 @@ def health_check(request):
     return Response(
         {
             'status': 'healthy',
-            'service': 'audio-analysis-ms'
+            'service': 'pitch-analysis-ms'
         },
         status=status.HTTP_200_OK
     )

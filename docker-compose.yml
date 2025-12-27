@@ -37,7 +37,7 @@ services:
     restart: unless-stopped
 
   video-analysis:
-    build: ./video_analysis_ms
+    build: video_processing_ms
     container_name: fluent_video_analysis
     ports:
       - '${VIDEO_ANALYSIS_PORT}:8001'
@@ -54,7 +54,7 @@ services:
     restart: unless-stopped
 
   audio-analysis:
-    build: ./audio_analysis_ms
+    build: audio_processing_ms
     container_name: fluent_audio_analysis
     ports:
       - '${AUDIO_ANALYSIS_PORT}:8004'
@@ -62,7 +62,56 @@ services:
       - .env
     volumes:
       - video-data:/app/video_data
-      - audio-debug:/app/debug_output
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - fluent-network
+    restart: unless-stopped
+
+  pitch-analysis:
+    build: ./pitch_analysis_ms
+    container_name: fluent_pitch_analysis
+    ports:
+      - '${PITCH_ANALYSIS_PORT}:8005'
+    env_file:
+      - .env
+    volumes:
+      - video-data:/app/video_data
+      - pitch-debug:/app/debug
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - fluent-network
+    restart: unless-stopped
+
+  volume-analysis:
+    build: ./volume_analysis_ms
+    container_name: fluent_volume_analysis
+    ports:
+      - '${VOLUME_ANALYSIS_PORT}:8006'
+    env_file:
+      - .env
+    volumes:
+      - video-data:/app/video_data
+      - volume-debug:/app/debug
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - fluent-network
+    restart: unless-stopped
+
+  hip-analysis:
+    build: ./hip_analysis_ms
+    container_name: fluent_hip_analysis
+    ports:
+      - '${HIP_ANALYSIS_PORT}:8007'
+    env_file:
+      - .env
+    volumes:
+      - hip-debug:/app/debug
     depends_on:
       timescaledb:
         condition: service_healthy
@@ -122,6 +171,8 @@ volumes:
       device: D:/VideoData
 
   video-debug:
-  audio-debug:
+  pitch-debug:
+  volume-debug:
+  hip-debug:
   arm-debug:
   eye-debug:
