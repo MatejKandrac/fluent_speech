@@ -284,3 +284,69 @@ Po analýze týchto troch existujúcich riešení som sa rozhodol vytvoriť tabu
 \end{table}
 
 Z tejto tabuľky môžeme vidieť, že žiadne z aplikácií nesledujú problémy spojené s postojom prezentujúceho, ako tancovanie, ruky vo vreckách alebo hranie sa s predmetmi.
+
+\section{Definícia problému}
+
+Na základe analýzy existujúcich riešení a preštudovanej literatúry som identifikoval niekoľko kľúčových medzier, ktoré poukazujú na potrebu komplexnejšieho prístupu k trénovaniu prezentačných schopností.
+
+\subsection{Fragmentácia existujúcich riešení}
+
+Ako je vidieť z tabuľky porovnania riešení (tabuľka \ref{tab:attributesTable}), \textbf{neexistuje jednotné riešenie}, ktoré by komplexne pokrývalo všetky podstatné aspekty prezentačných schopností. Analyzované systémy sa zameriavajú selektívne na konkrétne oblasti:
+
+\begin{itemize}
+    \item \textbf{MACH} sa primárne sústreďuje na mimiku, očný kontakt a verbálne aspekty (tempo reči, výplňové slová), no zanedbáva detailnú analýzu pohybov tela a postoja
+    \item \textbf{ROC Speak} kladie dôraz na intenzitu úsmevu a verbálne aspekty, avšak neanalyzuje očný kontakt ani špecifické negatívne javy spojené s postojom
+    \item \textbf{GestureLens} sa detailne venuje korelácii gest s hovoreným slovom, no úplne opomína analýzu verbálnych aspektov ako monotónnosť či výplňové slová
+\end{itemize}
+
+Žiadne z týchto riešení nepokrýva komplexne \textbf{verbálnu aj neverbálnu komunikáciu} súčasne. Konkrétne, neexistuje riešenie, ktoré by analyzovalo:
+
+\begin{enumerate}
+    \item \textbf{Neverbálne aspekty}: postoj (tancovanie, ruky vo vreckách), detailné pohyby rúk, očný kontakt, mimiku
+    \item \textbf{Vlastnosti hlasu}: monotónnosť, hlasitosť, výška tónu, tempo reči
+    \item \textbf{Verbálne aspekty}: výplňové slová, plynulosť reči
+\end{enumerate}
+
+v rámci jedného integrovaného systému.
+
+\subsection{Technologické obmedzenia}
+
+Ďalším zásadným problémom je, že analyzované riešenia neposkytujú prístup k \textbf{surových dátam} získaných počas analýzy. Systémy ako MACH či ROC Speak fungujú ako uzavreté riešenia (black-box), ktoré prezentujú iba finálne výsledky používateľovi. Neposkytujú možnosť:
+
+\begin{itemize}
+    \item Exportu časových radov pohybov tela (landmarks)
+    \item Prístupu k extrahovaným vlastnostiam hlasu (pitch, RMS energia)
+    \item Vlastného spracovania a analýzy týchto dát
+    \item Implementácie pokročilých metód analýzy časových radov (segmentácia, detekcia zmien trendu)
+\end{itemize}
+
+Táto skutočnosť vytvára potrebu \textbf{vlastného riešenia pre extrakciu a spracovanie dát}, ktoré umožní nielen detekciu negatívnych javov, ale aj ich hlbšiu analýzu prostredníctvom metód spracovania časových radov.
+
+\subsection{Nedostatok komplexnej analýzy časových radov}
+
+Analyzované riešenia poskytujú prevažne \textbf{agregované štatistiky} (napríklad celkový počet výplňových slov, priemerná hlasitosť), no chýba im časová dimenzía analýzy. Prezentujúcemu nepovedia:
+
+\begin{itemize}
+    \item V ktorom momente prezentácie prestali využívať gestikuláciu
+    \item Kedy sa zmenilo ich tempo reči alebo monotónnosť
+    \item Kde nastali kritické body zmien v ich správaní
+    \item Ako sa vyvíjali jednotlivé vlastnosti počas celej prezentácie
+\end{itemize}
+
+Práve \textbf{identifikácia kritických bodov zmien} a analýza trendov v časových radoch môže prezentujúcemu poskytnúť oveľa hodnotnejšiu spätnú väzbu než len celkové čísla.
+
+\subsection{Formulácia problému}
+
+\textbf{Problémom je absencia komplexného systému pre trénovanie prezentačných schopností, ktorý by:}
+
+\begin{enumerate}
+    \item Integroval analýzu verbálnych, neverbálnych aspektov aj vlastností hlasu v jednom riešení
+    \item Umožnil extrakciu a spracovanie surových dát (landmarks tela, audio features) pre vlastnú analýzu
+    \item Využíval metódy analýzy časových radov (segmentáciu, detekciu trendov) na identifikáciu kritických bodov zmien
+    \item Poskytoval detailnú časovú analýzu, nie len agregované štatistiky
+    \item Bol dostupný širokej verejnosti prostredníctvom mobilných zariadení
+\end{enumerate}
+
+\textbf{Prečo je tento problém dôležitý?} Prezentačné schopnosti sú kľúčové v mnohých oblastiach života - od akademického prostredia cez pracovné pohovory až po profesionálne vystúpenia. Tradičné formy nácviku (kurzy, tréningy) sú časovo aj finančne náročné a nie vždy dostupné. Moderný systém, ktorý poskytne komplexnú spätnú väzbu využitím pokročilých metód spracovania videa a zvuku, môže demokratizovať prístup k trénovaniu prezentačných schopností a umožniť používateľom efektívne sa zlepšovať aj bez prítomnosti fyzického trénera.
+
+Moje riešenie sa preto zameriava na vytvorenie takéhoto komplexného systému, ktorý eliminuje uvedené medzery existujúcich riešení.

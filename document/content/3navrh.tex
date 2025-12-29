@@ -21,23 +21,30 @@ Pred samotnou implementáciou som definoval niekoľko funkčných požiadaviek, 
     \item \textbf{Detekcia kritických bodov zmien}: Systém musí pre relevantné kritériá uvedené vyššie definovať kritické body, kedy sa drasticky zmenil doterajší priebeh. Ide napríklad o definovanie hranice, kedy prezentujúci prestal náhle využívať všetky pohyby rúk, alebo že v prvej minúte prezentácie využíval veľké množstvo výplňových slov.
 \end{itemize}
 
-\newpage
-
 \section{Prípady použitia}
 
 Systém je navrhnutý pre podporu viacerých scenárov použitia. Na základe funkčných požiadaviek som identifikoval nasledujúce hlavné prípady použitia:
 
 \begin{itemize}
-    \item \textbf{UC1: Nahratie videa prezentácie} - Používateľ nahrá video svojej prezentácie pomocou mobilnej aplikácie a odošle ho na server
-    \item \textbf{UC2: Trénovanie konkrétneho javu} - Používateľ si vyberie konkrétny aspekt prezentácie (napr. očný kontakt) a systém ho analyzuje izolované
-    \item \textbf{UC3: Celková analýza prezentácie} - Systém vykoná komplexnú analýzu všetkých aspektov prezentácie
-    \item \textbf{UC4: Zobrazenie výsledkov analýzy} - Používateľ si prezerá detailné výsledky analýzy s grafmi a odporúčaniami
-    \item \textbf{UC5: Správa histórie nahrávok} - Používateľ môže prezerať a spravovať svoje predchádzajúce nahrávky
+    \item \textbf{Nahratie videa prezentácie} - Používateľ nahrá video svojej prezentácie pomocou mobilnej aplikácie a odošle ho na server
+    \item \textbf{Trénovanie konkrétneho javu} - Používateľ si vyberie konkrétny aspekt prezentácie (napr. očný kontakt) a systém ho analyzuje izolované
+    \item \textbf{Celková analýza prezentácie} - Systém vykoná komplexnú analýzu všetkých aspektov prezentácie
+    \item \textbf{Zobrazenie výsledkov analýzy} - Používateľ si prezerá detailné výsledky analýzy s grafmi a odporúčaniami
+    \item \textbf{Správa histórie nahrávok} - Používateľ môže prezerať a spravovať svoje predchádzajúce nahrávky
 \end{itemize}
 
 V nasledujúcich podkapitolách detailne popíšem tri najdôležitejšie prípady použitia.
 
-\subsection{UC1: Nahratie videa prezentácie}
+% TODO: Placeholder pre UML Use Case Diagram
+% Diagram by mal graficky zobrazovať Celkovú analýzu prezentácie (najkomplexnejší prípad použitia)
+% Mal by obsahovať:
+% - Actor: Používateľ
+% - Use Cases: Nahrať video, Spustiť analýzu, Extrahovať landmarks, Analyzovať zvuk,
+%   Analyzovať očný kontakt, Analyzovať pohyby rúk, Agregovat výsledky, Zobraziť výsledky
+% - Relationships: include, extend
+% - System boundary
+
+\subsection{Nahratie videa prezentácie}
 
 \textbf{Aktér:} Používateľ aplikácie
 
@@ -77,7 +84,7 @@ V nasledujúcich podkapitolách detailne popíšem tri najdôležitejšie prípa
 
 \textbf{Výsledok:} Video je úspešne nahrané na server a je pripravené na analýzu. Metadata videa sú uložené v databáze a používateľ môže pokračovať k analýze.
 
-\subsection{UC3: Celková analýza prezentácie}
+\subsection{Celková analýza prezentácie}
 
 \textbf{Aktér:} Používateľ aplikácie, Systém (automaticky)
 
@@ -125,7 +132,7 @@ V nasledujúcich podkapitolách detailne popíšem tri najdôležitejšie prípa
     \item Detekované anomálie a odporúčania pre zlepšenie
 \end{itemize}
 
-\subsection{UC4: Zobrazenie výsledkov analýzy}
+\subsection{Zobrazenie výsledkov analýzy}
 
 \textbf{Aktér:} Používateľ aplikácie
 
@@ -164,14 +171,30 @@ V nasledujúcich podkapitolách detailne popíšem tri najdôležitejšie prípa
 \textbf{Výsledok:} Používateľ získa komplexný prehľad o svojich prezentačných schopnostiach s konkrétnymi odporúčaniami na zlepšenie.
 
 \section{Architektúra riešenia}
-Nakoľko som počas analýzy zistil, že nevhodných javov ktoré je možné detekovať je veľke množstvo, navrhujem mikroslužbovou architektúru, kde každá mikroslužba bude detekovať skupinu súvisiacich negatívnych javov. Dôvodom použitia mikroslužieb je ich vlastnosť jednoduchého nasadzovania, ktorá môže byť využitá pri pridávaní nových detekcií. Zároveň mikroslužbová architektúra umožnuje technologickú voľnosť, ktorá by sa v prípade rozširovania mojej práce zišla. Všeobecná architektúra by obsahovala:
+Nakoľko som počas analýzy zistil, že nevhodných javov ktoré je možné detekovať je veľke množstvo, navrhujem mikroslužbovou architektúru, kde každá mikroslužba bude detekovať skupinu súvisiacich negatívnych javov. Dôvodom použitia mikroslužieb je ich vlastnosť jednoduchého nasadzovania, ktorá môže byť využitá pri pridávaní nových detekcií. Zároveň mikroslužbová architektúra umožnuje technologickú voľnosť, ktorá by sa v prípade rozširovania mojej práce zišla. Navrhnutá architektúra obsahuje nasledujúce komponenty:
+
+\subsection{Komponenty systému}
+
 \begin{itemize}
-    \item Mobilnú aplikáciu
-    \item API Gateway
-    \item Mikroslužba pre analýzu videa
-    \item Mikroslužby pre detekciu javov
-    \item Databáza
+    \item \textbf{Mobilná aplikácia (Flutter)} - používateľské rozhranie pre nahrávanie videí a zobrazenie výsledkov analýzy
+    \item \textbf{API Gateway (Spring Boot/Kotlin)} - vstupný bod systému, správa HTTP requestov a multipart file upload
+    \item \textbf{Video Analysis Service (Django/Python)} - extrakcia landmarks pomocou MediaPipe Pose a spracovania video súborov
+    \item \textbf{Audio Analysis Service (Django/Python)} - extrakcia zvukovej stopy z videa a analýza vlastností hlasu (pitch, hlasitosť, RMS)
+    \item \textbf{Eye Contact Analysis Service (Django/Python)} - detekcia očného kontaktu na základe viditeľnosti landmarks očí
+    \item \textbf{Arm Movement Analysis Service (Django/Python)} - detekcia pohybov rúk, gestikulácie a opakujúcich sa gest
+    \item \textbf{Hip Movement Analysis Service (Django/Python)} - detekcia negatívneho javu "tancovanie" (pohyb bokov)
+    \item \textbf{Speech Analysis Service (Django/Python)} - detekcia výplňových slov a plynulosti reči (plánované)
+    \item \textbf{Mediator Service (Django/Python)} - orchestrácia paralelného spracovania analýz a agregácia výsledkov
+    \item \textbf{Databáza (PostgreSQL)} - ukladanie landmarks, audio features, metadata videí a výsledkov analýz
+    \item \textbf{Súborové úložisko} - ukladanie nahratých video súborov
 \end{itemize}
+
+% TODO: Placeholder pre Component Diagram
+% Diagram by mal zobrazovať:
+% - Komponenty systému (Mobile App, API Gateway, mikroslužby)
+% - Vzťahy medzi komponentmi (dependencies, komunikácia)
+% - Rozhrania (REST API endpoints)
+% - Databázu a file storage
 
 
 Pre pochopenie som vytvoril sekvenčný diagram, ktorý znázorňuje interakciu používateľa so systémom, kde chce detekovať konkrétne pohyb rúk.
@@ -202,27 +225,27 @@ Celkový diagram systému bude teda nasledovný:
 \caption{Architektúra aplikácie \label{fig:sequenceAllDetect}}
 \end{figure}
 
-Diatram je rozdelený na mobilnú aplikáciu a serverovú časť.
+Diagram je rozdelený na mobilnú aplikáciu a serverovú časť.
 
 \textbf{Mobilná aplikácia} má za úlohu vytvorenie videa a vytvorenie časových radov pre video. Tieto údaje následne posielá na \textbf{API Gateway}, ktorý slúži ako proxy, ktoré posunie iba podstatné údaje do \textbf{mikroslužby}, ktorá detekuje potrebné vlastnosti. Taktiež je zobrazený aj \textbf{mediator}, ktorý sa bude využívať pri detekcii všetkých javov.
 
-\subsection{Použité technológie}
+\section{Použité technológie}
 
 Riešenie je postavené na kombinácii moderných technológií pre mobilný vývoj, serverové spracovanie a analýzu údajov. Kľúčovým architektonickým rozhodnutím je, že \textbf{všetka analýza prebieha na serverovej strane}, čím sa minimalizujú výpočtové nároky na mobilné zariadenie a umožní sa budúce rozšírenie systému bez nutnosti aktualizácie mobilnej aplikácie.
 
-\subsubsection{Mobilná aplikácia}
+\subsection{Mobilná aplikácia}
 
 Pre mobilnú aplikáciu využívam framework \textbf{Flutter}, ktorý umožňuje vývoj cross-platform aplikácií pre iOS a Android z jedného kódového základu. Flutter poskytuje natívnu výkonnosť a integruje sa s kamerou mobilného zariadenia pre nahrávanie videa. Mobilná aplikácia má limitovanú úlohu - zabezpečuje nahrávanie videa, jeho upload na server a zobrazenie výsledkov analýzy.
 
-\subsubsection{Serverová časť - mikroslužby}
+\subsection{Serverová časť - mikroslužby}
 
 Pre serverovú časť využívam framework \textbf{Django} s programovacím jazykom \textbf{Python 3.11}. Python je štandardným jazykom pre strojové učenie a počítačové videnie, disponuje rozsiahlym ekosystémom knižníc pre spracovanie multimediálneho obsahu a analýzu časových radov. Každá mikroslužba je samostatná Django aplikácia, čo umožňuje nezávislé nasadenie a škálovanie.
 
-\subsubsection{API Gateway}
+\subsection{API Gateway}
 
 Pre API Gateway využívam \textbf{Spring Boot} s programovacím jazykom \textbf{Kotlin}. Spring Boot poskytuje robustnú platformu pre správu HTTP requestov, multipart file upload (až do 500MB) a orchestráciu volania mikroslužieb. API Gateway slúži ako jediný vstupný bod (single entry point) pre mobilnú aplikáciu.
 
-\subsubsection{Počítačové videnie - MediaPipe}
+\subsection{Počítačové videnie - MediaPipe}
 
 Najdôležitejším nástrojom pre analýzu videa je knižnica \textbf{MediaPipe}\cite{mediapipe} od spoločnosti Google. MediaPipe je open-source framework určený pre real-time spracovanie multimediálneho obsahu. V mojom riešení využívam modul \textbf{MediaPipe Pose}, ktorý dokáže detekovať 33 kľúčových bodov ľudského tela (landmarks) v každom snímku videa. MediaPipe beží výhradne na serverovej strane v rámci Video Analysis Service.
 
@@ -244,18 +267,18 @@ Nasledujúci obrázok zobrazuje všetky kľúčové body, ktoré MediaPipe Pose 
 \caption{33 kľúčových bodov detekovaných MediaPipe Pose\cite{mediapipe} \label{fig:mediapipeLandmarks}}
 \end{figure}
 
-\subsubsection{Spracovanie zvuku}
+\subsection{Spracovanie zvuku}
 
 Pre analýzu zvukových vlastností využívam knižnicu \textbf{librosa}\cite{librosa}, ktorá je štandardným nástrojom pre audio analýzu v Pythone. Librosa poskytuje funkcie pre extrakciu pitch (výšky tónu) pomocou YIN algoritmu a detekciu hlasitosti pomocou RMS (Root Mean Square) energie. Pre extrakciu zvukovej stopy z videa využívam nástroj \textbf{ffmpeg}.
 
-\subsubsection{Analýza časových radov}
+\subsection{Analýza časových radov}
 
 Pre segmentáciu a analýzu časových radov využívam knižnicu \textbf{NumPy} pre numerické výpočty a vlastné implementácie algoritmov pre detekciu zmien trendu. Pre vizualizáciu výsledkov používam knižnicu \textbf{matplotlib}.
 
-\subsubsection{Databáza}
+\subsection{Databáza}
 
 Pre ukladanie dát využívam relačnú databázu \textbf{PostgreSQL}, ktorá zabezpečuje ACID vlastnosti a podporuje efektívne ukladanie štruktúrovaných dát (landmarks, audio features, výsledky analýz). Pre súborové úložisko videí využívam súborový systém servera.
 
-\subsubsection{Kontajnerizácia}
+\subsection{Kontajnerizácia}
 
 Pre nasadenie a orchestráciu služieb využívam \textbf{Docker} a \textbf{Docker Compose}, čo zabezpečuje reprodukovateľné prostredie a zjednodušuje deployment na rôzne platformy.
