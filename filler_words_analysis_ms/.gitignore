@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Debug output
+debug_output/*
+!debug_output/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db

@@ -151,6 +151,19 @@ services:
       - fluent-network
     restart: unless-stopped
 
+  filler_words:
+    build: ./filler_words_analysis_ms
+    container_name: fluent_filler_words
+    ports:
+      - '${EYE_CONTACT_PORT}:8008'
+    env_file:
+      - .env
+    volumes:
+      - filler-words-debug:/app/debug_output
+    networks:
+      - fluent-network
+    restart: unless-stopped
+
 networks:
   fluent-network:
     driver: bridge
@@ -176,3 +189,4 @@ volumes:
   hip-debug:
   arm-debug:
   eye-debug:
+  filler-words-debug:
