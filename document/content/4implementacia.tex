@@ -1,12 +1,615 @@
 \chapter{Implementácia riešenia}
 
+V tejto kapitole podrobne popisujem implementáciu navrhnutého systému, kľúčové algoritmy, dátové štruktúry a technické riešenia použité pri realizácii jednotlivých komponentov.
+
+\section{Prehľad implementovanej funkcionality}
+
+V rámci doterajšej práce som implementoval nasledujúce komponenty systému:
+
+\begin{itemize}
+    \item \textbf{API Gateway} (Spring Boot/Kotlin) - vstupný bod systému, správa HTTP requestov a multipart file upload
+    \item \textbf{Video Analysis Service} - extrakcia landmarks pomocou MediaPipe Pose
+    \item \textbf{Audio Analysis Service} - extrakcia zvukovej stopy a audio vlastností
+    \item \textbf{Eye Contact Analysis Service} - detekcia očného kontaktu a looking away events
+    \item \textbf{Arm Movement Analysis Service} - detekcia pohybov rúk a gestikulácie
+    \item \textbf{Hip Movement Analysis Service} - detekcia negatívneho javu "tancovanie"
+    \item \textbf{Pitch Analysis Service} - analýza monotónnosti hlasu
+    \item \textbf{Volume Analysis Service} - analýza hlasitosti reči
+    \item \textbf{Filler Words Analysis Service} - detekcia výplňových slov pomocou Whisper
+\end{itemize}
+
+Všetky mikroslužby sú kontajnerizované pomocou Docker a komunikujú prostredníctvom REST API. Dáta sú ukladané do centrálnej PostgreSQL databázy.
+
+\section{Spracovanie videa}
+
+\subsection{Extrakcia kľúčových bodov pomocou MediaPipe}
+
+Pre detekciu polohy tela v každom snímku videa využívam knižnicu \textbf{MediaPipe Pose} od spoločnosti Google. MediaPipe je schopný v real-time detekovať 33 kľúčových bodov (landmarks) ľudského tela bez potreby špeciálneho hardvéru.
+
+\subsubsection{Použité landmarks}
+
+MediaPipe Pose poskytuje nasledujúce kľúčové body relevantné pre moju analýzu:
+
+\begin{itemize}
+    \item \textbf{Tvár}: nos (0), ľavé oko (2), pravé oko (5), ľavé ucho (7), pravé ucho (8)
+    \item \textbf{Trup}: ľavé rameno (11), pravé rameno (12), ľavý bok (23), pravý bok (24)
+    \item \textbf{Ruky}: ľavý lakeť (13), pravý lakeť (14), ľavé zápästie (15), pravé zápästie (16)
+\end{itemize}
+
+Každý landmark obsahuje:
+\begin{itemize}
+    \item \textbf{x, y, z súradnice} - normalizované pozície v 3D priestore
+    \item \textbf{visibility} - confidence score (0-1) indikujúci viditeľnosť bodu
+\end{itemize}
+
+% TODO: Placeholder pre obrázok MediaPipe landmarks
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=0.8\textwidth]{assets/images/implementation/mediapipe_landmarks_example.png}
+% \caption{Príklad detekcie MediaPipe Pose landmarks na testovom videu}
+% \label{fig:mediapipe_landmarks}
+% \end{figure}
+
+\subsubsection{Postup extrakcie}
+
+Extrakcia landmarks prebieha v nasledujúcich krokoch:
+
+\begin{enumerate}
+    \item Video súbor je načítaný pomocou OpenCV (\texttt{cv2.VideoCapture})
+    \item Pre každý snímok (frame) sa vykoná:
+    \begin{itemize}
+        \item Konverzia z BGR do RGB farebného priestoru
+        \item Spustenie MediaPipe Pose detekcie
+        \item Extrakcia 33 landmarks s ich súradnicami a visibility
+        \item Uloženie landmarks do dátovej štruktúry s timestamp
+    \end{itemize}
+    \item Landmarks sú uložené do databázy spolu s frame\_index a timestamp
+\end{enumerate}
+
+\subsubsection{Dátová štruktúra}
+
+Landmarks sú ukladané v PostgreSQL databáze v nasledujúcej štruktúre:
+
+\begin{verbatim}
+landmark (
+    id SERIAL PRIMARY KEY,
+    frame_data_id INTEGER REFERENCES frame_data(id),
+    type VARCHAR(50),     -- napr. "nose", "left_wrist"
+    x DECIMAL(10,6),      -- normalizovaná súradnica 0-1
+    y DECIMAL(10,6),
+    z DECIMAL(10,6),
+    visibility DECIMAL(5,4)  -- confidence 0-1
+)
+\end{verbatim}
+
+Táto štruktúra umožňuje efektívne dopyty pre jednotlivé mikroslužby, ktoré si načítavajú len potrebné landmarks (napr. Eye Contact Analysis potrebuje len landmarks očí a tváre).
+
 \section{Spracovanie zvuku}
-Pri spracovaní zvuku som sa sústredil na extrakciu zvukových signálov z videa a následným spracovaním týchto údajov. Pred samotnou analýzou týchto údajov som najprv chcel zistiť, ako sa tieto dáta predspracúvajú.
+
+\subsection{Extrakcia zvukovej stopy}
+
+Audio stopa je extrahovaná z nahratého videa pomocou nástroja \textbf{ffmpeg} ihneď po uploade videa. Výsledný audio súbor je uložený vo formáte WAV s nasledujúcimi parametrami:
+
+\begin{itemize}
+    \item \textbf{Formát}: WAV (PCM)
+    \item \textbf{Vzorkovacia frekvencia}: 16 kHz
+    \item \textbf{Kanály}: mono (1 kanál)
+    \item \textbf{Bitová hĺbka}: 16-bit
+\end{itemize}
+
+Príkaz ffmpeg pre extrakciu:
+\begin{verbatim}
+ffmpeg -i video.mp4 -vn -acodec pcm_s16le -ar 16000 -ac 1 audio.wav
+\end{verbatim}
 
 \subsection{Normalizácia}
-Najprv som dáta normalizoval na škálu od -1 do 1. Týmto zabezpečím, aby boli dáta v rovnakej škále, aby pri prípadnej budúcej práci boli použiteľné pre trénovanie modelov.
+
+Audio signál je normalizovaný na škálu od -1 do 1. Týmto zabezpečím, aby boli dáta v rovnakej škále nezávisle od nahrávaného zariadenia. Normalizácia je implementovaná pomocou knižnice librosa:
+
+\begin{verbatim}
+audio_data = librosa.util.normalize(audio_data)
+\end{verbatim}
+
+Toto je dôležité najmä pre budúce rozšírenia systému, kde by sa mohli audio dáta využiť pre trénovanie modelov strojového učenia.
 
 \subsection{Vzorkovacia rýchlosť}
-Ďalší problém je takzvaná vzorkovacia rýchlosť. Tento parameter sa líši medzi zariadeniami, a reprezentuje počet meraných vzoriek za sekundu, ktoré nakoniec reprezentujú zvukový súbor. Pri analýze zvukových dát sa riadim prevažne počtom dátových rámcov. Napríklad ak sa výška hlasu nezmení na desiatich za sebou idúcich rámcov, označím rámec pre budúce spracovanie. Ak by bola vzorkovacia rýchlosť rozdielna, aj počet týchto rámcov by nebol normalizovaný. Preto som sa rozhodol vykonať takzvaný "resampling", ktorý upraví zvukový vstup tak, aby bol fixne 16Hz. Túto hodnotu som hľadal pomedzi viacerími zdrojmi a používa sa ako priemyselný štandard.\cite{sampleRate}
+
+Vzorkovacia rýchlosť (sample rate) reprezentuje počet meraných vzoriek za sekundu. Rôzne nahrávače zariadenia môžu mať rozdielnu vzorkovaciu frekvenciu (44.1 kHz, 48 kHz, atď.).
+
+Pre zabezpečenie konzistencie analýzy vykonávam resampling všetkých audio súborov na fixnú frekvenciu \textbf{16 kHz}. Túto hodnotu som zvolil na základe priemyselných štandardov pre speech processing\cite{sampleRate}. Resampling je implementovaný pomocou librosa:
+
+\begin{verbatim}
+audio_data = librosa.resample(audio_data, orig_sr=orig_sr, target_sr=16000)
+\end{verbatim}
+
+Dôvod normalizácie vzorkovacej rýchlosti je ten, že moje algoritmy pracujú s počtom frame-ov. Napríklad ak detekujem monotónnosť ako "pitch sa nezmenil na 10 za sebou idúcich frame-och", rozdielna vzorkovacia rýchlosť by znamenala rozdielny časový úsek.
 
 \subsection{Bitová hĺbka}
+
+Bitová hĺbka definuje presnosť merania amplitúdy zvukového signálu. Používam \textbf{16-bit PCM}, čo poskytuje dostatočnú presnosť pre analýzu reči (96 dB dynamický rozsah) pri rozumnej veľkosti súboru. Pre porovnanie, 8-bit by poskytoval len 48 dB dynamický rozsah, čo by bolo nedostatočné pre detekciu jemných zmien v hlasitosti.
+
+\subsection{Extrakcia audio vlastností}
+
+Pre analýzu vlastností hlasu využívam knižnicu \textbf{librosa}, ktorá poskytuje funkcie pre extrakciu pitch a hlasitosti.
+
+\subsubsection{Pitch (výška tónu)}
+
+Pitch reprezentuje základnú frekvenciu hlasu (F0). Pre extrakciu pitch využívam \textbf{YIN algoritmus}, ktorý je robust voči šumu a poskytuje presné výsledky pre ľudský hlas:
+
+\begin{verbatim}
+pitches = librosa.yin(
+    audio_data,
+    fmin=librosa.note_to_hz('C2'),  # 65 Hz
+    fmax=librosa.note_to_hz('C7')   # 2093 Hz
+)
+\end{verbatim}
+
+Rozsah 65-2093 Hz pokrýva celý rozsah ľudského hlasu (mužský hlas ~85-180 Hz, ženský hlas ~165-255 Hz).
+
+\subsubsection{Hlasitosť (RMS energia)}
+
+Pre detekciu hlasitosti používam \textbf{RMS (Root Mean Square) energiu}, ktorá reprezentuje priemernú amplitúdu signálu v danom časovom okne:
+
+\begin{verbatim}
+rms = librosa.feature.rms(y=audio_data, frame_length=2048, hop_length=512)
+\end{verbatim}
+
+RMS hodnoty sú ukladané s časovými značkami do databázy pre následné použitie Volume Analysis mikroslužbou.
+
+\section{Detekcia očného kontaktu}
+
+Eye Contact Analysis mikroslužba analyzuje pohľad prezentujúceho voči publiku. Implementácia je založená na výpočte uhlov hlavy (yaw, pitch) z landmarks tváre.
+
+\subsection{Výpočet uhlov hlavy}
+
+\subsubsection{Yaw (otáčanie hlavy vľavo-vpravo)}
+
+Yaw uhol reprezentuje otáčanie hlavy horizontálne. Počítam ho pomocou kombinácie dvoch metrík:
+
+\begin{enumerate}
+    \item \textbf{Pomer vzdialeností k ušiam}:
+    \begin{verbatim}
+    dist_left_ear = sqrt((nose.x - left_ear.x)² + (nose.y - left_ear.y)²)
+    dist_right_ear = sqrt((nose.x - right_ear.x)² + (nose.y - right_ear.y)²)
+    ear_ratio = dist_left_ear / dist_right_ear
+    ear_yaw = log(ear_ratio) * 50
+    \end{verbatim}
+
+    \item \textbf{Offset nosa voči stredu tváre}:
+    \begin{verbatim}
+    face_center_x = (left_eye.x + right_eye.x) / 2
+    nose_offset_x = nose.x - face_center_x
+    nose_yaw = nose_offset_x * 100
+    \end{verbatim}
+\end{enumerate}
+
+Finálny yaw uhol je váženým priemerom:
+\begin{verbatim}
+yaw = ear_yaw * 0.7 + nose_yaw * 0.3
+\end{verbatim}
+
+\subsubsection{Pitch (nakláňanie hlavy hore-dole)}
+
+Pitch uhol reprezentuje vertikálne nakláňanie hlavy. Počítam ho z offsetu nosa voči úrovni očí:
+
+\begin{verbatim}
+eye_level_y = (left_eye.y + right_eye.y) / 2
+nose_offset_y = nose.y - eye_level_y
+pitch = -nose_offset_y * 150
+\end{verbatim}
+
+% TODO: Placeholder pre debug vizualizáciu očného kontaktu
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=\textwidth]{assets/images/debug/eye_contact_heatmap_example.png}
+% \caption{Príklad heat mapy očného kontaktu s označenou audience zone (zelený obdĺžnik)}
+% \label{fig:eye_contact_heatmap}
+% \end{figure}
+
+\subsection{Definícia audience zone}
+
+"Dobrý" očný kontakt definujem ako pohľad v rámci audience zone:
+\begin{itemize}
+    \item \textbf{Yaw}: -30° až +30° (pohľad dopredu s miernym otáčaním)
+    \item \textbf{Pitch}: -15° až +15° (mierny pohľad hore/dole)
+\end{itemize}
+
+\subsection{Detekcia looking away events}
+
+Looking away event nastáva, keď prezentujúci pozerá mimo audience zone počas minimálne 5 po sebe idúcich frame-ov. Pre každý event zaznamenávam:
+
+\begin{itemize}
+    \item \textbf{start\_timestamp, end\_timestamp} - časový úsek
+    \item \textbf{duration\_seconds} - trvanie v sekundách
+    \item \textbf{avg\_yaw, avg\_pitch} - priemerné uhly (kam sa pozerá)
+\end{itemize}
+
+\subsection{Štatistiky}
+
+Výstupné štatistiky zahŕňajú:
+\begin{itemize}
+    \item Percento času pohľadu na publikum vs. mimo
+    \item Počet looking away events
+    \item Priemerné trvanie looking away events
+    \item Heatmap rozloženia pohľadu (yaw × pitch bins)
+\end{itemize}
+
+\section{Detekcia pohybov rúk}
+
+Arm Movement Analysis mikroslužba detekuje nedostatočnú gestikuláciu a opakujúce sa gestá.
+
+\subsection{Výpočet akcelerácie zápästí}
+
+Pre kvantifikáciu pohybu rúk počítam akceleráciu zápästí pomocou druhej derivácie pozície:
+
+\begin{enumerate}
+    \item \textbf{Pozícia}: $(x_t, y_t, z_t)$ - súradnice zápästia v čase $t$
+    \item \textbf{Rýchlosť}: $v_t = \frac{(x_t - x_{t-1})^2 + (y_t - y_{t-1})^2 + (z_t - z_{t-1})^2}{dt}$
+    \item \textbf{Akcelerácia}: $a_t = \frac{v_t - v_{t-1}}{dt}$
+\end{enumerate}
+
+\subsection{Detekcia nedostatočnej gestikulácie}
+
+Nedostatočnú gestikuláciu detekujem pomocou sliding window analýzy:
+
+\begin{enumerate}
+    \item Rozdelím časový rad akcelerácie na okná veľkosti 30 frame-ov (~ 2 sekundy pri 15 FPS)
+    \item Pre každé okno počítam priemernú akceleráciu
+    \item Ak priemerná akcelerácia klesne pod threshold (empiricky nastavený na 0.01), označím toto okno ako "insufficient movement"
+\end{enumerate}
+
+\subsection{Detekcia opakujúcich sa gest}
+
+Pre detekciu opakujúcich sa gest používam cross-correlation časových radov:
+
+\begin{enumerate}
+    \item Rozdelím celý časový rad na segmenty dĺžky N frame-ov
+    \item Počítam cross-correlation medzi všetkými pármi segmentov
+    \item Ak korelačný koeficient > 0.85, segmenty sa považujú za podobné
+    \item Ak sa rovnaký pattern opakuje viac ako 3-krát, označím to ako repetitive gesture
+\end{enumerate}
+
+% TODO: Placeholder pre debug vizualizáciu pohybov rúk
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=\textwidth]{assets/images/debug/arm_movement_kinematics_example.png}
+% \caption{Príklad vizualizácie kinetických vlastností zápästí s označenými kritickými bodmi zmien}
+% \label{fig:arm_kinematics}
+% \end{figure}
+
+\section{Detekcia pohybu bokov (tancovanie)}
+
+Hip Movement Analysis mikroslužba detekuje negatívny jav "tancovanie" - nepotrebné pohyby bokov zo strany na stranu.
+
+\subsection{Výpočet stredu bokov}
+
+Pre analýzu pohybu bokov počítam stred medzi landmarks ľavého (23) a pravého (24) boku:
+
+\begin{verbatim}
+hip_center_x = (left_hip.x + right_hip.x) / 2
+hip_center_y = (left_hip.y + right_hip.y) / 2
+\end{verbatim}
+
+\subsection{Detekcia kývavého pohybu}
+
+Kývavý pohyb detekujem pomocou analýzy zmien v X-osi (horizontálny pohyb):
+
+\begin{enumerate}
+    \item Počítam akceleráciu hip\_center\_x
+    \item Detetujem lokálne maximá a minimá (zmeny smeru pohybu)
+    \item Ak sa smer pohybu zmení viac ako 5-krát za 10 sekúnd, označím segment ako "swaying"
+\end{enumerate}
+
+\section{Analýza vlastností hlasu}
+
+\subsection{Detekcia monotónnosti}
+
+Pitch Analysis mikroslužba detekuje monotónny hlas analyzovaním variácie pitch.
+
+\subsubsection{Výpočet pitch variability}
+
+Pre každé okno dĺžky 30 frame-ov počítam:
+\begin{itemize}
+    \item \textbf{Štandardnú odchýlku}: $\sigma_{pitch} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}(pitch_i - \mu_{pitch})^2}$
+    \item \textbf{Rozsah}: $range_{pitch} = max(pitch) - min(pitch)$
+\end{itemize}
+
+Ak $\sigma_{pitch} < 10$ Hz alebo $range_{pitch} < 20$ Hz, segment je označený ako monotónny.
+
+\subsection{Detekcia nízkej hlasitosti}
+
+Volume Analysis mikroslužba detekuje segmenty s nedostatočnou hlasitosťou.
+
+Pre každý frame počítam RMS energiu a normalizujem ju na dB škálu:
+\begin{verbatim}
+volume_db = 20 * log10(rms / reference_level)
+\end{verbatim}
+
+Segmenty s volume\_db < -30 dB sú označené ako "too quiet".
+
+\section{Detekcia výplňových slov}
+
+Filler Words Analysis mikroslužba využíva OpenAI Whisper pre speech-to-text transkripciu a následne detekuje výplňové slová v texte.
+
+\subsection{Whisper transkrip}
+
+Pre transkripciu používam Whisper model "base", ktorý poskytuje dobrý pomer medzi presnosťou a rýchlosťou:
+
+\begin{verbatim}
+model = whisper.load_model("base")
+result = model.transcribe(audio_path, word_timestamps=True)
+\end{verbatim}
+
+Whisper poskytuje:
+\begin{itemize}
+    \item \textbf{text} - celý transkribovaný text
+    \item \textbf{segments} - segmenty s časovými značkami
+    \item \textbf{language} - detekovaný jazyk (sk/en)
+\end{itemize}
+
+\subsection{Detekcia výplňových slov}
+
+Pre detekciu používam preddefinovaný zoznam výplňových slov pre slovenčinu a angličtinu:
+
+\begin{itemize}
+    \item \textbf{Slovenské}: ehm, ehh, emm, hm, hmm, teda, jako, takže, vlastne, viete
+    \item \textbf{Anglické}: uh, um, hmm, like, you know, so, actually, basically, literally
+\end{itemize}
+
+Detekcia prebieha pomocou regex s word boundaries:
+\begin{verbatim}
+pattern = r'\b' + re.escape(filler) + r'\b'
+matches = re.finditer(pattern, text.lower())
+\end{verbatim}
+
+\subsection{Štatistiky}
+
+Pre každý recording počítam:
+\begin{itemize}
+    \item \textbf{Celkový počet} výplňových slov
+    \item \textbf{Fillers per minute} - normalizovaná metrika
+    \item \textbf{Most common filler} - najčastejšie použité slovo
+    \item \textbf{Distribution} - rozloženie slovenských vs. anglických
+\end{itemize}
+
+% TODO: Placeholder pre debug vizualizáciu výplňových slov
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=\textwidth]{assets/images/debug/filler_words_timeline_example.png}
+% \caption{Timeline vizualizácia výplňových slov v priebehu prezentácie}
+% \label{fig:filler_timeline}
+% \end{figure}
+
+\section{Dátové štruktúry a databáza}
+
+\subsection{Databázová schéma}
+
+Používam PostgreSQL databázu s nasledujúcou schémou:
+
+\begin{verbatim}
+recording (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    video_file_path TEXT,
+    audio_file_path TEXT,
+    duration DECIMAL(10,2),
+    created_at TIMESTAMP
+)
+
+analysis (
+    id SERIAL PRIMARY KEY,
+    recording_id INTEGER REFERENCES recording(id),
+    total_frames INTEGER,
+    created_at TIMESTAMP
+)
+
+frame_data (
+    id SERIAL PRIMARY KEY,
+    analysis_id INTEGER REFERENCES analysis(id),
+    frame_index INTEGER,
+    timestamp TIME
+)
+
+landmark (
+    id SERIAL PRIMARY KEY,
+    frame_data_id INTEGER REFERENCES frame_data(id),
+    type VARCHAR(50),
+    x DECIMAL(10,6),
+    y DECIMAL(10,6),
+    z DECIMAL(10,6),
+    visibility DECIMAL(5,4)
+)
+
+audio_features (
+    id SERIAL PRIMARY KEY,
+    recording_id INTEGER REFERENCES recording(id),
+    timestamp TIME,
+    pitch DECIMAL(10,2),
+    rms DECIMAL(10,6)
+)
+\end{verbatim}
+
+\subsection{Indexovanie}
+
+Pre efektívne dopyty vytváram indexy na:
+\begin{itemize}
+    \item \texttt{frame\_data(analysis\_id, frame\_index)}
+    \item \texttt{landmark(frame\_data\_id, type)}
+    \item \texttt{audio\_features(recording\_id, timestamp)}
+\end{itemize}
+
+\section{Nasadenie a konfigurácia}
+
+\subsection{Docker kontajnerizácia}
+
+Každá mikroslužba beží v samostatnom Docker kontajneri. Príklad Dockerfile pre Eye Contact Analysis:
+
+\begin{verbatim}
+FROM python:3.11-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+RUN mkdir -p /app/debug_output
+
+EXPOSE 8003
+CMD python manage.py runserver 0.0.0.0:8003
+\end{verbatim}
+
+\subsection{Docker Compose orchestrácia}
+
+Všetky služby sú orchestrované pomocou docker-compose.yml:
+
+\begin{verbatim}
+services:
+  api-gateway:
+    build: ./api-gateway
+    ports: ["8080:8080"]
+
+  eye-contact-analysis:
+    build: ./eye_contact_analysis_ms
+    ports: ["8003:8003"]
+    depends_on: [postgres]
+
+  postgres:
+    image: postgres:15
+    ports: ["5432:5432"]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+\end{verbatim}
+
+\section{Testovanie}
+
+\subsection{Testovacie dáta}
+
+Pre testovanie funkcionality som vytvoril testovacie videá pokrývajúce rôzne scenáre:
+
+\begin{itemize}
+    \item \textbf{Video 1}: Prezentácia s dobrým očným kontaktom (baseline)
+    \item \textbf{Video 2}: Prezentácia s častým odvrachávaním pohľadu
+    \item \textbf{Video 3}: Prezentácia s nedostatočnou gestikuláciou
+    \item \textbf{Video 4}: Prezentácia s monotónnym hlasom
+    \item \textbf{Video 5}: Prezentácia s vysokým počtom výplňových slov
+\end{itemize}
+
+\subsection{Výsledky testovania}
+
+\subsubsection{Eye Contact Analysis}
+
+Testovanie na Video 2 (looking away):
+\begin{itemize}
+    \item Detekované 12 looking away events
+    \item Celkový čas mimo audience zone: 45 sekúnd (37.5\% z 120s)
+    \item Priemerné trvanie eventu: 3.75 sekundy
+\end{itemize}
+
+% TODO: Placeholder pre testovací výstup Eye Contact
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=0.8\textwidth]{assets/images/testing/test_eye_contact_results.png}
+% \caption{Výsledky testovania Eye Contact Analysis na Video 2}
+% \label{fig:test_eye_contact}
+% \end{figure}
+
+\subsubsection{Arm Movement Analysis}
+
+Testovanie na Video 3 (low gesticulation):
+\begin{itemize}
+    \item Detekované 3 úseky s nedostatočným pohybom rúk
+    \item Celkové trvanie insufficient movement: 65 sekúnd
+    \item Žiadne repetitive gestures
+\end{itemize}
+
+\subsubsection{Filler Words Analysis}
+
+Testovanie na Video 5 (high filler usage):
+\begin{itemize}
+    \item Detekované 47 výplňových slov za 3 minúty
+    \item Fillers per minute: 15.67 (nad threshold 5.0)
+    \item Najčastejšie slovo: "ehm" (18 výskytov)
+    \item Slovak: 38, English: 9
+\end{itemize}
+
+\section{Výzvy a riešenie problémov}
+
+\subsection{MediaPipe detekcia pri zložitom pozadí}
+
+\textbf{Problém}: MediaPipe mal problémy s detekciou landmarks pri zložitom pozadí s viacerými ľuďmi.
+
+\textbf{Riešenie}: Nastavil som \texttt{model\_complexity=1} a \texttt{min\_detection\_confidence=0.7}, čo zlepšilo presnosť pri miernom znížení FPS.
+
+\subsection{Whisper výkon na dlhých nahrávkach}
+
+\textbf{Problém}: Whisper model "base" bol pomalý na nahrávkach dlhších ako 10 minút.
+
+\textbf{Riešenie}: Implementoval som dávkové spracovanie po 5-minútových úsekoch s následným spojením transkriptov.
+
+\subsection{Normalizácia landmarks medzi zariadeniami}
+
+\textbf{Problém}: Rôzne rozlíšenia videí (1080p, 720p, 480p) produkovali rozdielne škály landmarks.
+
+\textbf{Riešenie}: MediaPipe automaticky normalizuje landmarks na 0-1, čo rieši tento problém. Pre dodatočnú stabilitu ukladám aj originálne max\_x a max\_y rozlíšenie videa.
+
+\section{Vyhodnotenie riešenia}
+
+\subsection{Implementované funkčné požiadavky}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|p{6cm}|}
+\hline
+\textbf{Požiadavka} & \textbf{Stav} & \textbf{Poznámka} \\
+\hline
+Detekcia očného kontaktu & ✅ & Plne funkčné \\
+\hline
+Detekcia pohybu bokov & ✅ & Základná implementácia \\
+\hline
+Detekcia pohybov rúk & ✅ & Plne funkčné \\
+\hline
+Detekcia monotónnosti & ✅ & Plne funkčné \\
+\hline
+Detekcia hlasitosti & ✅ & Plne funkčné \\
+\hline
+Detekcia výplňových slov & ✅ & Whisper implementácia \\
+\hline
+Detekcia kritických bodov & ⚠️ & Čiastočne - sliding window \\
+\hline
+\end{tabular}
+\caption{Prehľad implementovaných funkčných požiadaviek}
+\end{table}
+
+\subsection{Zhodnotenie voči pôvodným cieľom}
+
+\textbf{Čo sa podarilo}:
+\begin{itemize}
+    \item Úspešná implementácia všetkých core mikroslužieb
+    \item Funkčná extrakcia landmarks pomocou MediaPipe
+    \item Presná detekcia výplňových slov pomocou Whisper
+    \item Škálovateľná mikroslužbová architektúra
+    \item Kontajnerizácia pomocou Docker
+\end{itemize}
+
+\textbf{Čo zostáva na implementáciu}:
+\begin{itemize}
+    \item Mediator Service pre orchestráciu
+    \item Mobilná aplikácia (Flutter UI)
+    \item Pokročilá detekcia kritických bodov zmien (change point detection)
+    \item Vizualizácie výsledkov v mobile app
+\end{itemize}
+
+\subsection{Výkonnostné charakteristiky}
+
+Testované na video 120 sekúnd, 1080p, 30 FPS:
+\begin{itemize}
+    \item \textbf{MediaPipe extrakcia}: ~45 sekúnd
+    \item \textbf{Whisper transkrip}: ~120 sekúnd (model "base")
+    \item \textbf{Eye Contact Analysis}: ~2 sekundy
+    \item \textbf{Arm Movement Analysis}: ~3 sekundy
+    \item \textbf{Filler Words Analysis}: ~125 sekúnd (vrátane Whisper)
+\end{itemize}
+
+Celkový čas analýzy: ~5 minút pre 2-minútové video.

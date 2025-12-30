@@ -319,3 +319,317 @@ Bibliografia ✅
 ---
 
 Poznámka: Toto je len moja sumarizácia podľa toho čo som našiel v dokumentoch a podľa požiadaviek z mailu. Zajtra sa k tomu môžeš vrátiť a rozhodnúť čo konkrétne doplníš.
+
+---
+
+# MERMAID DIAGRAMY PRE DOKUMENTÁCIU
+
+## 1. Use Case Diagram - Celková analýza prezentácie
+
+```mermaid
+graph TB
+    User((Používateľ))
+
+    subgraph "Fluent Speech System"
+        UC1[Nahrať video<br/>prezentácie]
+        UC2[Spustiť analýzu]
+        UC3[Extrahovať<br/>landmarks]
+        UC4[Analyzovať<br/>zvuk]
+        UC5[Analyzovať<br/>očný kontakt]
+        UC6[Analyzovať<br/>pohyby rúk]
+        UC7[Analyzovať<br/>pohyby bokov]
+        UC8[Analyzovať<br/>vlastnosti hlasu]
+        UC9[Analyzovať<br/>výplňové slová]
+        UC10[Agregovať<br/>výsledky]
+        UC11[Zobraziť<br/>výsledky]
+    end
+
+    User -->|nahrá video| UC1
+    User -->|spustí| UC2
+    User -->|prezrie| UC11
+
+    UC2 -.->|include| UC3
+    UC2 -.->|include| UC4
+    UC3 -.->|include| UC5
+    UC3 -.->|include| UC6
+    UC3 -.->|include| UC7
+    UC4 -.->|include| UC8
+    UC4 -.->|include| UC9
+    UC5 -.->|include| UC10
+    UC6 -.->|include| UC10
+    UC7 -.->|include| UC10
+    UC8 -.->|include| UC10
+    UC9 -.->|include| UC10
+    UC10 -->|poskytne| UC11
+```
+
+## 2. Component Diagram - Architektúra systému
+
+```mermaid
+graph TB
+    subgraph "Mobile Application"
+        MA[Flutter Mobile App<br/>Video Recording & Results Display]
+    end
+
+    subgraph "API Layer"
+        GW[API Gateway<br/>Spring Boot/Kotlin<br/>Port: 8080]
+    end
+
+    subgraph "Processing Services"
+        VS[Video Analysis Service<br/>Django/Python<br/>MediaPipe Pose]
+        AS[Audio Analysis Service<br/>Django/Python<br/>librosa + Whisper]
+    end
+
+    subgraph "Analysis Microservices"
+        EC[Eye Contact Analysis<br/>Django/Python]
+        AM[Arm Movement Analysis<br/>Django/Python]
+        HM[Hip Movement Analysis<br/>Django/Python]
+        PA[Pitch Analysis<br/>Django/Python]
+        VA[Volume Analysis<br/>Django/Python]
+        FW[Filler Words Analysis<br/>Django/Python<br/>Whisper STT]
+    end
+
+    subgraph "Orchestration"
+        MD[Mediator Service<br/>Django/Python<br/>Aggregation]
+    end
+
+    subgraph "Data Layer"
+        DB[(PostgreSQL<br/>Database)]
+        FS[File Storage<br/>Videos & Audio]
+    end
+
+    MA -->|REST API| GW
+    GW -->|HTTP| VS
+    GW -->|HTTP| AS
+    GW -->|HTTP| MD
+
+    VS -->|landmarks| DB
+    VS -->|video| FS
+    AS -->|audio features| DB
+    AS -->|audio file| FS
+
+    MD -->|orchestrate| EC
+    MD -->|orchestrate| AM
+    MD -->|orchestrate| HM
+    MD -->|orchestrate| PA
+    MD -->|orchestrate| VA
+    MD -->|orchestrate| FW
+
+    EC -->|read landmarks| DB
+    AM -->|read landmarks| DB
+    HM -->|read landmarks| DB
+    PA -->|read audio features| DB
+    VA -->|read audio features| DB
+    FW -->|read audio file| FS
+
+    EC -->|results| DB
+    AM -->|results| DB
+    HM -->|results| DB
+    PA -->|results| DB
+    VA -->|results| DB
+    FW -->|results| DB
+
+    MD -->|aggregated results| DB
+```
+
+## 3. Deployment Diagram - Docker Compose Environment
+
+```mermaid
+graph TB
+    subgraph "User Device"
+        PHONE[Flutter Mobile App<br/>iOS/Android]
+    end
+
+    subgraph "Docker Compose Environment"
+        subgraph "Port 8080"
+            GW_C[api-gateway<br/>Kotlin/Spring Boot<br/>Container]
+        end
+
+        subgraph "Port 8001"
+            VS_C[video-analysis<br/>Python/Django<br/>MediaPipe<br/>Container]
+        end
+
+        subgraph "Port 8002"
+            AS_C[audio-analysis<br/>Python/Django<br/>librosa<br/>Container]
+        end
+
+        subgraph "Port 8003"
+            EC_C[eye-contact-analysis<br/>Python/Django<br/>Container]
+        end
+
+        subgraph "Port 8004"
+            AM_C[arm-movement-analysis<br/>Python/Django<br/>Container]
+        end
+
+        subgraph "Port 8005"
+            HM_C[hip-movement-analysis<br/>Python/Django<br/>Container]
+        end
+
+        subgraph "Port 8006"
+            PA_C[pitch-analysis<br/>Python/Django<br/>Container]
+        end
+
+        subgraph "Port 8007"
+            VA_C[volume-analysis<br/>Python/Django<br/>Container]
+        end
+
+        subgraph "Port 8008"
+            FW_C[filler-words-analysis<br/>Python/Django<br/>Whisper<br/>Container]
+        end
+
+        subgraph "Port 8009"
+            MD_C[mediator-service<br/>Python/Django<br/>Container]
+        end
+
+        subgraph "Port 5432"
+            DB_C[(postgres<br/>PostgreSQL 15<br/>Container)]
+        end
+
+        VOL[Docker Volume<br/>uploads/]
+    end
+
+    PHONE -->|HTTPS| GW_C
+
+    GW_C -->|HTTP| VS_C
+    GW_C -->|HTTP| AS_C
+    GW_C -->|HTTP| MD_C
+
+    VS_C -->|SQL| DB_C
+    AS_C -->|SQL| DB_C
+    EC_C -->|SQL| DB_C
+    AM_C -->|SQL| DB_C
+    HM_C -->|SQL| DB_C
+    PA_C -->|SQL| DB_C
+    VA_C -->|SQL| DB_C
+    FW_C -->|SQL| DB_C
+    MD_C -->|SQL| DB_C
+
+    VS_C -->|read/write| VOL
+    AS_C -->|read/write| VOL
+    FW_C -->|read| VOL
+
+    MD_C -->|HTTP| EC_C
+    MD_C -->|HTTP| AM_C
+    MD_C -->|HTTP| HM_C
+    MD_C -->|HTTP| PA_C
+    MD_C -->|HTTP| VA_C
+    MD_C -->|HTTP| FW_C
+```
+
+## 4. Data Flow Diagram - Celkový tok spracovania
+
+```mermaid
+flowchart TD
+    START([Používateľ nahrá video])
+
+    START --> UPLOAD[Mobile App uploadne<br/>video cez API Gateway]
+    UPLOAD --> STORE[API Gateway uloží video<br/>do file storage<br/>a metadata do DB]
+
+    STORE --> VIDEO_PROC[Video Analysis Service<br/>spracuje video]
+    VIDEO_PROC --> MEDIAPIPE[MediaPipe extrahuje<br/>33 landmarks pre každý frame]
+    MEDIAPIPE --> SAVE_LANDMARKS[Landmarks sa uložia<br/>do DB s timestamps]
+
+    STORE --> AUDIO_PROC[Audio Analysis Service<br/>spracuje zvuk]
+    AUDIO_PROC --> EXTRACT_AUDIO[ffmpeg extrahuje<br/>audio z videa]
+    EXTRACT_AUDIO --> AUDIO_FEAT[librosa extrahuje<br/>pitch, RMS, hlasitosť]
+    AUDIO_FEAT --> SAVE_AUDIO[Audio features sa uložia<br/>do DB s timestamps]
+
+    SAVE_LANDMARKS --> MEDIATOR[Mediator Service<br/>spustí paralelné analýzy]
+    SAVE_AUDIO --> MEDIATOR
+
+    MEDIATOR --> EYE[Eye Contact Analysis<br/>načíta landmarks očí z DB]
+    MEDIATOR --> ARM[Arm Movement Analysis<br/>načíta landmarks rúk z DB]
+    MEDIATOR --> HIP[Hip Movement Analysis<br/>načíta landmarks bokov z DB]
+    MEDIATOR --> PITCH[Pitch Analysis<br/>načíta pitch data z DB]
+    MEDIATOR --> VOL[Volume Analysis<br/>načíta RMS data z DB]
+    MEDIATOR --> FILLER[Filler Words Analysis<br/>načíta audio file<br/>Whisper STT transkripcia]
+
+    EYE --> EYE_RES[Detekcia očného kontaktu<br/>looking away events]
+    ARM --> ARM_RES[Detekcia pohybov rúk<br/>insufficient movement<br/>repetitive gestures]
+    HIP --> HIP_RES[Detekcia tancovania<br/>hip swaying]
+    PITCH --> PITCH_RES[Detekcia monotónnosti<br/>pitch variance]
+    VOL --> VOL_RES[Detekcia nízkej hlasitosti<br/>volume levels]
+    FILLER --> FILLER_RES[Detekcia výplňových slov<br/>ehm, um, like, teda]
+
+    EYE_RES --> SAVE_RES[Výsledky analýz<br/>sa uložia do DB]
+    ARM_RES --> SAVE_RES
+    HIP_RES --> SAVE_RES
+    PITCH_RES --> SAVE_RES
+    VOL_RES --> SAVE_RES
+    FILLER_RES --> SAVE_RES
+
+    SAVE_RES --> AGGREGATE[Mediator agreguje<br/>všetky výsledky]
+    AGGREGATE --> FINAL[Finálne výsledky<br/>uložené v DB]
+
+    FINAL --> DISPLAY[Mobile App načíta<br/>výsledky cez API Gateway]
+    DISPLAY --> VIZ[Zobrazenie grafov<br/>a vizualizácií<br/>používateľovi]
+
+    VIZ --> END([Koniec])
+```
+
+## 5. Sequence Diagram - Whisper Filler Words Analysis
+
+```mermaid
+sequenceDiagram
+    participant User as Používateľ
+    participant App as Mobile App
+    participant GW as API Gateway
+    participant Med as Mediator Service
+    participant FW as Filler Words<br/>Analysis MS
+    participant Whisper as OpenAI Whisper
+    participant DB as Database
+    participant FS as File Storage
+
+    User->>App: Nahrá video prezentácie
+    App->>GW: POST /upload (video)
+    GW->>FS: Ulož video súbor
+    GW->>FS: Extrahuj audio (ffmpeg)
+    GW->>DB: Ulož metadata (recording_id)
+    GW-->>App: 200 OK (recording_id)
+
+    App->>GW: POST /analyze (recording_id)
+    GW->>Med: Spusti analýzu
+
+    Med->>FW: POST /analyze-filler-words/{id}
+    FW->>DB: Načítaj audio_file_path
+    DB-->>FW: /uploads/audio_123.wav
+    FW->>FS: Načítaj audio súbor
+    FS-->>FW: audio data
+
+    FW->>Whisper: Transkribuj audio<br/>(model: base)
+    Note over Whisper: Speech-to-Text<br/>s word timestamps
+    Whisper-->>FW: transcript + timestamps
+
+    FW->>FW: Detekuj výplňové slová<br/>(ehm, um, teda, like)
+    FW->>FW: Vypočítaj štatistiky<br/>(fillers/min, distribution)
+
+    FW->>DB: Ulož výsledky analýzy
+    FW-->>Med: 200 OK (results)
+
+    Med->>Med: Agreguj všetky výsledky
+    Med->>DB: Ulož agregované výsledky
+    Med-->>GW: 200 OK
+    GW-->>App: 200 OK
+
+    App->>App: Zobraz výsledky
+    App-->>User: Vizualizácia výplňových slov
+```
+
+---
+
+## Použitie diagramov v LaTeX
+
+Pre LaTeX dokument môžeš tieto Mermaid diagramy:
+1. Exportovať ako PNG pomocou Mermaid Live Editor (https://mermaid.live)
+2. Alebo použiť `mermaid-cli` pre automatickú konverziu
+3. Vložiť do dokumentu pomocou `\includegraphics`
+
+Príklad:
+```latex
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{assets/images/use_case_diagram.png}
+\caption{Use Case diagram - Celková analýza prezentácie}
+\label{fig:usecase}
+\end{figure}
+```
