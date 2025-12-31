@@ -20,8 +20,8 @@ Jednoduchý proces používania teda vyzerá nasledovne:
 Pred samotnou implementáciou som definoval niekoľko funkčných požiadaviek, ktoré by aplikácia mala spĺňať. Pri rozhodovaní, ktoré údaje budem detekovať som sa odrážal od môjho výskumu a porovnaní existujúcich riešení, ktorý bol bližšie popísaný v kapitole analýzy problematiky.
 \begin{itemize}
     \item \textbf{Detekcia očného kontaktu}: Systém musí vedieť rozpoznať, či sa prezentujúci pozerá smerom do publika a nie je k nemu otočený chrbtom. Pre detekciu tohto javu sa využije viditeľnosť očí voči kamere, ktorá bude pred prezentujúcim.
-    \item \textbf{Detekcia pohybu bokov}: Systém musí vedieť detekovať negatívny jav, nazývaný ako tancovanie (pohyb bokov zo strany na stranu). Detekcia bude počítaná akceleráciou stredu medzi bokmi, a bude detekovať kývanie z prava do ľava a z predu do zadu.
-    \item \textbf{Detekcia pohybov rúk}: Systém musí vedieť detekovať nedostatočné pohyby rúk v prezentácii. Taktiež počítaná sledovaním akcelerácie rúk. Zároveň bude systém sledovať opakujúce sa gestá.
+    \item \textbf{Detekcia pohybu bokov}: Systém musí vedieť detekovať negatívny jav, nazývaný ako tancovanie (pohyb bokov zo strany na stranu). Detekcia bude počítaná akceleráciou stredu medzi bokmi, a bude detekovať kývanie z prava do ľava.
+    \item \textbf{Detekcia pohybov rúk}: Systém musí vedieť detekovať nedostatočné pohyby rúk v prezentácii. Taktiež počítaná sledovaním akcelerácie rúk. Zároveň bude systém sledovať, či nemá používateľ ruky za chrbátom.
     \item \textbf{Detekcia monotónnosti}: Systém musí vedieť detekovať monotónny hlas. Monotónnosť hlasu je definovaná ako konštantný tón hlasu počas prezentácie. Bude sa teda sledovať zmena tónu hlasu.
     \item \textbf{Detekcia hlasitosti}: Systém musí vedieť detekovať nízku hlasitosť prezentujúceho.
     \item \textbf{Detekcia výplňových slov}: Systém musí vedieť detekovať výplňové slová.
@@ -45,7 +45,7 @@ V nasledujúcich podkapitolách detailne popíšem tri najdôležitejšie prípa
 
 \begin{figure}[H]
     \begin{centering}
-        \includegraphics[width=\textwidth]{assets/images/solution/global_UC_diag.png}
+        \includegraphics[width=\textwidth]{assets/images/solution/global_UC_diag}
         \par\end{centering}
     \caption{Diagram prípadov použitia \label{fig:globalUcDiag}}
 \end{figure}
@@ -129,19 +129,67 @@ Nakoľko som počas analýzy zistil, že nevhodných javov ktoré je možné det
 
 \begin{itemize}
     \item \textbf{Mobilná aplikácia (Flutter)} - používateľské rozhranie pre nahrávanie videí a zobrazenie výsledkov analýzy
-    \item \textbf{API Gateway (Spring Boot/Kotlin)} - vstupný bod systému a správa HTTP requestov
-    \item \textbf{Video Analysis Service (Django/Python)} - extrakcia landmarks pomocou MediaPipe Pose a spracovania video súborov
-    \item \textbf{Audio Analysis Service (Django/Python)} - extrakcia zvukovej stopy z videa, spolu s úpravou vzorkovacej rýchlosti a normalizácie
-    \item \textbf{Eye Contact Analysis Service (Django/Python)} - analýza očného kontaktu a miesta, kde sa používateľ pozeral
-    \item \textbf{Arm Movement Analysis Service (Django/Python)} - analýza gestikulácie
-    \item \textbf{Hip Movement Analysis Service (Django/Python)} - analýza pohybov bokov
-    \item \textbf{Filler Words Analysis Service (Django/Python)} - analýza používania výplňových slov
-    \item \textbf{Pitch Analysis Service (Django/Python)} - analýza výšky hlasu a detekovanie monotónnosti
-    \item \textbf{Volume Analysis Service (Django/Python)} - analýza hlasitosti hlasu
-    \item \textbf{Mediator Service (Django/Python)} - orchestrácia paralelného spracovania analýz a agregácia výsledkov
+    \item \textbf{API Gateway (Spring Boot/Kotlin)} - vstupný bod systému a správa HTTP requestov. Vrámci tohto komponentu sa zároveň budú videá ukládať do lokálneho úložiska, aby sa predišlo preposielaniu veľkých videí cez sieť medzi mikroslužbami.
+    \item \textbf{Video Processing Service (Django/Python)} - extrakcia landmarks pomocou MediaPipe Pose a spracovania video súborov
+    \item \textbf{Audio Processing Service (Django/Python)} - extrakcia zvukovej stopy z videa, spolu s úpravou vzorkovacej rýchlosti a normalizácie
+    \item \textbf{Eye Contact Analysis Service (Django/Python)} - analýza očného kontaktu a miesta, kde sa používateľ pozeral. Analýza bude obsahovať:
+    \begin{itemize}
+        \item Heatmapu, kde sa používateľ pozeral
+        \item Časové vzorky videa, kedy sa nepozeral do publika
+        \item Časové vzorky, kedy sa príliš dlho pozeral na jedno miesto
+        \item Analýza časového radu, kedy sa výrazne zvýšili negatívne javy
+    \end{itemize}
+    \item \textbf{Arm Movement Analysis Service (Django/Python)} - analýza gestikulácie, ktorá bude obsahovať:
+    \begin{itemize}
+        \item Časové vzorky, kedy používateľ dlho nepoužíval gestikuláciu
+        \item Časové vzorky, kedy používateľ spravil príliš rýchly pohyb rukami
+        \item Časové vzorky, kedy mal používateľ ruky za chrbátom
+        \item Analýza časového radu, kedy sa výrazne zvýšil alebo znížil trend alebo priemer používania gestikulácie
+    \end{itemize}
+    \item \textbf{Hip Movement Analysis Service (Django/Python)} - analýza pohybov bokov, ktorá bude obsahovať:
+    \begin{itemize}
+        \item Časové vzorky, kedy používateľ "tancoval"
+    \end{itemize}
+    \item \textbf{Filler Words Analysis Service (Django/Python)} - analýza používania výplňových slov, ktorá bude obsahovať:
+    \begin{itemize}
+        \item Jednoduché celkové štatistiky výplňových slov
+        \item Analýza časového radu, kedy sa výrazne zvýšil alebo znížil trend alebo priemer používania výplňových slov
+    \end{itemize}
+    \item \textbf{Pitch Analysis Service (Django/Python)} - analýza výšky hlasu (trendy) a detekovanie monotónnosti
+    \item \textbf{Volume Analysis Service (Django/Python)} - analýza hlasitosti hlasu, spolu s analýzou časových radov pre trendy
+    \item \textbf{Mediator Service (Django/Python)} - orchestrácia paralelného spracovania analýz a spájanie výsledkov
     \item \textbf{Databáza (PostgreSQL/TimescaleDB)} - ukladanie pozícií tela, natočených videí a analýz
-    \item \textbf{Súborové úložisko} - ukladanie nahratých video súborov
+    \item \textbf{Súborové úložisko} - ukladanie nahratých video súborov, spolu s príslušnými zvukovými súbormi
 \end{itemize}
+
+\subsection{Mapovanie požiadaviek na komponenty}
+
+Pre prehľadnosť uvádzam tabuľku, ktorá mapuje funkčné požiadavky na konkrétne mikroslužby zodpovedné za ich implementáciu.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Požiadavka} & \textbf{Zodpovedná mikroslužba} \\
+\hline
+\specialrule{1.2pt}{0pt}{0pt}
+Detekcia očného kontaktu a sledovanie smeru pohľadu & Eye Contact Analysis Service \\ \hline
+Detekcia pohybu bokov (tancovanie) & Hip Movement Analysis Service \\ \hline
+Detekcia pohybov rúk a gestikulácie & Arm Movement Analysis Service \\ \hline
+Detekcia monotónnosti hlasu & Pitch Analysis Service \\ \hline
+Detekcia hlasitosti a dynamiky hlasu & Volume Analysis Service \\ \hline
+Detekcia výplňových slov v reči & Filler Words Analysis Service \\ \hline
+Detekcia kritických bodov zmien v časových radoch & Všetky analytické mikroslužby (segmentácia) \\ \hline
+Generovanie komplexných výsledkov a odporúčaní & Mediator Service \\ \hline
+Extrakcia kľúčových bodov tela z videa & Video Processing Service \\ \hline
+Extrakcia a normalizácia audio signálu & Audio Processing Service \\ \hline
+\end{tabularx}
+\caption{Mapovanie funkčných požiadaviek na komponenty systému}
+\label{tab:requirementsMapping}
+\end{table}
+
+\subsection{Komonentový diagram}
+Pre celkový obraz systému som pripravil nasledujúci komponentový diagram, ktorý zobrazuje všetky vyššie spomínané kopmonenty.
 
 \begin{figure}[H]
     \begin{centering}
@@ -150,22 +198,22 @@ Nakoľko som počas analýzy zistil, že nevhodných javov ktoré je možné det
     \caption{Komponent diagram riešenia \label{fig:componentDiag}}
 \end{figure}
 
-Pre pochopenie som vytvoril sekvenčný diagram, ktorý znázorňuje interakciu používateľa so systémom, kde chce detekovať konkrétne pohyb rúk.
+Pre pochopenie som vytvoril sekvenčný diagram, ktorý znázorňuje interakciu používateľa so systémom pri nahrávaní nového videa a jeho automatickým spracovaním na strane servera. Dôležité v tomto diagrame je si všimnúť asynchrónne volania medzi jednotlivými mikroslužbami. Výsledkom tohto sekvenčneho diagramu je, že video je uložené v úložisku na serveri a zároveň sú v databáze uložené všetky landmarky extrahované z MediaPipe. Zároveň je v úložisku vytvorený audio súbor patriaci videu, normalizovaný a so vzorkovacou rýchlosťou 16 tisíc.
 
 \begin{figure}[H]
     \begin{centering}
-        \includegraphics[width=\textwidth, height=12cm]{assets/images/solution/detekciaKonkretne.png}
+        \includegraphics[width=\textwidth]{assets/images/solution/seq_processing.png}
         \par\end{centering}
-    \caption{Príklad interakcie s aplikáciou v móde trénovania konkrétneho javu \label{fig:sequenceSingleDetect}}
+    \caption{Natočenie a spracovanie videa \label{fig:sequenceVideoProcessing}}
 \end{figure}
 
-Pri detekcii všetkých negatívnych javov pribúda ešte mediator, ktorý po nahratí videa spustí detekciu na všetkých mikroslužbách a vytvorí komplexnú odpoveď so všetkými údajmi.
+Po spracovaní videa bude používateľ informovaný o dokončení spracovania. Toto spracovanie totiž bude trvať istý čas a nakoľko prezentácie čakám v rozsahu 10-30 minút, bude musieť systém istý čas pracovať. Po spracovaní videa a zvuku môže používateľ potom analyzovať konkrétne javy prezentácie. Tieto analýzy už budú synchrónne, pretože keď sme video predspracovali, najdlhšia časť analýzy je hotová. Nasledujúci sekvenčný diagram už zobrazuje ako bude používateľ analyzovať konkrétne javy, pre príklad som vybral analýzu očného kontaktu.
 
 \begin{figure}[H]
     \begin{centering}
-        \includegraphics[width=\textwidth]{assets/images/solution/detectionAll.png}
+        \includegraphics[width=\textwidth]{assets/images/solution/seq_analyze.png}
         \par\end{centering}
-    \caption{Príklad interakcie s aplikáciou v móde celkovej analýzy\label{fig:sequenceAllDetect}}
+    \caption{Príklad analyzovania očného kontaktu\label{fig:sequenceEyeDetect}}
 \end{figure}
 
 \section{Použité technológie}
@@ -182,7 +230,7 @@ Pre serverovú časť využívam framework \textbf{Django} s programovacím jazy
 
 \subsection{API Gateway}
 
-Pre API Gateway využívam \textbf{Spring Boot} s programovacím jazykom \textbf{Kotlin}. Spring Boot poskytuje robustnú platformu pre správu HTTP requestov, multipart file upload (až do 500MB) a orchestráciu volania mikroslužieb. API Gateway slúži ako jediný vstupný bod (single entry point) pre mobilnú aplikáciu.
+Pre API Gateway využívam \textbf{Spring Boot} s programovacím jazykom \textbf{Kotlin}. Spring Boot poskytuje robustnú platformu pre správu HTTP requestov, multipart file upload pre videá a orchestráciu volania mikroslužieb. API Gateway slúži ako jediný vstupný bod pre mobilnú aplikáciu.
 
 \subsection{Počítačové videnie - MediaPipe}
 
@@ -192,10 +240,12 @@ Nasledujúci obrázok zobrazuje všetky kľúčové body, ktoré MediaPipe Pose 
 
 \begin{figure}[H]
     \begin{centering}
-        \includegraphics[width=\textwidth]{assets/images/solution/poseDetecion.png}
+        \includegraphics[width=\textwidth]{assets/images/solution/pose_detection.png}
         \par\end{centering}
     \caption{33 kľúčových bodov detekovaných MediaPipe Pose\cite{mediapipe} \label{fig:mediapipeLandmarks}}
 \end{figure}
+
+V prípade, že by chcel používateľ spustiť celkovú analýzu prezentácie, požiadavka pôjde na mediátor a ten by spustil analýzu vo všetkých službách, výsledky spojil a vŕatil by tieto údaje.
 
 \subsection{Spracovanie zvuku}
 
