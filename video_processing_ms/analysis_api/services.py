@@ -148,52 +148,6 @@ class VideoProcessingService:
             print(f"Error saving visualization: {e}")
             return None
 
-    def extract_audio_from_video(self, video_path: str) -> Optional[str]:
-        try:
-            try:
-                subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                print("WARNING: ffmpeg not found in PATH. Skipping audio extraction.")
-                return None
-
-            print("Extracting audio from video...")
-            video_file = Path(video_path)
-            audio_path = video_file.parent / f"{video_file.stem}.wav"
-
-            sample_rate = str(settings.AUDIO_EXTRACTION_CONFIG['sample_rate'])
-
-            result = subprocess.run(
-                ['ffmpeg', '-i', video_path, '-vn', '-acodec', 'pcm_s16le',
-                 '-ar', sample_rate, '-ac', '1', '-y', str(audio_path)],
-                capture_output=True,
-                text=True
-            )
-
-            if result.returncode != 0:
-                print(f"ffmpeg error: {result.stderr}")
-                return None
-
-            print(f"WAV file saved at: {audio_path}")
-            return str(audio_path)
-
-        except Exception as e:
-            print(f"Error extracting audio: {e}")
-            return None
-
-    def trigger_audio_analysis(self, recording_id: int):
-        try:
-            audio_service_url = settings.AUDIO_ANALYSIS_SERVICE_URL
-            endpoint = f"{audio_service_url}/api/v1/analyze/audio/{recording_id}/"
-            requests.post(
-                endpoint,
-                timeout=5
-            )
-            print(f"Audio analysis triggered for recording {recording_id}")
-        except requests.exceptions.Timeout:
-            print(f"Audio analysis request sent (async) for recording {recording_id}")
-        except Exception as e:
-            print(f"Warning: Failed to trigger audio analysis: {e}")
-
     def process_video(self, video_id: int) -> Dict[str, Any]:
         video_path = self.get_video_path(video_id)
         if not video_path:
@@ -224,8 +178,6 @@ class VideoProcessingService:
                     'success': False,
                     'error': f'Video duration ({duration:.2f}s) exceeds maximum ({self.max_duration}s)'
                 }
-
-            wav_path = self.extract_audio_from_video(video_path)
 
             frame_skip = int(fps * self.frame_interval)
             if frame_skip < 1:
@@ -281,9 +233,6 @@ class VideoProcessingService:
                 )
 
                 insert_landmarks_batch(frame_data_id, frame_data['landmarks'])
-
-            if wav_path:
-                self.trigger_audio_analysis(video_id)
 
             print(f"Frame data saved to PostgreSQL for recording ID: {video_id}")
 

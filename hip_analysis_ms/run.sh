@@ -13,5 +13,5 @@ set -a
 source "$ENV_FILE"
 set +a
 
-echo Starting Hit analysis microservice at ${EYE_CONTACT_PORT:-8007}
-python manage.py runserver ${EYE_CONTACT_PORT:-8007}
+echo Starting Hip Analysis Microservice at ${HIP_ANALYSIS_PORT:-8007}
+python manage.py runserver ${HIP_ANALYSIS_PORT:-8007}

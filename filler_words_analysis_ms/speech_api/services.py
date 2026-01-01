@@ -10,7 +10,7 @@ import numpy as np
 
 from django.conf import settings
 
-from .db_connection import get_audio_file_path, get_recording_metadata
+from .db_connection import get_recording_by_id
 
 
 class FillerWordsAnalysisService:
@@ -22,7 +22,6 @@ class FillerWordsAnalysisService:
         print(f"Loaded configuration: {self.config}")
 
     def transcribe_audio(self, audio_path: str) -> Optional[Dict[str, Any]]:
-        """Transcribe audio file using OpenAI Whisper"""
         try:
             import whisper
 
@@ -47,7 +46,6 @@ class FillerWordsAnalysisService:
             return None
 
     def detect_filler_words(self, transcript: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Detect filler words in the transcript"""
         if not transcript or 'segments' not in transcript:
             return []
 
@@ -87,7 +85,6 @@ class FillerWordsAnalysisService:
         filler_occurrences: List[Dict[str, Any]],
         duration: float
     ) -> Dict[str, Any]:
-        """Calculate statistics about filler word usage"""
 
         if not filler_occurrences:
             return {
@@ -140,7 +137,6 @@ class FillerWordsAnalysisService:
         duration: float,
         bin_size: float = 10.0
     ) -> Tuple[List[float], List[int]]:
-        """Create timeline bins for visualization"""
 
         if duration <= 0:
             return [], []
@@ -165,7 +161,6 @@ class FillerWordsAnalysisService:
         recording_id: int,
         output_dir: Optional[str] = None
     ):
-        """Create a visualization of filler word usage over time"""
 
         if output_dir is None:
             output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
@@ -237,19 +232,35 @@ class FillerWordsAnalysisService:
         print(f"Filler words timeline visualization saved to: {output_path}")
 
     def analyze_filler_words(self, recording_id: int) -> Dict[str, Any]:
-        """Main analysis method"""
         print(f"Analyzing filler words for recording ID: {recording_id}")
 
-        # Get recording metadata
-        metadata = get_recording_metadata(recording_id)
-        if not metadata:
-            return {'success': False, 'error': 'Recording not found'}
+        # Get recording information
+        recording = get_recording_by_id(recording_id)
+        if not recording:
+            return {'success': False, 'error': f'Recording with ID {recording_id} not found'}
 
-        audio_path = metadata.get('audio_file_path')
-        if not audio_path or not os.path.exists(audio_path):
-            return {'success': False, 'error': f'Audio file not found: {audio_path}'}
+        # Construct path to processed audio
+        video_filename = recording['filename']
+        processed_filename = Path(video_filename).stem + '_processed.wav'
+        processed_path = Path(settings.VIDEO_STORAGE_PATH) / processed_filename
 
-        duration = metadata.get('duration', 0)
+        if not processed_path.exists():
+            return {
+                'success': False,
+                'error': f'Processed audio file not found at: {processed_path}'
+            }
+
+        audio_path = str(processed_path)
+        print(f"[DEBUG] Using processed audio from: {audio_path}")
+
+        # Get duration from audio file
+        try:
+            import librosa
+            audio, sr = librosa.load(audio_path, sr=None)
+            duration = len(audio) / sr
+            print(f"[DEBUG] Audio duration: {duration:.2f}s (sample rate: {sr} Hz)")
+        except Exception as e:
+            return {'success': False, 'error': f'Failed to load audio file: {e}'}
 
         # Check minimum duration
         min_duration = self.config['min_speech_duration']

@@ -27,6 +27,7 @@ def analyze_pitch(request, recording_id):
                 'success': True,
                 'recording_id': result['recording_id'],
                 'pitch_frames': result['pitch_frames'],
+                'voiced_frames': result['voiced_frames'],
                 'pitch_mean': result['pitch_mean'],
                 'pitch_min': result['pitch_min'],
                 'pitch_max': result['pitch_max'],

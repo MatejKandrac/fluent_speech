@@ -13,5 +13,5 @@ set -a
 source "$ENV_FILE"
 set +a
 
-echo Starting Arm Analysis Service
-python manage.py runserver ${ARM_MOVEMENT_PORT:8002}
+echo Starting Arm Movement Analysis Microservice at ${ARM_MOVEMENT_PORT:-8002}
+python manage.py runserver ${ARM_MOVEMENT_PORT:-8002}

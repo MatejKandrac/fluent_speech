@@ -3,6 +3,9 @@ from typing import Optional
 import subprocess
 
 import librosa
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
 import numpy as np
 from django.conf import settings
 
@@ -12,6 +15,35 @@ from .db_connection import get_recording_by_id
 class AudioAnalysisService:
     def __init__(self):
         pass
+
+    def save_waveform_plot(self, audio: np.ndarray, sr: int, recording_id: str) -> Optional[str]:
+        try:
+            debug_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
+            debug_dir.mkdir(parents=True, exist_ok=True)
+
+            # Calculate time axis
+            duration = len(audio) / sr
+            time = np.linspace(0, duration, len(audio))
+
+            # Create figure
+            fig, ax = plt.subplots(figsize=(14, 6))
+            ax.plot(time, audio, linewidth=0.5, color='#1f77b4')
+            ax.set_xlabel('Time (s)', fontsize=12)
+            ax.set_ylabel('Amplitude', fontsize=12)
+            ax.set_title(f'Audio Waveform - Sample Rate: {sr} Hz', fontsize=14, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.set_ylim([-1.1, 1.1])
+
+            output_path = debug_dir / 'audio_amplitude.png'
+            plt.savefig(str(output_path), dpi=150, bbox_inches='tight')
+            plt.close(fig)
+
+            print(f"Waveform visualization saved to: {output_path}")
+            return str(output_path)
+
+        except Exception as e:
+            print(f"Error saving waveform visualization: {e}")
+            return None
 
     def extract_audio_from_video(self, video_path: str, output_wav_path: str) -> bool:
         try:
@@ -115,6 +147,10 @@ class AudioAnalysisService:
             import soundfile as sf
             sf.write(str(processed_path), audio_final, target_sr)
             print(f"Processed audio saved to: {processed_path}")
+
+            # Generate visualization
+            if settings.DEBUG:
+                self.save_waveform_plot(audio_final, target_sr, str(recording_id))
 
             return {
                 'success': True,

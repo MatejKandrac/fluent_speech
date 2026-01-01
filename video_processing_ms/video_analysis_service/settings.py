@@ -70,8 +70,4 @@ VIDEO_PROCESSING_CONFIG = {
     'max_video_duration': 600,  # Maximum video duration in seconds (10 minutes)
 }
 
-AUDIO_EXTRACTION_CONFIG = {
-    'sample_rate': int(os.getenv('AUDIO_SAMPLE_RATE', '22050')),  # Audio sample rate in Hz
-}
-
 AUDIO_ANALYSIS_SERVICE_URL = os.getenv('AUDIO_ANALYSIS_SERVICE_URL', 'http://localhost:8004')

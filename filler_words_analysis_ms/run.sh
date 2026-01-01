@@ -13,5 +13,5 @@ set -a
 source "$ENV_FILE"
 set +a
 
-echo Starting Filler words microservice at ${EYE_CONTACT_PORT:-8008}
-python manage.py runserver ${EYE_CONTACT_PORT:-8008}
+echo Starting Filler Words Analysis Microservice at ${FILLER_WORDS_PORT:-8008}
+python manage.py runserver ${FILLER_WORDS_PORT:-8008}

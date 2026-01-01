@@ -13,5 +13,5 @@ set -a
 source "$ENV_FILE"
 set +a
 
-echo Starting Pich Analysis Microservice at ${PITCH_AUDIO_ANALYSIS_PORT:-8005}
-python manage.py runserver ${PITCH_AUDIO_ANALYSIS_PORT:-8005}
+echo Starting Pitch Analysis Microservice at ${PITCH_ANALYSIS_PORT:-8005}
+python manage.py runserver ${PITCH_ANALYSIS_PORT:-8005}

@@ -10,6 +10,8 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS_FILLER', 'localhost,127.0.0.1').split(',')
 
 INSTALLED_APPS = [
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
     'rest_framework',
     'speech_api',
 ]
@@ -30,6 +32,8 @@ POSTGRES_CONFIG = {
     'user': os.getenv('DB_USERNAME', ''),
     'password': os.getenv('DB_PASSWORD', ''),
 }
+
+VIDEO_STORAGE_PATH = os.getenv('VIDEO_STORAGE_PATH', 'D:/VideoData')
 
 TIME_ZONE = 'UTC'
 USE_I18N = True

@@ -13,5 +13,5 @@ set -a
 source "$ENV_FILE"
 set +a
 
-echo Starting Eye contact microservice
-python manage.py runserver ${EYE_CONTACT_PORT:8003}
+echo Starting Eye Contact Analysis Microservice at ${EYE_CONTACT_PORT:-8003}
+python manage.py runserver ${EYE_CONTACT_PORT:-8003}

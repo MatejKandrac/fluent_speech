@@ -58,53 +58,16 @@ def return_db_connection(conn):
     PostgreSQLConnection().return_connection(conn)
 
 
-def get_audio_file_path(recording_id: int) -> Optional[str]:
-    """Get the path to the audio file for a recording"""
+def get_recording_by_id(recording_id: int) -> Optional[dict]:
+    """Get recording by ID"""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                """
-                SELECT audio_file_path
-                FROM recording
-                WHERE id = %s
-                """,
+                "SELECT id, filename, created_at FROM recording WHERE id = %s",
                 (recording_id,)
             )
             result = cursor.fetchone()
-
-            if result and result['audio_file_path']:
-                return result['audio_file_path']
-            return None
-
-    finally:
-        return_db_connection(conn)
-
-
-def get_recording_metadata(recording_id: int) -> Optional[Dict[str, Any]]:
-    """Get recording metadata including duration"""
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                """
-                SELECT r.id, r.audio_file_path, r.duration, r.created_at, r.name
-                FROM recording r
-                WHERE r.id = %s
-                """,
-                (recording_id,)
-            )
-            result = cursor.fetchone()
-
-            if result:
-                return {
-                    'recording_id': result['id'],
-                    'audio_file_path': result['audio_file_path'],
-                    'duration': float(result['duration']) if result['duration'] else None,
-                    'created_at': result['created_at'].isoformat() if result['created_at'] else None,
-                    'name': result['name']
-                }
-            return None
-
+            return dict(result) if result else None
     finally:
         return_db_connection(conn)

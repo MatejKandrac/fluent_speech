@@ -26,13 +26,46 @@ class PitchAnalysisService:
             duration_per_frame = hop_length / sr
             time = np.arange(len(pitch)) * duration_per_frame
 
-            fig, ax = plt.subplots(figsize=(12, 6))
-            ax.plot(time, pitch, linewidth=1, color='green')
-            ax.set_xlabel('Time (s)')
-            ax.set_ylabel('Frequency (Hz)')
-            ax.set_title(f'Pitch - Mean: {pitch.mean():.2f} Hz - Sample Rate: {sr} Hz')
+            # Separate voiced (non-NaN) and unvoiced (NaN) segments
+            voiced_mask = ~np.isnan(pitch)
+            unvoiced_mask = np.isnan(pitch)
+
+            # Calculate mean only from voiced segments
+            voiced_pitch = pitch[voiced_mask]
+            pitch_mean = voiced_pitch.mean() if len(voiced_pitch) > 0 else 0
+
+            fig, ax = plt.subplots(figsize=(14, 6))
+
+            # Plot pitch - matplotlib will automatically break the line at NaN values
+            ax.plot(time, pitch, linewidth=1.5, color='green',
+                   label=f'Voiced (mean: {pitch_mean:.1f} Hz)')
+
+            # Add light gray shaded regions for unvoiced/silent segments
+            # Find continuous unvoiced regions
+            unvoiced_indices = np.where(unvoiced_mask)[0]
+            if len(unvoiced_indices) > 0:
+                # Group consecutive indices
+                splits = np.where(np.diff(unvoiced_indices) != 1)[0] + 1
+                unvoiced_groups = np.split(unvoiced_indices, splits)
+
+                # Shade each unvoiced region
+                for group in unvoiced_groups:
+                    if len(group) > 0:
+                        start_time = time[group[0]]
+                        end_time = time[group[-1]] + duration_per_frame
+                        ax.axvspan(start_time, end_time, color='lightgray',
+                                  alpha=0.3, label='Unvoiced/Silent' if group is unvoiced_groups[0] else '')
+
+            ax.set_xlabel('Time (s)', fontsize=12)
+            ax.set_ylabel('Frequency (Hz)', fontsize=12)
+            ax.set_title(f'Pitch Analysis - Sample Rate: {sr} Hz', fontsize=14, fontweight='bold')
             ax.grid(True, alpha=0.3)
-            ax.set_ylim([0, 400])
+            ax.set_ylim([50, 350])
+
+            # Remove duplicate labels in legend
+            handles, labels = ax.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            ax.legend(by_label.values(), by_label.keys(), loc='upper right')
 
             output_path = debug_dir / 'pitch.png'
             plt.savefig(str(output_path), dpi=150, bbox_inches='tight')
@@ -76,25 +109,57 @@ class PitchAnalysisService:
 
             # Extract pitch using YIN algorithm
             hop_length = 800
+            frame_length = 1600
             pitch = librosa.yin(
                 audio, fmin=50, fmax=300, sr=sr,
-                frame_length=1600, hop_length=hop_length
+                frame_length=frame_length, hop_length=hop_length
             )
-            print(f"Pitch extracted: mean={pitch.mean():.2f} Hz, min={pitch.min():.2f}, max={pitch.max():.2f}")
+            print(f"Pitch extracted (raw): mean={pitch.mean():.2f} Hz, min={pitch.min():.2f}, max={pitch.max():.2f}")
 
-            # Save debug plot
-            self.save_pitch_plot(pitch, sr, str(recording_id))
+            # Calculate RMS energy to detect unvoiced/silent segments
+            rms = librosa.feature.rms(y=audio, frame_length=frame_length, hop_length=hop_length)[0]
+
+            # Filter pitch: set to 0 where energy is low or pitch is unreliable
+            energy_threshold = 0.02  # Minimum RMS energy for voiced segments
+            pitch_threshold = 70     # Minimum valid pitch (Hz) - below this is likely error
+
+            # Create mask for valid voiced segments
+            valid_mask = (rms > energy_threshold) & (pitch >= pitch_threshold)
+
+            # Set invalid segments to NaN (creates discontinuous plot)
+            pitch_filtered = pitch.copy()
+            pitch_filtered[~valid_mask] = np.nan
+
+            # Calculate statistics only from voiced segments (non-NaN)
+            voiced_pitch = pitch_filtered[~np.isnan(pitch_filtered)]
+
+            if len(voiced_pitch) > 0:
+                pitch_mean = float(voiced_pitch.mean())
+                pitch_min = float(voiced_pitch.min())
+                pitch_max = float(voiced_pitch.max())
+                pitch_std = float(voiced_pitch.std())
+            else:
+                pitch_mean = 0.0
+                pitch_min = 0.0
+                pitch_max = 0.0
+                pitch_std = 0.0
+
+            print(f"Pitch filtered: voiced_frames={len(voiced_pitch)}/{len(pitch_filtered)}, mean={pitch_mean:.2f} Hz")
+
+            # Save debug plot with filtered pitch
+            self.save_pitch_plot(pitch_filtered, sr, str(recording_id))
 
             # TODO: Save pitch data to database (implement later)
 
             return {
                 'success': True,
                 'recording_id': recording_id,
-                'pitch_frames': len(pitch),
-                'pitch_mean': float(pitch.mean()),
-                'pitch_min': float(pitch.min()),
-                'pitch_max': float(pitch.max()),
-                'pitch_std': float(pitch.std())
+                'pitch_frames': len(pitch_filtered),
+                'voiced_frames': len(voiced_pitch),
+                'pitch_mean': pitch_mean,
+                'pitch_min': pitch_min,
+                'pitch_max': pitch_max,
+                'pitch_std': pitch_std
             }
 
         except Exception as e:

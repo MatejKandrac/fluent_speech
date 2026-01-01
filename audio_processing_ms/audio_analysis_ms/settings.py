@@ -48,7 +48,7 @@ VIDEO_STORAGE_PATH = os.getenv('VIDEO_STORAGE_PATH', 'D:/VideoData')
 
 # Audio Extraction Configuration
 AUDIO_EXTRACTION_CONFIG = {
-    'sample_rate': int(os.getenv('AUDIO_SAMPLE_RATE', '22050')),  # Audio sample rate in Hz
+    'sample_rate': int(os.getenv('AUDIO_SAMPLE_RATE', '16000')),  # Audio sample rate in Hz
 }
 
 TIME_ZONE = 'UTC'
