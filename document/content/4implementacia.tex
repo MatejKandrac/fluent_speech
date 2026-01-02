@@ -51,8 +51,8 @@ Po testoch na videách som sa rozhodol použiť tieto hodnoty parametrov:
     \item \texttt{min\_detection\_confidence}: 0.7
     \item \texttt{min\_tracking\_confidence}: 0.5
     \item \texttt{model\_complexity}: 1
-    \item \textt{frame\_interval}: 0.1
-    \item \textt{max\_video\_duration}: 600 (10 minút)
+    \item \texttt{frame\_interval}: 0.1
+    \item \texttt{max\_video\_duration}: 600 (10 minút)
 \end{itemize}
 
 \subsection{Postup extrakcie}
@@ -106,7 +106,7 @@ Bitová hĺbka definuje presnosť merania amplitúdy zvukového signálu. Použ�
 
 \subsection{Pitch (výška tónu)}
 
-Pitch reprezentuje základnú frekvenciu hlasu (F0).
+Pitch reprezentuje základnú frekvenciu hlasu (F0)\cite{pitchRange}.
 Analýzu využívania výšky hlasu spracúva už mikroslužba \textbf{Pitch Analysis}.
 Pre extrakciu pitch využívam knižnicu librosa a \textbf{YIN algoritmus}, ktorý je robustný voči šumu a poskytuje presné výsledky pre ľudský hlas:
 
@@ -118,7 +118,6 @@ pitches = librosa.yin(
 )
 \end{verbatim}
 
-Rozsah 65-2093 Hz pokrýva celý rozsah ľudského hlasu (mužský hlas ~85-180 Hz, ženský hlas ~165-255 Hz).
 Pre príklad som taktiež pripravil graf zobrazujúci pitch hlasu. Prázdne časti sú tie, kedy výška hlasu nemohla byť
 získaná, napríklad keď prezentujúci mal pauzu.
 
@@ -147,20 +146,16 @@ Pre detekciu hlasitosti používam \textbf{RMS (Root Mean Square) energiu}, ktor
 rms = librosa.feature.rms(y=audio_data, frame_length=2048, hop_length=512)
 \end{verbatim}
 
+Tento údaj ale nestačí. Ak by som sa sústredil iba na RMS a určil by som hranicu, kedy sa rozprávanie považuje za tiché, bolo by moje riešenie závislé na pozíciu mikrofónu, pretože čím bliŽsie by bol mikrofón, tým hlasnejšie by bolo počuť prezentujúceho.
+V aktuálnom stave táto služba zatiaľ získava iba decibely z RMS no pre lepšie riešenie využijem normalizované dáta na dB škálu, takzvané dBFS.
+
+Aktuálna implementácia zobrazuje získanú RMS energiu vo forme jednoduchého grafu.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{assets/images/implementation/volume.png}
     \caption{Príklad hlasitosti získaného zo zvuku}
     \label{fig:volume}
 \end{figure}
-
-Pri analýze hlasitosti sa sústredím na detekciu tichého rozprávania.
-Pre každý frame počítam RMS energiu a normalizujem ju na dB škálu:
-\begin{verbatim}
-volume_db = 20 * log10(rms / reference_level)
-\end{verbatim}
-
-Segmenty s volume\_db < -30 dB sú označené ako príž tiché.
 
 \section{Detekcia výplňových slov}
 
@@ -310,8 +305,34 @@ Kývavý pohyb detekujem pomocou analýzy zmien v X-osi (horizontálny pohyb):
 \begin{enumerate}
     \item Počítam akceleráciu hip\_center\_x
     \item Detetujem lokálne maximá a minimá (zmeny smeru pohybu)
-    \item Ak sa smer pohybu zmení viac ako 5-krát za 10 sekúnd, označím segment
+    \item Ak sa smer pohybu zmení viackrát za pár frame-ov a jeho amplitúda je dostatočne vysoká (aby sa drobné pohyby neregistrovali), označím segment ako kývanie
 \end{enumerate}
+
+Pre príklad som si pripravil video, kde som na začiatku videa úmyselne kýval bokmi.
+Vizualizácia výsledku tejto mikroslužby vyzerá nasledovne.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{assets/images/implementation/hip_movement.png}
+    \caption{Vizualizácia pohybu bokov}
+    \label{fig:hipMovement}
+\end{figure}
+
+\section{Mobilná aplikácia}
+Kľúčovým prvkom mobilnej aplikácie je natočenie a orezanie videa.
+Používateľské rozhranie je teda v tomto stave jednoduché, kde po vybratí možnosti nového videa sa otvorí obrazovka s kamerou.
+Kamera priebežne ukazuje používateľovi, ako by vyzerala extrakcia landmarkov pre jeho aktuálnu polohu. Tým vie pre samotným spustetním videa zistiť, či by detekcia fungovala.
+Po stlačení tlačidla na nahrávanie sa spustí trojsekundový časovač a následne sa spustí video.
+Po skončení nahrávania videa má používateľ možnosť video orezať a tým sa zbaviť časti videa, kedy išiel kameru vypnúť.
+Systém následne umožní používateľovi nahrávku pomenovať a odoslať na server. Neskôr bude pridaná možnosť iba video uložiť.
+Používateľské rozhranie vyzerá pre tento proces nasledovne:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{assets/images/implementation/app.png}
+    \caption{Vizualoizácia pohybu bokov}
+    \label{fig:appFlow}
+\end{figure}
 
 \section{Výzvy a riešenie problémov}
 
@@ -326,13 +347,28 @@ a riešenie by bolo neefektívne.
 
 Po dlhšom rozhodovaní som sa teda rozhodol presunúť logiku extrakcie landmarkov na serverovú časť, a tým som efektívne vyriešil problém.
 
-\subsection{Whisper výkon}
+\subsection{Presnosť whisper}
 
 Pri testovaní whisper modelu som narazil na problém, že jednoduchý model nebol schopný správne detekovať slová.
 Rozhodol som sa preto teda použiť veľký model large-v3, ktorý je omnoho presnejší. V budúcnosti chcem extrakciu transkriptu
 presunúť na osobitnú mikroslužbu, aby momentálne dlhý čas extrakcie nebol pre používateľa nepríjemný.
+Problém ktorý zatiaľ pretrváva je, že výplňové slová ako uhm alebo hmm tento model nedetekuje. Je nutné teda upravovať
+hyperparametre modelu kým to nebude fungovať, poprípade nájsť iný model.
 
-\section{Stav riešenia}
+\subsection{Hlasitosť je závislá na mikrofóne}
+Z hľadiska analýzy hlasitosti je problematická jednoduchá analýza hlasitosti iba pomocou hranice, pretože je závislá
+na vzdialenosti mikrofónu od prezentujúceho. Je preto nutné upraviť spôsob získavania hlasitosti pomocou RMS na lepší ukazovateľ.
+
+Týmto ukazovateľom môže byť bBFS, alebo LUFS, ktorý zjemní tento problém.
+Oba tieto ukazovatele by použili referenčný level a fungovali by relatívne pre video, čím by sa problém čiastočne vyriešil.
+
+\subsection{Ukončovanie videa}
+Pri ukončovaní videa som narazil na problém, že používateľ musel prísť ku kamere a vypnúť aktuálne nahrávanie videa.
+Tento segment videa bol taktiež spracovávaný a to spôsobovalo veľké odchýlky.
+
+Rozhodol som sa pre to implementovať orezávanie videa na konci nahrávania, kde používateľ tento segment orezal.
+
+\section{Stav riešenia a ďalšia práca}
 
 \subsection{Implementované funkčné požiadavky}
 
@@ -340,21 +376,21 @@ presunúť na osobitnú mikroslužbu, aby momentálne dlhý čas extrakcie nebol
 \centering
 \begin{tabular}{|l|c|p{6cm}|}
 \hline
-\textbf{Požiadavka} & \textbf{Stav} & \textbf{Poznámka} \\
+\textbf{Požiadavka} & \textbf{Stav dokončenia} & \textbf{Poznámka} \\
 \hline
-Detekcia očného kontaktu & Áno & Plne funkčné \\
+Detekcia očného kontaktu & 90\% & Plne funkčné, stačí doladiť \\
 \hline
-Detekcia pohybu bokov & Áno & Základná implementácia \\
+Detekcia pohybu bokov & 90\% & Plne funkčné, stačí doladiť \\
 \hline
-Detekcia pohybov rúk & Áno & Plne funkčné \\
+Detekcia pohybov rúk & 90\% & Plne funkčné, stačí doladiť \\
 \hline
-Detekcia monotónnosti & Áno & Plne funkčné \\
+Detekcia monotónnosti & 50\% & Zatiaľ málo otestované, extrakcia funkčná \\
 \hline
-Detekcia hlasitosti & Áno & Plne funkčné \\
+Detekcia hlasitosti & 50\% & Zatiaľ málo otestované, extrakcia funkčná \\
 \hline
-Detekcia výplňových slov & Áno & Whisper implementácia \\
+Detekcia výplňových slov & 50\% & Zatiaľ málo otestované, extrakcia funkčná \\
 \hline
-Detekcia kritických bodov & Čiastočne & Sliding window analýza \\
+Detekcia kritických bodov & 20\% & Zatiaľ jednoduchá sliding window analýza \\
 \hline
 \end{tabular}
 \caption{Prehľad implementovaných funkčných požiadaviek}
@@ -366,13 +402,16 @@ Detekcia kritických bodov & Čiastočne & Sliding window analýza \\
 \begin{itemize}
     \item Úspešná implementácia všetkých core mikroslužieb
     \item Funkčná extrakcia landmarks pomocou MediaPipe
-    \item Detekcia výplňových slov pomocou Whisper
+    \item Základná detekcia výplňových slov pomocou Whisper
     \item Škálovateľná mikroslužbová architektúra
 \end{itemize}
 
 \textbf{Čo zostáva na implementáciu}:
 \begin{itemize}
     \item Mediator Service pre orchestráciu
+    \item Notifikovanie používateľa o dokončení spracovania videa alebo zvuku
     \item Vizualizácia výsledkov v mobilnej aplikácii (Flutter UI)
     \item Pokročilá detekcia kritických bodov zmien (change point detection)
+    \item Oprava parametra hlasitosti
+    \item Úprava Whisper aby správne detekoval výplňové slová
 \end{itemize}

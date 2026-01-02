@@ -67,12 +67,6 @@ def return_db_connection(conn):
 
 
 def get_analysis_by_recording_id(recording_id: int) -> Optional[Dict[str, Any]]:
-    """
-    Get frame data and landmarks for a recording.
-
-    Returns:
-        Dictionary with recording_id, total_frames, and frame data with landmarks
-    """
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:

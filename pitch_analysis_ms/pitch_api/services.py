@@ -16,6 +16,60 @@ class PitchAnalysisService:
     def __init__(self):
         pass
 
+    def detect_monotonous_segments(
+        self,
+        pitch: np.ndarray,
+        sr: float,
+        hop_length: int,
+        window_size: int = 30,
+        std_threshold: float = 10.0,
+        range_threshold: float = 20.0
+    ) -> list:
+
+        monotonous_segments = []
+        duration_per_frame = hop_length / sr
+
+        # Iterate through pitch data with sliding window
+        for i in range(len(pitch) - window_size + 1):
+            window = pitch[i:i + window_size]
+
+            # Filter out NaN values (unvoiced segments)
+            voiced_window = window[~np.isnan(window)]
+
+            # Skip if window has too few voiced frames (less than 50% voiced)
+            if len(voiced_window) < window_size * 0.5:
+                continue
+
+            # Calculate statistics for this window
+            window_std = np.std(voiced_window)
+            window_range = np.max(voiced_window) - np.min(voiced_window)
+
+            # Check if segment is monotonous
+            if window_std < std_threshold or window_range < range_threshold:
+                start_time = i * duration_per_frame
+                end_time = (i + window_size) * duration_per_frame
+
+                # Check if this segment overlaps with the last one
+                # If yes, merge them; if no, create a new segment
+                if monotonous_segments and monotonous_segments[-1]['end_timestamp'] >= start_time:
+                    # Extend the previous segment
+                    monotonous_segments[-1]['end_timestamp'] = end_time
+                    monotonous_segments[-1]['duration_seconds'] = (
+                        monotonous_segments[-1]['end_timestamp'] -
+                        monotonous_segments[-1]['start_timestamp']
+                    )
+                else:
+                    # Create new segment
+                    monotonous_segments.append({
+                        'start_timestamp': round(start_time, 2),
+                        'end_timestamp': round(end_time, 2),
+                        'duration_seconds': round(end_time - start_time, 2),
+                        'std_dev': round(float(window_std), 2),
+                        'range': round(float(window_range), 2)
+                    })
+
+        return monotonous_segments
+
     def save_pitch_plot(self, pitch: np.ndarray, sr: float, recording_id: str) -> Optional[str]:
         try:
             debug_dir = Path(settings.BASE_DIR) / 'debug' / recording_id
@@ -149,6 +203,18 @@ class PitchAnalysisService:
             # Save debug plot with filtered pitch
             self.save_pitch_plot(pitch_filtered, sr, str(recording_id))
 
+            # Detect monotonous segments using sliding window analysis
+            monotonous_segments = self.detect_monotonous_segments(
+                pitch_filtered,
+                sr,
+                hop_length,
+                window_size=30,
+                std_threshold=10.0,
+                range_threshold=20.0
+            )
+
+            print(f"[DEBUG] Detected {len(monotonous_segments)} monotonous segments")
+
             # TODO: Save pitch data to database (implement later)
 
             return {
@@ -159,7 +225,9 @@ class PitchAnalysisService:
                 'pitch_mean': pitch_mean,
                 'pitch_min': pitch_min,
                 'pitch_max': pitch_max,
-                'pitch_std': pitch_std
+                'pitch_std': pitch_std,
+                'monotonous_segments': monotonous_segments,
+                'monotonous_segments_count': len(monotonous_segments)
             }
 
         except Exception as e:

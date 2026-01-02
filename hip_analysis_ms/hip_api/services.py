@@ -16,15 +16,93 @@ class HipAnalysisService:
     def __init__(self):
         pass
 
-    def calculate_hip_metrics(self, frames: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def detect_swaying_segments(
+        self,
+        hip_center_y: np.ndarray,
+        timestamps: List[str],
+        fps: float = 10.0,
+        window_duration: float = 10.0,
+        min_direction_changes: int = 5,
+        min_amplitude: float = 0.02
+    ) -> List[Dict[str, Any]]:
         """
-        Calculate hip movement metrics from landmark data.
+        Detect swaying/dancing segments based on direction changes in hip movement.
+        Uses Y coordinate because MediaPipe frames are rotated (Y = lateral movement).
 
-        Metrics include:
-        - Hip center position (x, y, z) over time
-        - Hip sway (lateral movement)
-        - Hip distance (width between hips)
+        Args:
+            min_amplitude: Minimum change in position between extrema to count as significant movement
         """
+        if len(hip_center_y) < 3:
+            return []
+
+        # Calculate velocity (first derivative)
+        velocity = np.diff(hip_center_y)
+
+        # Calculate acceleration (second derivative)
+        acceleration = np.diff(velocity)
+
+        # Detect local maxima and minima (direction changes)
+        # Direction change occurs when velocity changes sign
+        # BUT only count it if the amplitude is significant enough
+        direction_changes = []
+        last_extremum_idx = 0
+        last_extremum_value = hip_center_y[0]
+
+        for i in range(1, len(velocity)):
+            # Check if velocity changed sign (crossed zero)
+            if velocity[i-1] * velocity[i] < 0:
+                # Found a potential extremum at index i
+                current_value = hip_center_y[i]
+                amplitude = abs(current_value - last_extremum_value)
+
+                # Only register this extremum if the amplitude is significant
+                if amplitude >= min_amplitude:
+                    direction_changes.append(i)
+                    last_extremum_idx = i
+                    last_extremum_value = current_value
+
+        print(f"[DEBUG] Detected {len(direction_changes)} significant direction changes in hip movement (min amplitude: {min_amplitude})")
+
+        # Sliding window analysis to find segments with excessive direction changes
+        swaying_segments = []
+        window_frames = int(window_duration * fps)
+
+        for i in range(len(hip_center_y) - window_frames + 1):
+            # Count direction changes within this window
+            changes_in_window = sum(
+                1 for change_idx in direction_changes
+                if i <= change_idx < i + window_frames
+            )
+
+            # If direction changes exceed threshold, mark as swaying
+            if changes_in_window >= min_direction_changes:
+                start_time = i / fps
+                end_time = (i + window_frames) / fps
+
+                # Check if this segment overlaps with the last one
+                if swaying_segments and swaying_segments[-1]['end_timestamp'] >= start_time:
+                    # Extend the previous segment
+                    swaying_segments[-1]['end_timestamp'] = end_time
+                    swaying_segments[-1]['duration_seconds'] = (
+                        swaying_segments[-1]['end_timestamp'] -
+                        swaying_segments[-1]['start_timestamp']
+                    )
+                    swaying_segments[-1]['direction_changes'] = max(
+                        swaying_segments[-1]['direction_changes'],
+                        changes_in_window
+                    )
+                else:
+                    # Create new segment
+                    swaying_segments.append({
+                        'start_timestamp': round(start_time, 2),
+                        'end_timestamp': round(end_time, 2),
+                        'duration_seconds': round(end_time - start_time, 2),
+                        'direction_changes': changes_in_window
+                    })
+
+        return swaying_segments
+
+    def calculate_hip_metrics(self, frames: List[Dict[str, Any]]) -> Dict[str, Any]:
         metrics = {
             'left_hip_x': [],
             'left_hip_y': [],
@@ -75,75 +153,64 @@ class HipAnalysisService:
 
         return metrics
 
-    def save_hip_movement_plots(self, metrics: Dict[str, Any], recording_id: str) -> Optional[str]:
-        """
-        Save hip movement visualizations to debug directory.
-
-        Creates multiple subplots showing:
-        - Hip center position over time (X, Y, Z)
-        - Hip distance (width) over time
-        - Hip sway (lateral movement)
-        """
+    def save_hip_movement_plots(
+        self,
+        metrics: Dict[str, Any],
+        recording_id: str,
+        swaying_segments: List[Dict[str, Any]] = None
+    ) -> Optional[str]:
         try:
             debug_dir = Path(settings.BASE_DIR) / 'debug' / recording_id
             debug_dir.mkdir(parents=True, exist_ok=True)
 
             # Convert timestamps to frame indices for plotting
             frame_indices = list(range(len(metrics['timestamps'])))
+            fps = 10.0  # Frames per second
 
-            # Create figure with multiple subplots
-            fig, axs = plt.subplots(3, 2, figsize=(16, 12))
+            # Create figure with single plot
+            fig, ax = plt.subplots(figsize=(16, 6))
             fig.suptitle(f'Hip Movement Analysis - Recording {recording_id}', fontsize=16)
 
-            # Plot 1: Hip Center X position over time
-            axs[0, 0].plot(frame_indices, metrics['hip_center_x'], linewidth=1, color='blue')
-            axs[0, 0].set_xlabel('Frame Index')
-            axs[0, 0].set_ylabel('X Position')
-            axs[0, 0].set_title('Hip Center - Lateral Movement (X)')
-            axs[0, 0].grid(True, alpha=0.3)
+            # Plot Hip Center Y position (lateral movement - side to side)
+            # Note: Y is used because MediaPipe frames are rotated
+            ax.plot(frame_indices, metrics['hip_center_y'], linewidth=1.5, color='blue', label='Hip Center Y')
+            ax.set_xlabel('Frame Index', fontsize=12)
+            ax.set_ylabel('Y Position (normalized)', fontsize=12)
+            ax.set_title('Hip Center - Lateral Movement (Side to Side)', fontsize=14)
+            ax.grid(True, alpha=0.3)
 
-            # Plot 2: Hip Center Y position over time
-            axs[0, 1].plot(frame_indices, metrics['hip_center_y'], linewidth=1, color='green')
-            axs[0, 1].set_xlabel('Frame Index')
-            axs[0, 1].set_ylabel('Y Position')
-            axs[0, 1].set_title('Hip Center - Vertical Movement (Y)')
-            axs[0, 1].grid(True, alpha=0.3)
+            # Highlight swaying segments
+            if swaying_segments:
+                for segment in swaying_segments:
+                    start_frame = int(segment['start_timestamp'] * fps)
+                    end_frame = int(segment['end_timestamp'] * fps)
 
-            # Plot 3: Hip Center Z position over time
-            axs[1, 0].plot(frame_indices, metrics['hip_center_z'], linewidth=1, color='red')
-            axs[1, 0].set_xlabel('Frame Index')
-            axs[1, 0].set_ylabel('Z Position')
-            axs[1, 0].set_title('Hip Center - Depth Movement (Z)')
-            axs[1, 0].grid(True, alpha=0.3)
+                    # Add shaded region for swaying segment
+                    ax.axvspan(
+                        start_frame,
+                        end_frame,
+                        color='red',
+                        alpha=0.2,
+                        label='Swaying' if segment == swaying_segments[0] else ''
+                    )
 
-            # Plot 4: Hip Distance (width) over time
-            axs[1, 1].plot(frame_indices, metrics['hip_distance'], linewidth=1, color='purple')
-            axs[1, 1].set_xlabel('Frame Index')
-            axs[1, 1].set_ylabel('Distance')
-            axs[1, 1].set_title('Hip Distance (Width)')
-            axs[1, 1].grid(True, alpha=0.3)
+                    # Add text annotation with number of direction changes
+                    mid_frame = (start_frame + end_frame) / 2
+                    y_pos = ax.get_ylim()[1] * 0.95
+                    ax.text(
+                        mid_frame,
+                        y_pos,
+                        f"{segment['direction_changes']} changes",
+                        ha='center',
+                        va='top',
+                        fontsize=9,
+                        bbox=dict(boxstyle='round,pad=0.3', facecolor='red', alpha=0.3)
+                    )
 
-            # Plot 5: Left vs Right Hip X positions
-            axs[2, 0].plot(frame_indices, metrics['left_hip_x'], linewidth=1, color='orange', label='Left Hip')
-            axs[2, 0].plot(frame_indices, metrics['right_hip_x'], linewidth=1, color='cyan', label='Right Hip')
-            axs[2, 0].set_xlabel('Frame Index')
-            axs[2, 0].set_ylabel('X Position')
-            axs[2, 0].set_title('Left vs Right Hip - Lateral Position')
-            axs[2, 0].legend()
-            axs[2, 0].grid(True, alpha=0.3)
-
-            # Plot 6: Hip sway statistics
-            if len(metrics['hip_center_x']) > 0:
-                sway_x = np.array(metrics['hip_center_x'])
-                sway_std = np.std(sway_x)
-                sway_range = np.max(sway_x) - np.min(sway_x)
-
-                axs[2, 1].text(0.5, 0.7, f"Hip Sway Statistics", ha='center', fontsize=14, weight='bold')
-                axs[2, 1].text(0.5, 0.5, f"Lateral Range: {sway_range:.4f}", ha='center', fontsize=12)
-                axs[2, 1].text(0.5, 0.4, f"Std Dev: {sway_std:.4f}", ha='center', fontsize=12)
-                axs[2, 1].text(0.5, 0.3, f"Mean X: {np.mean(sway_x):.4f}", ha='center', fontsize=12)
-                axs[2, 1].text(0.5, 0.2, f"Total Frames: {len(frame_indices)}", ha='center', fontsize=12)
-                axs[2, 1].axis('off')
+            # Remove duplicate labels in legend
+            handles, labels = ax.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            ax.legend(by_label.values(), by_label.keys(), loc='upper right')
 
             plt.tight_layout()
 
@@ -159,15 +226,6 @@ class HipAnalysisService:
             return None
 
     def analyze_hip_movement(self, recording_id: int) -> dict:
-        """
-        Analyze hip movements from landmark data.
-
-        Args:
-            recording_id: ID of the recording to analyze
-
-        Returns:
-            Dictionary with success status and hip movement analysis results
-        """
         try:
             print(f"[DEBUG] Starting hip movement analysis for recording_id: {recording_id}")
 
@@ -224,15 +282,32 @@ class HipAnalysisService:
                 }
             }
 
-            # Save debug plots
-            self.save_hip_movement_plots(metrics, str(recording_id))
+            # Detect swaying/dancing segments
+            # Use Y coordinate because MediaPipe frames are rotated (Y = lateral movement)
+            # Assume 10 FPS based on video processing settings (frame_interval=0.1)
+            fps = 10.0
+            swaying_segments = self.detect_swaying_segments(
+                hip_sway_y,
+                metrics['timestamps'],
+                fps=fps,
+                window_duration=10.0,
+                min_direction_changes=5,
+                min_amplitude=0.02  # Minimum normalized position change to count as significant movement
+            )
+
+            print(f"[DEBUG] Detected {len(swaying_segments)} swaying segments")
+
+            # Save debug plots with swaying segments highlighted
+            self.save_hip_movement_plots(metrics, str(recording_id), swaying_segments)
 
             print(f"[DEBUG] Hip movement analysis completed successfully")
 
             return {
                 'success': True,
                 'recording_id': recording_id,
-                'statistics': stats
+                'statistics': stats,
+                'swaying_segments': swaying_segments,
+                'swaying_segments_count': len(swaying_segments)
             }
 
         except Exception as e:

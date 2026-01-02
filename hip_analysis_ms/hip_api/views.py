@@ -26,7 +26,9 @@ def analyze_hip_movement(request, recording_id):
             {
                 'success': True,
                 'recording_id': result['recording_id'],
-                'statistics': result['statistics']
+                'statistics': result['statistics'],
+                'swaying_segments': result['swaying_segments'],
+                'swaying_segments_count': result['swaying_segments_count']
             },
             status=status.HTTP_200_OK
         )

@@ -97,10 +97,6 @@ class EyeContactAnalysisService:
         nose_offset_y = nose['y'] - eye_level_y
         pitch = -nose_offset_y * 150
 
-        # Clamp pitch to valid range (only if not facing back)
-        if not facing_back:
-            pitch = max(pitch_min, min(pitch_max, pitch))
-
         return {
             'yaw': yaw,
             'pitch': pitch,

@@ -45,7 +45,7 @@ POST http://localhost:8001/api/v1/video/1/analyze/
 POST http://localhost:8004/api/v1/audio/3/analyze/
 
 ### Pitch Analysis - Analyze pitch from processed audio
-POST http://localhost:8005/api/v1/pitch/4/analyze/
+POST http://localhost:8005/api/v1/pitch/5/analyze/
 
 ### Volume Analysis - Analyze volume from processed audio
 POST http://localhost:8006/api/v1/volume/6/analyze/
@@ -54,10 +54,10 @@ POST http://localhost:8006/api/v1/volume/6/analyze/
 POST http://localhost:8002/api/v1/analyze/arm-movements/1/
 
 ### Eye Contact Analysis - Analyze gaze patterns
-POST http://localhost:8003/api/v1/eye-contact/7/analyze/
+POST http://localhost:8003/api/v1/eye-contact/8/analyze/
 
 ### Hip Analysis - Analyze hip movement and sway
-POST http://localhost:8007/api/v1/hip/3/analyze/
+POST http://localhost:8007/api/v1/hip/8/analyze/
 
 ### Filler Words Analysis - Analyze filler words
 # @timeout 60 m
