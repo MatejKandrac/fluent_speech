@@ -98,7 +98,7 @@ Vzorkovacia rýchlosť (sample rate) reprezentuje počet meraných vzoriek za se
 Pre zabezpečenie konzistencie analýzy vykonávam resampling všetkých audio súborov na frekvenciu \textbf{16 kHz}. Túto hodnotu som zvolil na základe priemyselných štandardov pre speech processing.
 Pre flexibilitu riešenia som sa ale rozhodol tento parameter zmeniť na nastaviteľný pomocou premenných prostredia pri spúštaní mikroslužby.
 
-Dôvod normalizácie vzorkovacej rýchlosti je ten, že moje algoritmy pracujú s počtom frame-ov. Napríklad ak detekujem monotónnosť ako "pitch sa nezmenil na 10 za sebou idúcich frame-och", rozdielna vzorkovacia rýchlosť by znamenala rozdielny časový úsek.
+Dôvod normalizácie vzorkovacej rýchlosti je ten, že moje algoritmy pracujú s počtom frame-ov. Napríklad ak detekujem monotónnosť ako výška hlasu sa nezmenila na 10 za sebou idúcich frame-och, rozdielna vzorkovacia rýchlosť by znamenala rozdielny časový úsek.
 
 \subsection{Bitová hĺbka}
 
@@ -129,6 +129,15 @@ získaná, napríklad keď prezentujúci mal pauzu.
     \label{fig:pitch}
 \end{figure}
 
+Z tejto hodnoty následne detekujem monotónnosť.
+Pre každé okno dĺžky 30 frame-ov počítam:
+\begin{itemize}
+    \item \textbf{Štandardnú odchýlku}: $\sigma_{pitch} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}(pitch_i - \mu_{pitch})^2}$
+    \item \textbf{Rozsah}: $range_{pitch} = max(pitch) - min(pitch)$
+\end{itemize}
+
+Ak $\sigma_{pitch} < 10$ Hz alebo $range_{pitch} < 20$ Hz, segment je označený ako monotónny.
+
 \subsection{Hlasitosť (RMS energia)}
 
 Rovnako ako pre pitch, hlasitosť obsluhuje mikroslužba \textbf{Volume Analysis}.
@@ -145,6 +154,55 @@ rms = librosa.feature.rms(y=audio_data, frame_length=2048, hop_length=512)
     \label{fig:volume}
 \end{figure}
 
+Pri analýze hlasitosti sa sústredím na detekciu tichého rozprávania.
+Pre každý frame počítam RMS energiu a normalizujem ju na dB škálu:
+\begin{verbatim}
+volume_db = 20 * log10(rms / reference_level)
+\end{verbatim}
+
+Segmenty s volume\_db < -30 dB sú označené ako príž tiché.
+
+\section{Detekcia výplňových slov}
+
+Filler Words Analysis mikroslužba využíva OpenAI Whisper pre speech-to-text transkripciu a následne detekuje výplňové slová v texte.
+
+\subsection{Whisper transkrip}
+
+Pre transkripciu používam najpresnejší Whisper model. Na základe testov som sa preň rozhodol, pretože čas získavania transkriptu nemusí byť rýchly
+a zároveň ho potrebujem mať čo najpresnejší.
+
+\begin{verbatim}
+model = whisper.load_model(self.config['whisper_model']) # whisper_model=large-v3
+result = model.transcribe(audio_path, word_timestamps=True)
+\end{verbatim}
+
+Whisper poskytuje:
+\begin{itemize}
+    \item \textbf{text} - celý transkribovaný text
+    \item \textbf{segments} - segmenty s časovými značkami
+    \item \textbf{language} - detekovaný jazyk (sk/en)
+\end{itemize}
+
+Pre detekciu používam preddefinovaný zoznam výplňových slov pre slovenčinu a angličtinu:
+
+\begin{itemize}
+    \item \textbf{Slovenské}: ehm, ehh, emm, hm, hmm, teda, jako, takže, vlastne, viete
+    \item \textbf{Anglické}: uh, um, hmm, like, you know, so, actually, basically, literally
+\end{itemize}
+
+Detekcia prebieha pomocou regex s word boundaries:
+\begin{verbatim}
+pattern = r'\b' + re.escape(filler) + r'\b'
+matches = re.finditer(pattern, text.lower())
+\end{verbatim}
+
+Pre každú nahrávku počítam:
+\begin{itemize}
+    \item \textbf{Celkový počet} výplňových slov
+    \item \textbf{Fillers per minute} - normalizovaná metrika
+    \item \textbf{Most common filler} - najčastejšie použité slovo
+\end{itemize}
+
 \section{Detekcia očného kontaktu}
 
 Eye Contact Analysis mikroslužba analyzuje pohľad prezentujúceho voči publiku. Implementácia je založená na výpočte uhlov hlavy (yaw, pitch) z landmarks tváre.
@@ -159,31 +217,20 @@ Táto služba tiež generuje pomocné grafy a heatmapu, ktorá dovoľuje detailn
 
 \subsection{Výpočet uhlov hlavy}
 
-Yaw uhol reprezentuje otáčanie hlavy horizontálne. Počítam ho pomocou kombinácie dvoch metrík:
+\textbf{Yaw uhol} reprezentuje otáčanie hlavy horizontálne (doľava/doprava). Počítam ho pomocou pomeru vzdialeností od nosa k ušiam:
 
-\begin{enumerate}
-    \item \textbf{Pomer vzdialeností k ušiam}:
-    \begin{verbatim}
+\begin{verbatim}
 dist_left_ear = sqrt((nose.x - left_ear.x)² + (nose.y - left_ear.y)²)
 dist_right_ear = sqrt((nose.x - right_ear.x)² + (nose.y - right_ear.y)²)
 ear_ratio = dist_left_ear / dist_right_ear
-ear_yaw = log(ear_ratio) * 50
-    \end{verbatim}
-
-    \item \textbf{Offset nosa voči stredu tváre}:
-    \begin{verbatim}
-face_center_x = (left_eye.x + right_eye.x) / 2
-nose_offset_x = nose.x - face_center_x
-nose_yaw = nose_offset_x * 100
-    \end{verbatim}
-\end{enumerate}
-
-Finálny yaw uhol je váženým priemerom:
-\begin{verbatim}
-yaw = ear_yaw * 0.7 + nose_yaw * 0.3
+yaw = log(ear_ratio) * 50
 \end{verbatim}
 
-Pitch uhol reprezentuje vertikálne nakláňanie hlavy. Počítam ho z offsetu nosa voči úrovni očí:
+Logaritmus pomeru zabezpečuje, že yaw je 0° pri pohľade dopredu (ear\_ratio = 1.0) a symetricky rastie pri otáčaní v oboch smeroch. Škálovací faktor 50 bol empiricky stanovený na základe kalibrácie s reálnymi uhlami.
+
+Počas vývoja som testoval aj alternatívne prístupy (offset nosa voči stredu tváre, offset nosa voči stredu ramien), no tie sa ukázali ako nedostatočne robustné - produkovali nestabilné výsledky s malou variabilitou. Pomer vzdialeností k ušiam poskytuje najpresnejšie a najstabilnejšie meranie horizontálneho otáčania hlavy.
+
+\textbf{Pitch uhol} reprezentuje vertikálne nakláňanie hlavy (hore/dole). Počítam ho z offsetu nosa voči úrovni očí:
 
 \begin{verbatim}
 eye_level_y = (left_eye.y + right_eye.y) / 2
@@ -193,13 +240,12 @@ pitch = -nose_offset_y * 150
 
 \subsection{Definícia audience zone}
 
-"Dobrý" očný kontakt definujem ako pohľad v rámci audience zone:
+Dobrý očný kontakt definujem ako pohľad v rámci audience zone:
 \begin{itemize}
     \item \textbf{Yaw}: -30° až +30° (pohľad dopredu s miernym otáčaním)
     \item \textbf{Pitch}: -15° až +15° (mierny pohľad hore/dole)
 \end{itemize}
-
-\subsection{Detekcia looking away events}
+Tieto hodnoty sú konfigurovateľné, a získal som ich na základe vlastných testov prezentácií.
 
 Looking away event nastáva, keď prezentujúci pozerá mimo audience zone počas minimálne X po sebe idúcich frame-ov.
 Počet týchto frame-ov je konfigurovateľný.
@@ -210,6 +256,15 @@ Pre každý event zaznamenávam:
     \item \textbf{duration\_seconds} - trvanie v sekundách
     \item \textbf{avg\_yaw, avg\_pitch} - priemerné uhly (kam sa pozerá)
 \end{itemize}
+
+\subsection{Detekcia otočenia chrbtom}
+Pri detekovaní, či je používateľ otočený chrbtom som narazil na problém s klasickým výpočtom yaw uhlu.
+Ako som spomenul vyššie, yaw je počítaný vzdialenostami medzi ušami a očami. Ak je používateľ otočený chrbtom,
+MediaPipe automaticky vypočita pozície očí, ktoré ak neberiem do úvahy z súradnicu pôsobia totožne, akokeby som sa pozeral priamo do kamery.
+
+Preto som sa rozhodol vziať stred ramien a z pozíciu nosa a sledoval som ich rozdiel. Po niekoľkých testoch sa mi podarilo
+implementovať to, že ak je nos za stredom ramien, je používateľ otočený chrbtom.
+To je možné vidieť v obrázku 4.5 v poslednom grafe obrázka.
 
 \section{Detekcia pohybov rúk}
 
@@ -232,12 +287,12 @@ Nedostatočnú gestikuláciu detekujem pomocou sliding window analýzy:
 \begin{enumerate}
     \item Rozdelím časový rad akcelerácie na okná veľkosti 30 frame-ov (~ 2 sekundy pri 15 FPS)
     \item Pre každé okno počítam priemernú akceleráciu
-    \item Ak priemerná akcelerácia klesne pod threshold (empiricky nastavený na 0.01), označím toto okno ako "insufficient movement"
+    \item Ak priemerná akcelerácia klesne pod threshold (empiricky nastavený na 0.01), označím toto okno ako nedostatočný pohyb.
 \end{enumerate}
 
 \section{Detekcia pohybu bokov (tancovanie)}
 
-Hip Movement Analysis mikroslužba detekuje negatívny jav "tancovanie" - nepotrebné pohyby bokov zo strany na stranu.
+Hip Movement Analysis mikroslužba detekuje negatívny jav tancovania - nepotrebné pohyby bokov zo strany na stranu.
 
 \subsection{Výpočet stredu bokov}
 
@@ -255,110 +310,29 @@ Kývavý pohyb detekujem pomocou analýzy zmien v X-osi (horizontálny pohyb):
 \begin{enumerate}
     \item Počítam akceleráciu hip\_center\_x
     \item Detetujem lokálne maximá a minimá (zmeny smeru pohybu)
-    \item Ak sa smer pohybu zmení viac ako 5-krát za 10 sekúnd, označím segment ako "swaying"
+    \item Ak sa smer pohybu zmení viac ako 5-krát za 10 sekúnd, označím segment
 \end{enumerate}
-
-\section{Analýza vlastností hlasu}
-
-\subsection{Detekcia monotónnosti}
-
-Pitch Analysis mikroslužba detekuje monotónny hlas analyzovaním variácie pitch.
-
-\subsubsection{Výpočet pitch variability}
-
-Pre každé okno dĺžky 30 frame-ov počítam:
-\begin{itemize}
-    \item \textbf{Štandardnú odchýlku}: $\sigma_{pitch} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}(pitch_i - \mu_{pitch})^2}$
-    \item \textbf{Rozsah}: $range_{pitch} = max(pitch) - min(pitch)$
-\end{itemize}
-
-Ak $\sigma_{pitch} < 10$ Hz alebo $range_{pitch} < 20$ Hz, segment je označený ako monotónny.
-
-\subsection{Detekcia nízkej hlasitosti}
-
-Volume Analysis mikroslužba detekuje segmenty s nedostatočnou hlasitosťou.
-
-Pre každý frame počítam RMS energiu a normalizujem ju na dB škálu:
-\begin{verbatim}
-volume_db = 20 * log10(rms / reference_level)
-\end{verbatim}
-
-Segmenty s volume\_db < -30 dB sú označené ako "too quiet".
-
-\section{Detekcia výplňových slov}
-
-Filler Words Analysis mikroslužba využíva OpenAI Whisper pre speech-to-text transkripciu a následne detekuje výplňové slová v texte.
-
-\subsection{Whisper transkrip}
-
-Pre transkripciu používam Whisper model "base", ktorý poskytuje dobrý pomer medzi presnosťou a rýchlosťou:
-
-\begin{verbatim}
-model = whisper.load_model("base")
-result = model.transcribe(audio_path, word_timestamps=True)
-\end{verbatim}
-
-Whisper poskytuje:
-\begin{itemize}
-    \item \textbf{text} - celý transkribovaný text
-    \item \textbf{segments} - segmenty s časovými značkami
-    \item \textbf{language} - detekovaný jazyk (sk/en)
-\end{itemize}
-
-\subsection{Detekcia výplňových slov}
-
-Pre detekciu používam preddefinovaný zoznam výplňových slov pre slovenčinu a angličtinu:
-
-\begin{itemize}
-    \item \textbf{Slovenské}: ehm, ehh, emm, hm, hmm, teda, jako, takže, vlastne, viete
-    \item \textbf{Anglické}: uh, um, hmm, like, you know, so, actually, basically, literally
-\end{itemize}
-
-Detekcia prebieha pomocou regex s word boundaries:
-\begin{verbatim}
-pattern = r'\b' + re.escape(filler) + r'\b'
-matches = re.finditer(pattern, text.lower())
-\end{verbatim}
-
-\subsection{Štatistiky}
-
-Pre každý recording počítam:
-\begin{itemize}
-    \item \textbf{Celkový počet} výplňových slov
-    \item \textbf{Fillers per minute} - normalizovaná metrika
-    \item \textbf{Most common filler} - najčastejšie použité slovo
-    \item \textbf{Distribution} - rozloženie slovenských vs. anglických
-\end{itemize}
-
-% TODO: Placeholder pre debug vizualizáciu výplňových slov
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=\textwidth]{assets/images/debug/filler_words_timeline_example.png}
-% \caption{Timeline vizualizácia výplňových slov v priebehu prezentácie}
-% \label{fig:filler_timeline}
-% \end{figure}
 
 \section{Výzvy a riešenie problémov}
 
-\subsection{MediaPipe detekcia pri zložitom pozadí}
+\subsection{Extrakcia landmarkov z videa}
 
-\textbf{Problém}: MediaPipe mal problémy s detekciou landmarks pri zložitom pozadí s viacerými ľuďmi.
+Moja pôvodná idea bola získavať landmarky ešte na mobilnom zariadení. Týmto som chcel odľahčiť objem dát posielaných na
+server. Pri implementácii som ale narazil na technologickú limitáciu. Pri nahrávaní videa nie je mobilné zariadenie schopné zároveň
+spracovávať jednotlivé rámce videa. Chcel som to potom spraviť tak, že sa najprv natočí video, a potom spustím analýzu.
+Tu som ale narazil na ďalší problém, kedy som musel použiť ffmpeg pre získanie jednotlivých obrázkov. Týmto sa vytvorilo toľko
+obrázkov, aké bolo dlhé video krát počet spracovávaných frame-ov za sekundu. Týmto by som narazil na vysoké pamäťové nároky
+a riešenie by bolo neefektívne.
 
-\textbf{Riešenie}: Nastavil som \texttt{model\_complexity=1} a \texttt{min\_detection\_confidence=0.7}, čo zlepšilo presnosť pri miernom znížení FPS.
+Po dlhšom rozhodovaní som sa teda rozhodol presunúť logiku extrakcie landmarkov na serverovú časť, a tým som efektívne vyriešil problém.
 
-\subsection{Whisper výkon na dlhých nahrávkach}
+\subsection{Whisper výkon}
 
-\textbf{Problém}: Whisper model "base" bol pomalý na nahrávkach dlhších ako 10 minút.
+Pri testovaní whisper modelu som narazil na problém, že jednoduchý model nebol schopný správne detekovať slová.
+Rozhodol som sa preto teda použiť veľký model large-v3, ktorý je omnoho presnejší. V budúcnosti chcem extrakciu transkriptu
+presunúť na osobitnú mikroslužbu, aby momentálne dlhý čas extrakcie nebol pre používateľa nepríjemný.
 
-\textbf{Riešenie}: Implementoval som dávkové spracovanie po 5-minútových úsekoch s následným spojením transkriptov.
-
-\subsection{Normalizácia landmarks medzi zariadeniami}
-
-\textbf{Problém}: Rôzne rozlíšenia videí (1080p, 720p, 480p) produkovali rozdielne škály landmarks.
-
-\textbf{Riešenie}: MediaPipe automaticky normalizuje landmarks na 0-1, čo rieši tento problém. Pre dodatočnú stabilitu ukladám aj originálne max\_x a max\_y rozlíšenie videa.
-
-\section{Vyhodnotenie riešenia}
+\section{Stav riešenia}
 
 \subsection{Implementované funkčné požiadavky}
 
@@ -392,28 +366,13 @@ Detekcia kritických bodov & Čiastočne & Sliding window analýza \\
 \begin{itemize}
     \item Úspešná implementácia všetkých core mikroslužieb
     \item Funkčná extrakcia landmarks pomocou MediaPipe
-    \item Presná detekcia výplňových slov pomocou Whisper
+    \item Detekcia výplňových slov pomocou Whisper
     \item Škálovateľná mikroslužbová architektúra
-    \item Kontajnerizácia pomocou Docker
 \end{itemize}
 
 \textbf{Čo zostáva na implementáciu}:
 \begin{itemize}
     \item Mediator Service pre orchestráciu
-    \item Mobilná aplikácia (Flutter UI)
+    \item Vizualizácia výsledkov v mobilnej aplikácii (Flutter UI)
     \item Pokročilá detekcia kritických bodov zmien (change point detection)
-    \item Vizualizácie výsledkov v mobile app
 \end{itemize}
-
-\subsection{Výkonnostné charakteristiky}
-
-Testované na video 120 sekúnd, 1080p, 30 FPS:
-\begin{itemize}
-    \item \textbf{MediaPipe extrakcia}: ~45 sekúnd
-    \item \textbf{Whisper transkrip}: ~120 sekúnd (model "base")
-    \item \textbf{Eye Contact Analysis}: ~2 sekundy
-    \item \textbf{Arm Movement Analysis}: ~3 sekundy
-    \item \textbf{Filler Words Analysis}: ~125 sekúnd (vrátane Whisper)
-\end{itemize}
-
-Celkový čas analýzy: ~5 minút pre 2-minútové video.

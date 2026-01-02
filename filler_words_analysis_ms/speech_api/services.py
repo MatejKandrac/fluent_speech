@@ -33,7 +33,12 @@ class FillerWordsAnalysisService:
             result = model.transcribe(
                 audio_path,
                 word_timestamps=True,
-                verbose=False
+                verbose=False,
+                temperature=0.0,
+                condition_on_previous_text=False,
+                no_speech_threshold=0.2,
+                logprob_threshold=-1.0,
+                compression_ratio_threshold=3.0
             )
 
             return result
@@ -274,6 +279,10 @@ class FillerWordsAnalysisService:
         transcript = self.transcribe_audio(audio_path)
         if not transcript:
             return {'success': False, 'error': 'Transcription failed'}
+        else:
+            output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id) / 'transcript.txt'
+            with open(output_dir, "w", encoding="utf-8") as f:
+                f.write(transcript["text"])
 
         print(f"Transcription completed. Detected language: {transcript.get('language', 'unknown')}")
 

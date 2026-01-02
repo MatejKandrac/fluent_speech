@@ -24,7 +24,8 @@ class EyeContactAnalysisService:
     def calculate_head_angles(self, frame_data: Dict[str, Any]) -> Optional[Dict[str, float]]:
         landmarks = frame_data.get('landmarks', {})
 
-        required = ['nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear']
+        # Check required landmarks
+        required = ['nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear', 'left_shoulder', 'right_shoulder']
         if not all(lm in landmarks for lm in required):
             return None
 
@@ -33,18 +34,21 @@ class EyeContactAnalysisService:
         right_eye = landmarks['right_eye']
         left_ear = landmarks['left_ear']
         right_ear = landmarks['right_ear']
+        left_shoulder = landmarks['left_shoulder']
+        right_shoulder = landmarks['right_shoulder']
 
-
+        # Get configuration
         pitch_min = self.config['pitch_min']
         pitch_max = self.config['pitch_max']
-
         yaw_min = self.config['yaw_min']
         yaw_max = self.config['yaw_max']
 
-        face_center_x = (left_eye['x'] + right_eye['x']) / 2
+        # Get yaw calculation weights
+        weight_ear = self.config['yaw_weight_ear_ratio']
+        weight_nose_face = self.config['yaw_weight_nose_face']
+        weight_nose_shoulder = self.config['yaw_weight_nose_shoulder']
 
-        nose_offset_x = nose['x'] - face_center_x
-
+        # --- YAW CALCULATION 1: Ear ratio (pomer vzdialeností k ušiam) ---
         dist_to_left_ear = math.sqrt(
             (nose['x'] - left_ear['x']) ** 2 +
             (nose['y'] - left_ear['y']) ** 2
@@ -64,23 +68,55 @@ class EyeContactAnalysisService:
         else:
             ear_yaw = 0
 
-        nose_yaw = nose_offset_x * 100
+        # --- YAW CALCULATION 2: Nose vs face center (nos voči stredu tváre) ---
+        face_center_x = (left_eye['x'] + right_eye['x']) / 2
+        nose_offset_face_x = nose['x'] - face_center_x
+        nose_face_yaw = nose_offset_face_x * 100
 
-        yaw = ear_yaw * 0.7 + nose_yaw * 0.3
+        # --- YAW CALCULATION 3: Nose vs shoulder center (nos voči stredu ramien) ---
+        shoulder_center_x = (left_shoulder['x'] + right_shoulder['x']) / 2
+        nose_offset_shoulder_x = nose['x'] - shoulder_center_x
+        nose_shoulder_yaw = nose_offset_shoulder_x * 100
 
-        yaw = max(yaw_min, min(yaw_max, yaw))
+        # --- WEIGHTED AVERAGE of all three yaw calculations ---
+        yaw = (
+            ear_yaw * weight_ear +
+            nose_face_yaw * weight_nose_face +
+            nose_shoulder_yaw * weight_nose_shoulder
+        )
 
+        # --- BACK-FACING DETECTION ---
+        # Calculate center of shoulders in Z-axis
+        shoulder_center_z = (left_shoulder['z'] + right_shoulder['z']) / 2
+
+        # If nose is further from camera than shoulders, person is facing backwards
+        facing_back = (nose['z'] - shoulder_center_z) > self.config['back_facing_threshold']
+
+        # --- PITCH CALCULATION ---
         eye_level_y = (left_eye['y'] + right_eye['y']) / 2
         nose_offset_y = nose['y'] - eye_level_y
-
         pitch = -nose_offset_y * 150
 
-        pitch = max(pitch_min, min(pitch_max, pitch))
+        # Clamp pitch to valid range (only if not facing back)
+        if not facing_back:
+            pitch = max(pitch_min, min(pitch_max, pitch))
 
         return {
             'yaw': yaw,
             'pitch': pitch,
-            'timestamp': frame_data.get('timestamp')
+            'timestamp': frame_data.get('timestamp'),
+            'facing_back': facing_back,
+            # Debug info
+            'yaw_components': {
+                'ear_yaw': ear_yaw,
+                'nose_face_yaw': nose_face_yaw,
+                'nose_shoulder_yaw': nose_shoulder_yaw
+            },
+            'z_depth': {
+                'nose_z': nose['z'],
+                'shoulder_center_z': shoulder_center_z,
+                'z_diff': nose['z'] - shoulder_center_z
+            }
         }
 
     def build_heatmap(self, angle_data: List[Dict[str, float]], frame_duration: float) -> Dict[str, Any]:
@@ -102,6 +138,10 @@ class EyeContactAnalysisService:
         for frame in angle_data:
             yaw = frame['yaw']
             pitch = frame['pitch']
+
+            # Skip frames where person is facing backwards (yaw is None)
+            if yaw is None or pitch is None:
+                continue
 
             yaw_idx = np.digitize(yaw, yaw_bins) - 1
             pitch_idx = np.digitize(pitch, pitch_bins) - 1
@@ -308,13 +348,20 @@ class EyeContactAnalysisService:
         frame_indices = [i for i in range(len(angle_data))]
         yaw_values = [frame['yaw'] for frame in angle_data]
         pitch_values = [frame['pitch'] for frame in angle_data]
+        facing_back_values = [1 if frame.get('facing_back', False) else 0 for frame in angle_data]
 
-        fig = plt.figure(figsize=(16, 12))
-        gs = fig.add_gridspec(3, 1, height_ratios=[2, 1, 1], hspace=0.3)
+        # Extract Z-depth values for debugging
+        nose_z_values = [frame.get('z_depth', {}).get('nose_z', 0) for frame in angle_data]
+        shoulder_z_values = [frame.get('z_depth', {}).get('shoulder_center_z', 0) for frame in angle_data]
+        z_diff_values = [frame.get('z_depth', {}).get('z_diff', 0) for frame in angle_data]
+
+        fig = plt.figure(figsize=(16, 16))
+        gs = fig.add_gridspec(4, 1, height_ratios=[2, 1, 1, 1], hspace=0.3)
 
         ax1 = fig.add_subplot(gs[0])
         ax2 = fig.add_subplot(gs[1])
         ax3 = fig.add_subplot(gs[2])
+        ax4 = fig.add_subplot(gs[3])
 
         extent = [yaw_bins[0], yaw_bins[-1], pitch_bins[0], pitch_bins[-1]]
         im = ax1.imshow(duration_matrix, extent=extent, origin='lower',
@@ -366,6 +413,26 @@ class EyeContactAnalysisService:
         ax3.set_title('Pitch Angle Over Time', fontsize=12, fontweight='bold')
         ax3.legend(loc='upper right', fontsize=9)
         ax3.grid(True, alpha=0.3)
+
+        # Fourth graph: Z-Depth Analysis
+        ax4.plot(frame_indices, nose_z_values, color='blue', linewidth=1.5, label='Nose Z')
+        ax4.plot(frame_indices, shoulder_z_values, color='green', linewidth=1.5, label='Shoulder Center Z')
+        ax4.plot(frame_indices, z_diff_values, color='orange', linewidth=1.5, label='Z Difference')
+
+        # Show threshold line for back-facing detection
+        ax4.axhline(-0.1, color='red', linestyle='--', linewidth=2, label='Back-Facing Threshold (-0.1)')
+        ax4.axhline(0, color='gray', linestyle=':', alpha=0.5)
+
+        # Mark back-facing regions with red background
+        for i, is_back in enumerate(facing_back_values):
+            if is_back:
+                ax4.axvspan(i - 0.5, i + 0.5, color='red', alpha=0.1)
+
+        ax4.set_xlabel('Frame Index', fontsize=12)
+        ax4.set_ylabel('Z-Coordinate', fontsize=12)
+        ax4.set_title('Z-Depth Analysis (Back-Facing Detection)', fontsize=12, fontweight='bold')
+        ax4.legend(loc='upper right', fontsize=9)
+        ax4.grid(True, alpha=0.3)
 
         plt.tight_layout()
 

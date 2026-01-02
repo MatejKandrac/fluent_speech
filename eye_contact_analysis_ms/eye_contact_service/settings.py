@@ -10,6 +10,8 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS_EYE', 'localhost,127.0.0.1').split(',')
 
 INSTALLED_APPS = [
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
     'rest_framework',
     'gaze_api',
 ]
@@ -62,4 +64,12 @@ EYE_CONTACT_ANALYSIS_CONFIG = {
 
     'staring_angle_threshold': float(os.getenv('STARING_ANGLE_THRESHOLD', '3')),  # degrees
     'min_staring_frames': int(os.getenv('MIN_STARING_FRAMES', '30')),  # ~2 seconds at 15fps
+
+    # Yaw calculation weights (must sum to 1.0)
+    'yaw_weight_ear_ratio': float(os.getenv('YAW_WEIGHT_EAR_RATIO', '0.5')),
+    'yaw_weight_nose_face': float(os.getenv('YAW_WEIGHT_NOSE_FACE', '0.2')),
+    'yaw_weight_nose_shoulder': float(os.getenv('YAW_WEIGHT_NOSE_SHOULDER', '0.3')),
+
+    # Back facing
+    'back_facing_threshold': float(os.getenv('BACK_FACING_THRESHOLD', '-0.1')),
 }

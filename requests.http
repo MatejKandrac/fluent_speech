@@ -54,10 +54,11 @@ POST http://localhost:8006/api/v1/volume/6/analyze/
 POST http://localhost:8002/api/v1/analyze/arm-movements/1/
 
 ### Eye Contact Analysis - Analyze gaze patterns
-POST http://localhost:8003/api/v1/analyze/eye-contact/1/
+POST http://localhost:8003/api/v1/eye-contact/7/analyze/
 
 ### Hip Analysis - Analyze hip movement and sway
 POST http://localhost:8007/api/v1/hip/3/analyze/
 
 ### Filler Words Analysis - Analyze filler words
+# @timeout 60 m
 POST http://localhost:8008/api/v1/filler-words/5/analyze/
