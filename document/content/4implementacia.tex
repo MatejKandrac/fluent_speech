@@ -52,7 +52,7 @@ Po testoch na videách som sa rozhodol použiť tieto hodnoty parametrov:
     \item \texttt{min\_tracking\_confidence}: 0.5
     \item \texttt{model\_complexity}: 1
     \item \texttt{frame\_interval}: 0.1
-    \item \texttt{max\_video\_duration}: 600 (10 minút)
+    \item \texttt{max\_video\_duration}: 1800 (30 minút)
 \end{itemize}
 
 \subsection{Postup extrakcie}
@@ -136,6 +136,7 @@ Pre každé okno dĺžky 30 frame-ov počítam:
 \end{itemize}
 
 Ak $\sigma_{pitch} < 10$ Hz alebo $range_{pitch} < 20$ Hz, segment je označený ako monotónny.
+Hodnoty boli určené empiricky na základe testovania a budú upravené po rozsiahlych testoch.
 
 \subsection{Hlasitosť (RMS energia)}
 
@@ -161,7 +162,7 @@ Aktuálna implementácia zobrazuje získanú RMS energiu vo forme jednoduchého 
 
 Filler Words Analysis mikroslužba využíva OpenAI Whisper pre speech-to-text transkripciu a následne detekuje výplňové slová v texte.
 
-\subsection{Whisper transkrip}
+\subsection{Whisper transkript}
 
 Pre transkripciu používam najpresnejší Whisper model. Na základe testov som sa preň rozhodol, pretože čas získavania transkriptu nemusí byť rýchly
 a zároveň ho potrebujem mať čo najpresnejší.
@@ -200,7 +201,8 @@ Pre každú nahrávku počítam:
 
 \section{Detekcia očného kontaktu}
 
-Eye Contact Analysis mikroslužba analyzuje pohľad prezentujúceho voči publiku. Implementácia je založená na výpočte uhlov hlavy (yaw, pitch) z landmarks tváre.
+Eye Contact Analysis mikroslužba analyzuje pohľad prezentujúceho voči publiku, ktorý predstavuje kamera, konkrétne jej stred.
+Implementácia je založená na výpočte uhlov hlavy (yaw, pitch) z landmarks tváre.
 Táto služba tiež generuje pomocné grafy a heatmapu, ktorá dovoľuje detailnejšiu analýzu tohto javu a dáva používateľovi jasnú predstavu o tom, kde sa pozeral počas prezentovania.
 
 \begin{figure}[H]
@@ -235,7 +237,7 @@ pitch = -nose_offset_y * 150
 
 \subsection{Definícia audience zone}
 
-Dobrý očný kontakt definujem ako pohľad v rámci audience zone:
+Dobrý očný kontakt s publikom definujem ako pohľad v rámci audience zone:
 \begin{itemize}
     \item \textbf{Yaw}: -30° až +30° (pohľad dopredu s miernym otáčaním)
     \item \textbf{Pitch}: -15° až +15° (mierny pohľad hore/dole)
