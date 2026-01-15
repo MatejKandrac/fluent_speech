@@ -15,7 +15,7 @@ class AudioAnalysisService(
 ) {
     private val logger = LoggerFactory.getLogger(AudioAnalysisService::class.java)
 
-    @Value("\${audio.analysis.service.url}")
+    @Value("\${processing.urls.audio}")
     private lateinit var audioAnalysisServiceUrl: String
 
     @Async

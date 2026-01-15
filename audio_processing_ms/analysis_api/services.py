@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Optional
 import subprocess
+import threading
+import requests
 
 import librosa
 import matplotlib
@@ -15,6 +17,33 @@ from .db_connection import get_recording_by_id
 class AudioAnalysisService:
     def __init__(self):
         pass
+
+    def trigger_transcription_async(self, recording_id: int) -> None:
+
+        def _trigger():
+            try:
+                url = f"{settings.TRANSCRIPT_SERVICE_URL}/{recording_id}/transcribe/"
+                print(f"[ASYNC] Triggering transcription for recording {recording_id} at {url}")
+
+                # Short timeout - we only need to send the request, not wait for transcription
+                response = requests.post(url, timeout=2)
+
+                # If we get here, request was sent successfully
+                print(f"[ASYNC] Transcription request sent successfully for recording {recording_id}")
+
+            except requests.exceptions.Timeout:
+                # This is expected - transcription takes a long time
+                # The important thing is the request was sent
+                print(f"[ASYNC] Transcription request sent (processing will continue on server)")
+            except requests.exceptions.ConnectionError as e:
+                print(f"[ASYNC] Could not connect to transcript service: {e}")
+            except Exception as e:
+                print(f"[ASYNC] Error triggering transcription: {e}")
+
+        # Start the request in a background thread
+        thread = threading.Thread(target=_trigger, daemon=True)
+        thread.start()
+        print(f"[ASYNC] Transcription thread started for recording {recording_id}")
 
     def save_waveform_plot(self, audio: np.ndarray, sr: int, recording_id: str) -> Optional[str]:
         try:
@@ -152,6 +181,13 @@ class AudioAnalysisService:
             if settings.DEBUG:
                 self.save_waveform_plot(audio_final, target_sr, str(recording_id))
 
+            # Trigger transcription asynchronously (non-blocking)
+            if settings.AUTO_TRIGGER_TRANSCRIPTION:
+                print(f"[DEBUG] Auto-triggering transcription for recording {recording_id}")
+                self.trigger_transcription_async(recording_id)
+            else:
+                print(f"[DEBUG] Auto-trigger transcription is disabled")
+
             return {
                 'success': True,
                 'recording_id': recording_id,
@@ -159,7 +195,8 @@ class AudioAnalysisService:
                 'processed_wav_path': str(processed_path),
                 'duration': len(audio_final) / target_sr,
                 'sample_rate': target_sr,
-                'samples': len(audio_final)
+                'samples': len(audio_final),
+                'transcription_triggered': settings.AUTO_TRIGGER_TRANSCRIPTION
             }
 
         except Exception as e:

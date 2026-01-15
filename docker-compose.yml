@@ -164,6 +164,19 @@ services:
       - fluent-network
     restart: unless-stopped
 
+  transcript_service:
+    build: ./transcript_processing_ms
+    container_name: transcript_service
+    ports:
+      - '${TRANSCRIPT_SERVICE_PORT}:8009'
+    env_file:
+      - .env
+    volumes:
+      - transcript-debug:/app/debug_output
+    networks:
+      - fluent-network
+    restart: unless-stopped
+
 networks:
   fluent-network:
     driver: bridge
@@ -190,3 +203,4 @@ volumes:
   arm-debug:
   eye-debug:
   filler-words-debug:
+  transcript-debug:

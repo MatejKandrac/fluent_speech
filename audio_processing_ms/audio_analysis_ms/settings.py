@@ -51,6 +51,10 @@ AUDIO_EXTRACTION_CONFIG = {
     'sample_rate': int(os.getenv('AUDIO_SAMPLE_RATE', '16000')),  # Audio sample rate in Hz
 }
 
+# Transcript Processing Service Configuration
+TRANSCRIPT_SERVICE_URL = os.getenv('TRANSCRIPT_SERVICE_URL', 'http://localhost:8009/api/v1')
+AUTO_TRIGGER_TRANSCRIPTION = os.getenv('AUTO_TRIGGER_TRANSCRIPTION', 'True') == 'True'
+
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True

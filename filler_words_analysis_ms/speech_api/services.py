@@ -10,7 +10,7 @@ import numpy as np
 
 from django.conf import settings
 
-from .db_connection import get_recording_by_id
+from .db_connection import get_recording_by_id, get_transcript_words
 
 
 class FillerWordsAnalysisService:
@@ -21,35 +21,6 @@ class FillerWordsAnalysisService:
         self.english_fillers = self.config['english_fillers']
         print(f"Loaded configuration: {self.config}")
 
-    def transcribe_audio(self, audio_path: str) -> Optional[Dict[str, Any]]:
-        try:
-            import whisper
-
-            model_name = self.config['whisper_model']
-            print(f"Loading Whisper model: {model_name}")
-            model = whisper.load_model(model_name)
-
-            print(f"Transcribing audio file: {audio_path}")
-            result = model.transcribe(
-                audio_path,
-                word_timestamps=True,
-                verbose=False,
-                temperature=0.0,
-                condition_on_previous_text=False,
-                no_speech_threshold=0.2,
-                logprob_threshold=-1.0,
-                compression_ratio_threshold=3.0
-            )
-
-            return result
-
-        except ImportError:
-            print("ERROR: Whisper is not installed. Install with: pip install openai-whisper")
-            return None
-        except Exception as e:
-            print(f"Error during transcription: {e}")
-            return None
-
     def detect_filler_words(self, transcript: Dict[str, Any]) -> List[Dict[str, Any]]:
         if not transcript or 'segments' not in transcript:
             return []
@@ -59,26 +30,48 @@ class FillerWordsAnalysisService:
 
         # Process each segment
         for segment in transcript['segments']:
-            text = segment['text'].lower().strip()
-            start_time = segment['start']
-            end_time = segment['end']
+            # If we have word-level data, use it for precise timestamps
+            if 'words' in segment and segment['words']:
+                for word_data in segment['words']:
+                    word_text = word_data['word'].lower().strip()
 
-            # Check for filler words
-            for filler in all_fillers:
-                # Use word boundaries to avoid partial matches
-                pattern = r'\b' + re.escape(filler) + r'\b'
-                matches = list(re.finditer(pattern, text))
+                    # Check if this word is a filler word
+                    for filler in all_fillers:
+                        # Use word boundaries to avoid partial matches
+                        pattern = r'\b' + re.escape(filler) + r'\b'
+                        if re.search(pattern, word_text):
+                            is_slovak = filler in self.slovak_fillers
 
-                for match in matches:
-                    is_slovak = filler in self.slovak_fillers
+                            filler_occurrences.append({
+                                'word': filler,
+                                'language': 'slovak' if is_slovak else 'english',
+                                'start_time': word_data.get('start_time', word_data.get('start', 0)),
+                                'end_time': word_data.get('end_time', word_data.get('end', 0)),
+                                'segment_text': segment.get('text', ''),
+                                'probability': word_data.get('probability', 1.0)
+                            })
+            else:
+                # Fallback: use segment-level detection (less precise)
+                text = segment['text'].lower().strip()
+                start_time = segment['start']
+                end_time = segment['end']
 
-                    filler_occurrences.append({
-                        'word': filler,
-                        'language': 'slovak' if is_slovak else 'english',
-                        'start_time': start_time,
-                        'end_time': end_time,
-                        'segment_text': text
-                    })
+                # Check for filler words
+                for filler in all_fillers:
+                    # Use word boundaries to avoid partial matches
+                    pattern = r'\b' + re.escape(filler) + r'\b'
+                    matches = list(re.finditer(pattern, text))
+
+                    for match in matches:
+                        is_slovak = filler in self.slovak_fillers
+
+                        filler_occurrences.append({
+                            'word': filler,
+                            'language': 'slovak' if is_slovak else 'english',
+                            'start_time': start_time,
+                            'end_time': end_time,
+                            'segment_text': text
+                        })
 
         # Sort by time
         filler_occurrences.sort(key=lambda x: x['start_time'])
@@ -236,6 +229,72 @@ class FillerWordsAnalysisService:
 
         print(f"Filler words timeline visualization saved to: {output_path}")
 
+    def get_transcript_from_db(self, recording_id: int) -> Optional[Dict[str, Any]]:
+        try:
+            # Get words from database
+            words = get_transcript_words(recording_id)
+
+            if not words:
+                print(f"No transcript words found in database for recording {recording_id}")
+                return None
+
+            # Calculate duration from last word's end time
+            duration = max(word['end_time'] for word in words) if words else 0
+
+            # Reconstruct segments from words
+            # Group words into segments (approximate - every 5 seconds or until significant pause)
+            segments = []
+            current_segment = {
+                'start': 0,
+                'end': 0,
+                'text': '',
+                'words': []
+            }
+
+            segment_duration = 5.0  # Group words into ~5 second segments
+
+            for word_data in words:
+                # Start new segment if we've exceeded segment duration
+                if word_data['start_time'] - current_segment['start'] > segment_duration and current_segment['words']:
+                    # Trim leading space from text
+                    current_segment['text'] = current_segment['text'].strip()
+                    segments.append(current_segment)
+                    current_segment = {
+                        'start': word_data['start_time'],
+                        'end': word_data['end_time'],
+                        'text': '',
+                        'words': []
+                    }
+
+                # Add to current segment
+                if not current_segment['words']:
+                    current_segment['start'] = word_data['start_time']
+
+                current_segment['end'] = word_data['end_time']
+                current_segment['text'] += ' ' + word_data['word']
+                current_segment['words'].append(word_data)
+
+            # Add final segment
+            if current_segment['words']:
+                current_segment['text'] = current_segment['text'].strip()
+                segments.append(current_segment)
+
+            # Build full text
+            full_text = ' '.join(word['word'] for word in words)
+
+            print(f"Loaded {len(words)} words from database, reconstructed {len(segments)} segments")
+
+            return {
+                'text': full_text,
+                'language': 'unknown',  # Language not stored in word table
+                'segments': segments,
+                'duration': duration
+            }
+
+        except Exception as e:
+            print(f"Error getting transcript from database: {e}")
+            return None
+
     def analyze_filler_words(self, recording_id: int) -> Dict[str, Any]:
         print(f"Analyzing filler words for recording ID: {recording_id}")
 
@@ -244,28 +303,16 @@ class FillerWordsAnalysisService:
         if not recording:
             return {'success': False, 'error': f'Recording with ID {recording_id} not found'}
 
-        # Construct path to processed audio
-        video_filename = recording['filename']
-        processed_filename = Path(video_filename).stem + '_processed.wav'
-        processed_path = Path(settings.VIDEO_STORAGE_PATH) / processed_filename
-
-        if not processed_path.exists():
+        # Get transcript from database
+        transcript = self.get_transcript_from_db(recording_id)
+        if not transcript:
             return {
                 'success': False,
-                'error': f'Processed audio file not found at: {processed_path}'
+                'error': 'Failed to get transcript from database. Please run transcript processing first.'
             }
 
-        audio_path = str(processed_path)
-        print(f"[DEBUG] Using processed audio from: {audio_path}")
-
-        # Get duration from audio file
-        try:
-            import librosa
-            audio, sr = librosa.load(audio_path, sr=None)
-            duration = len(audio) / sr
-            print(f"[DEBUG] Audio duration: {duration:.2f}s (sample rate: {sr} Hz)")
-        except Exception as e:
-            return {'success': False, 'error': f'Failed to load audio file: {e}'}
+        duration = transcript.get('duration', 0)
+        print(f"Received transcript with duration: {duration:.2f}s")
 
         # Check minimum duration
         min_duration = self.config['min_speech_duration']
@@ -274,17 +321,6 @@ class FillerWordsAnalysisService:
                 'success': False,
                 'error': f'Audio duration ({duration}s) is less than minimum required ({min_duration}s)'
             }
-
-        # Transcribe audio
-        transcript = self.transcribe_audio(audio_path)
-        if not transcript:
-            return {'success': False, 'error': 'Transcription failed'}
-        else:
-            output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id) / 'transcript.txt'
-            with open(output_dir, "w", encoding="utf-8") as f:
-                f.write(transcript["text"])
-
-        print(f"Transcription completed. Detected language: {transcript.get('language', 'unknown')}")
 
         # Detect filler words
         filler_occurrences = self.detect_filler_words(transcript)

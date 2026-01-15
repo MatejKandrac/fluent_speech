@@ -15,7 +15,7 @@ class VideoAnalysisService(
 ) {
     private val logger = LoggerFactory.getLogger(VideoAnalysisService::class.java)
 
-    @Value("\${video.analysis.service.url}")
+    @Value("\${processing.urls.video}")
     private lateinit var videoAnalysisServiceUrl: String
 
     @Async

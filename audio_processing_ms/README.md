@@ -76,6 +76,22 @@ Saves the final processed audio for use by other microservices.
 - Mono channel
 - Normalized amplitude
 
+### Step 7: Auto-Trigger Transcription (Optional)
+Automatically triggers the Transcript Processing MS to start transcription after audio processing completes.
+
+**How it works:**
+- Runs in a separate background thread (non-blocking)
+- Makes HTTP POST request to Transcript Processing MS
+- Does not wait for transcription to complete
+- Audio processing response returns immediately
+- Transcription runs asynchronously in the background
+
+**Benefits:**
+- Streamlines the processing pipeline
+- No manual step needed to start transcription
+- User gets faster end-to-end results
+- Can be disabled via configuration
+
 ## API Endpoints
 
 ### Health Check
@@ -100,9 +116,12 @@ POST /api/v1/audio/{recording_id}/process/
   "processed_wav_path": "D:/VideoData/video_processed.wav",
   "duration": 180.5,
   "sample_rate": 16000,
-  "samples": 2888000
+  "samples": 2888000,
+  "transcription_triggered": true
 }
 ```
+
+**Note:** If `AUTO_TRIGGER_TRANSCRIPTION=True`, the service will automatically start transcription in the background after audio processing completes. The response returns immediately without waiting for transcription.
 
 ## Configuration
 
@@ -121,6 +140,10 @@ DB_PORT=5432
 DB_NAME=fluent
 DB_USERNAME=postgres
 DB_PASSWORD=your_password
+
+# Transcript Processing Integration
+TRANSCRIPT_SERVICE_URL=http://localhost:8009/api/v1
+AUTO_TRIGGER_TRANSCRIPTION=True  # Set to False to disable auto-triggering
 ```
 
 ## Setup
@@ -168,7 +191,8 @@ The service will be available at `http://localhost:8004`
 1. Video uploaded → Stored in VIDEO_STORAGE_PATH
 2. Recording created in database
 3. This service → Extract and process audio → Save processed WAV
-4. Other services (pitch, volume) → Use processed WAV for analysis
+4. (Auto) Trigger Transcript Processing MS → Start transcription in background
+5. Other services (pitch, volume, filler words) → Use processed WAV/transcripts for analysis
 
 ### File Naming:
 - Original video: `{filename}.mp4`
@@ -186,6 +210,31 @@ The service will be available at `http://localhost:8004`
 curl -X POST http://localhost:8004/api/v1/audio/1/process/
 ```
 
+## Integration with Other Services
+
+### Transcript Processing MS
+When `AUTO_TRIGGER_TRANSCRIPTION=True` (default), this service automatically triggers transcription after audio processing:
+
+```
+Audio Processing Complete
+    ↓ (async, non-blocking)
+Transcript Processing MS
+    ↓
+Saves words to database
+    ↓
+Filler Words Analysis MS can analyze
+```
+
+**Workflow:**
+1. POST `/api/v1/audio/{recording_id}/process/` - Audio processing completes
+2. (Auto) Background thread calls Transcript Processing MS
+3. Response returns immediately (doesn't wait for transcription)
+4. Transcription runs in background
+5. When transcription completes, words are saved to database
+6. Filler Words Analysis MS can now analyze the recording
+
+**Note:** This is fire-and-forget - the audio processing response doesn't wait for transcription to complete. Check the Transcript Processing MS logs to monitor transcription progress.
+
 ## Future Improvements
 
 - Implement noise reduction (currently TODO)
@@ -193,3 +242,5 @@ curl -X POST http://localhost:8004/api/v1/audio/1/process/
 - Automatic volume normalization per speaker
 - Real-time audio processing
 - Support for streaming audio
+- Add retry logic for failed transcription triggers
+- Add webhook callback when transcription completes

@@ -23,6 +23,8 @@ Fluent Speech is a microservices-based platform that analyzes presentation video
 | **Hip Analysis** | 8007 | Analyzes body stability and posture |
 | **Arm Movement Analysis** | 8002 | Analyzes gestures and arm kinematics |
 | **Eye Contact Analysis** | 8003 | Analyzes gaze patterns and eye contact |
+| **Transcript Processing** | 8009 | Transcribes audio using Whisper, preserves filler words |
+| **Filler Words Analysis** | 8008 | Analyzes filler word usage from transcripts |
 
 ### Service Communication
 
@@ -166,6 +168,8 @@ POST http://localhost:8006/api/v1/volume/{recording_id}/analyze/
 POST http://localhost:8007/api/v1/hip/{recording_id}/analyze/
 POST http://localhost:8002/api/v1/analyze/arm-movements/{recording_id}/
 POST http://localhost:8003/api/v1/analyze/eye-contact/{recording_id}/
+POST http://localhost:8009/api/v1/{recording_id}/transcribe/
+POST http://localhost:8008/api/v1/filler-words/{recording_id}/analyze/
 ```
 
 ## Development
@@ -174,19 +178,21 @@ POST http://localhost:8003/api/v1/analyze/eye-contact/{recording_id}/
 
 ```
 fluent_speech/
-├── FluentApiGateway/          # API Gateway service
-├── video_processing_ms/        # Video processing with MediaPipe
-├── audio_processing_ms/        # Audio extraction and preprocessing
-├── pitch_analysis_ms/          # Pitch analysis
-├── volume_analysis_ms/         # Volume analysis
-├── hip_analysis_ms/            # Hip movement analysis
-├── arm_movement_analysis_ms/   # Arm gesture analysis
-├── eye_contact_analysis_ms/    # Eye contact analysis
-├── fluent/                     # Flutter mobile app
-├── init-db.sql                 # Database initialization
-├── docker-compose.yml          # Docker orchestration
-├── requests.http               # API testing requests
-└── README.md                   # This file
+├── FluentApiGateway/              # API Gateway service
+├── video_processing_ms/           # Video processing with MediaPipe
+├── audio_processing_ms/           # Audio extraction and preprocessing
+├── pitch_analysis_ms/             # Pitch analysis
+├── volume_analysis_ms/            # Volume analysis
+├── hip_analysis_ms/               # Hip movement analysis
+├── arm_movement_analysis_ms/      # Arm gesture analysis
+├── eye_contact_analysis_ms/       # Eye contact analysis
+├── transcript_processing_ms/      # Audio transcription with Whisper
+├── filler_words_analysis_ms/      # Filler words detection and analysis
+├── fluent/                        # Flutter mobile app
+├── init-db.sql                    # Database initialization
+├── docker-compose.yml             # Docker orchestration
+├── requests.http                  # API testing requests
+└── README.md                      # This file
 ```
 
 ### Database Schema
@@ -198,6 +204,7 @@ See `init-db.sql` for the complete database schema.
 - `frame_data`: Frame timestamps and indices
 - `landmark`: Pose landmarks (x, y, z, visibility)
 - `audio_features`: Audio analysis data (pitch, volume)
+- `word`: Transcribed words with timestamps and probabilities
 
 ## Documentation
 
@@ -209,6 +216,8 @@ Each microservice has its own detailed README:
 - [Arm Movement Analysis](./arm_movement_analysis_ms/README.md)
 - [Eye Contact Analysis](./eye_contact_analysis_ms/README.md)
 - [Video Processing](./video_processing_ms/README.md)
+- [Transcript Processing](./transcript_processing_ms/README.md)
+- [Filler Words Analysis](./filler_words_analysis_ms/README.md)
 
 ---
 

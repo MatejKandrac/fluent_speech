@@ -49,11 +49,8 @@ REST_FRAMEWORK = {
 }
 
 FILLER_WORDS_CONFIG = {
-    'slovak_fillers': ['ehm', 'ehh', 'emm', 'hm', 'hmm', 'teda', 'jako', 'takže', 'vlastne', 'viete'],
-    'english_fillers': ['uh', 'um', 'hmm', 'like', 'you know', 'so', 'actually', 'basically', 'literally'],
-
-    # Whisper model configuration
-    'whisper_model': os.getenv('WHISPER_MODEL', 'base'),  # tiny, base, small, medium, large
+    'slovak_fillers': ['ehm', 'ehh', 'emm', 'hm', 'hmm', 'teda', 'jako', 'takže', 'vlastne', 'viete', 'no', 'tak'],
+    'english_fillers': ['uh', 'um', 'hmm', 'like', 'you know', 'so', 'actually', 'basically', 'literally', 'well'],
 
     # Analysis thresholds
     'high_filler_threshold_per_minute': float(os.getenv('HIGH_FILLER_THRESHOLD', '5')),  # fillers per minute
