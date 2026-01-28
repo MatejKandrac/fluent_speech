@@ -19,7 +19,6 @@ class ArmMovementAnalysisService:
         return get_analysis_by_recording_id(recording_id)
 
     def normalize_landmarks(self, frame_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Normalize landmarks relative to body position and scale."""
         landmarks = frame_data.get('landmarks', {})
 
         required_landmarks = ['left_hip', 'right_hip', 'left_shoulder', 'right_shoulder']
@@ -591,7 +590,6 @@ class ArmMovementAnalysisService:
         }
 
     def analyze_arm_movements(self, recording_id: int) -> Dict[str, Any]:
-        """Main analysis pipeline for arm movements."""
         print(f"Analyzing arm movements for recording ID: {recording_id}")
 
         # Step 1: Fetch data

@@ -25,13 +25,6 @@ class HipAnalysisService:
         min_direction_changes: int = 5,
         min_amplitude: float = 0.02
     ) -> List[Dict[str, Any]]:
-        """
-        Detect swaying/dancing segments based on direction changes in hip movement.
-        Uses Y coordinate because MediaPipe frames are rotated (Y = lateral movement).
-
-        Args:
-            min_amplitude: Minimum change in position between extrema to count as significant movement
-        """
         if len(hip_center_y) < 3:
             return []
 

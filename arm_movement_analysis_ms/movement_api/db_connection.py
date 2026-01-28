@@ -66,49 +66,50 @@ def get_db_connection():
 def return_db_connection(conn):
     PostgreSQLConnection().return_connection(conn)
 
-
 def get_analysis_by_recording_id(recording_id: int) -> Optional[Dict[str, Any]]:
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            # Check if recording exists
             cursor.execute(
                 """
-                SELECT a.id, a.recording_id, a.total_frames, a.created_at
-                FROM analysis a
-                WHERE a.recording_id = %s
-                ORDER BY a.created_at DESC
-                LIMIT 1
+                SELECT id, filename, created_at
+                FROM recording
+                WHERE id = %s
                 """,
                 (recording_id,)
             )
-            analysis = cursor.fetchone()
+            recording = cursor.fetchone()
 
-            if not analysis:
+            if not recording:
                 return None
 
-            analysis_id = analysis['id']
-
+            # Get frame data with landmarks for this recording
             cursor.execute(
                 """
                 SELECT fd.id as frame_id, fd.timestamp, fd.frame_index,
                        l.type, l.x, l.y, l.z, l.visibility
                 FROM frame_data fd
                 LEFT JOIN landmark l ON l.frame_data_id = fd.id
-                WHERE fd.analysis_id = %s
-                  AND l.type IN %s
+                WHERE fd.recording_id = %s
+                  AND (l.type IN %s OR l.type IS NULL)
                 ORDER BY fd.frame_index, l.type
                 """,
-                (analysis_id, tuple(ARM_LANDMARKS))
+                (recording_id, tuple(ARM_LANDMARKS))
             )
             rows = cursor.fetchall()
 
+            if not rows:
+                return None
+
+            # Group landmarks by frame
             frames = {}
             for row in rows:
                 frame_idx = row['frame_index']
 
                 if frame_idx not in frames:
                     frames[frame_idx] = {
-                        'timestamp': row['timestamp'].isoformat(),
+                        'timestamp': row['timestamp'].isoformat() if row['timestamp'] else None,
                         'landmarks': {}
                     }
 
@@ -122,8 +123,8 @@ def get_analysis_by_recording_id(recording_id: int) -> Optional[Dict[str, Any]]:
 
             result = {
                 'recording_id': recording_id,
-                'total_frames': analysis['total_frames'],
-                'created_at': analysis['created_at'].isoformat(),
+                'total_frames': len(frames),
+                'created_at': recording['created_at'].isoformat() if recording['created_at'] else None,
                 'data': [frames[i] for i in sorted(frames.keys())]
             }
 
