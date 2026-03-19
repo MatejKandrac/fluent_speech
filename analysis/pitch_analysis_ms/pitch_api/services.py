@@ -14,16 +14,16 @@ from .db_connection import get_recording_by_id
 
 class PitchAnalysisService:
     def __init__(self):
-        pass
+        self.config = settings.PITCH_ANALYSIS_CONFIG
 
     def detect_monotonous_segments(
         self,
         pitch: np.ndarray,
         sr: float,
         hop_length: int,
-        window_size: int = 30,
-        std_threshold: float = 10.0,
-        range_threshold: float = 20.0
+        window_size: int,
+        std_threshold: float,
+        range_threshold: float
     ) -> list:
 
         monotonous_segments = []
@@ -184,6 +184,15 @@ class PitchAnalysisService:
             pitch_filtered = pitch.copy()
             pitch_filtered[~valid_mask] = np.nan
 
+            # Apply onset grace period: NaN out the first N frames after each silence-to-voice transition
+            grace_period_ms = self.config['pitch_grace_period']
+            grace_frames = int(grace_period_ms / 1000 * sr / hop_length)
+            if grace_frames > 0:
+                # valid_mask is False->True at each voice onset
+                transitions = np.where(~valid_mask[:-1] & valid_mask[1:])[0] + 1
+                for onset in transitions:
+                    pitch_filtered[onset:onset + grace_frames] = np.nan
+
             # Calculate statistics only from voiced segments (non-NaN)
             voiced_pitch = pitch_filtered[~np.isnan(pitch_filtered)]
 
@@ -208,10 +217,26 @@ class PitchAnalysisService:
                 pitch_filtered,
                 sr,
                 hop_length,
-                window_size=30,
-                std_threshold=10.0,
-                range_threshold=20.0
+                window_size=self.config['monotonous_window_size'],
+                std_threshold=self.config['monotonous_std_threshold'],
+                range_threshold=self.config['monotonous_range_threshold'],
             )
+
+            # Merge segments separated by a small gap, then drop segments that are too short
+            merge_gap = self.config['monotonous_merge_gap_ms'] / 1000.0
+            min_duration = self.config['monotonous_min_duration_ms'] / 1000.0
+
+            merged = []
+            for seg in monotonous_segments:
+                if merged and (seg['start_timestamp'] - merged[-1]['end_timestamp']) <= merge_gap:
+                    merged[-1]['end_timestamp'] = seg['end_timestamp']
+                    merged[-1]['duration_seconds'] = round(
+                        merged[-1]['end_timestamp'] - merged[-1]['start_timestamp'], 2
+                    )
+                else:
+                    merged.append(dict(seg))
+
+            monotonous_segments = [s for s in merged if s['duration_seconds'] >= min_duration]
 
             print(f"[DEBUG] Detected {len(monotonous_segments)} monotonous segments")
 

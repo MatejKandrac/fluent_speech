@@ -58,3 +58,12 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ],
 }
+
+PITCH_ANALYSIS_CONFIG = {
+    'pitch_grace_period': float(os.getenv('PITCH_GRACE_PERIOD_MS', 100)),
+    'monotonous_window_size': int(os.getenv('MONOTONOUS_WINDOW_SIZE', 30)),
+    'monotonous_std_threshold': float(os.getenv('MONOTONOUS_STD_THRESHOLD', 10.0)),
+    'monotonous_range_threshold': float(os.getenv('MONOTONOUS_RANGE_THRESHOLD', 20.0)),
+    'monotonous_merge_gap_ms': float(os.getenv('MONOTONOUS_MERGE_GAP_MS', 2500)),
+    'monotonous_min_duration_ms': float(os.getenv('MONOTONOUS_MIN_DURATION_MS', 3000)),
+}
