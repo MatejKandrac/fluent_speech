@@ -10,6 +10,7 @@ from django.conf import settings
 
 from .db_connection import (
     get_video_by_id,
+    update_recording_fps,
     insert_frame_data,
     insert_landmarks_batch
 )
@@ -171,6 +172,8 @@ class VideoProcessingService:
 
             print(f"Processing video: {video_path}")
             print(f"FPS: {fps}, Total frames: {total_frames}, Duration: {duration:.2f}s")
+
+            update_recording_fps(video_id, fps)
 
             if duration > self.max_duration:
                 cap.release()

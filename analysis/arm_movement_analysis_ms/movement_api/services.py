@@ -597,6 +597,14 @@ class ArmMovementAnalysisService:
         if not analysis_data:
             return {'success': False, 'error': 'Video analysis not found'}
 
+        fps = analysis_data.get('fps') or 30.0
+        self.config['min_consecutive_frames'] = max(1, round(self.config['min_consecutive_duration_ms'] * fps / 1000))
+        self.config['segmentation_window_size'] = max(1, round(self.config['segmentation_window_duration_ms'] * fps / 1000))
+        self.config['min_segment_gap'] = max(1, round(self.config['min_segment_gap_ms'] * fps / 1000))
+        print(f"Using fps={fps}: min_consecutive_frames={self.config['min_consecutive_frames']}, "
+              f"segmentation_window_size={self.config['segmentation_window_size']}, "
+              f"min_segment_gap={self.config['min_segment_gap']}")
+
         total_frames = len(analysis_data.get('data', []))
         print(f"Retrieved {total_frames} frames from database")
 

@@ -209,15 +209,15 @@ See `init-db.sql` for the complete database schema.
 ## Documentation
 
 Each microservice has its own detailed README:
-- [Audio Processing](./audio_processing_ms/README.md)
-- [Pitch Analysis](./pitch_analysis_ms/README.md)
-- [Volume Analysis](./volume_analysis_ms/README.md)
-- [Hip Analysis](./hip_analysis_ms/README.md)
-- [Arm Movement Analysis](./arm_movement_analysis_ms/README.md)
-- [Eye Contact Analysis](./eye_contact_analysis_ms/README.md)
-- [Video Processing](./video_processing_ms/README.md)
-- [Transcript Processing](./transcript_processing_ms/README.md)
-- [Filler Words Analysis](./filler_words_analysis_ms/README.md)
+- [Audio Processing](processing/audio_processing_ms/README.md)
+- [Pitch Analysis](analysis/pitch_analysis_ms/README.md)
+- [Volume Analysis](analysis/volume_analysis_ms/README.md)
+- [Hip Analysis](analysis/hip_analysis_ms/README.md)
+- [Arm Movement Analysis](analysis/arm_movement_analysis_ms/README.md)
+- [Eye Contact Analysis](analysis/eye_contact_analysis_ms/README.md)
+- [Video Processing](processing/video_processing_ms/README.md)
+- [Transcript Processing](processing/transcript_processing_ms/README.md)
+- [Filler Words Analysis](analysis/filler_words_analysis_ms/README.md)
 
 ---
 

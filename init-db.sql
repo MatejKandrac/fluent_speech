@@ -6,6 +6,7 @@ CREATE TABLE recording
 (
     id         BIGSERIAL PRIMARY KEY,
     filename   VARCHAR(255) NOT NULL,
+    fps        DOUBLE PRECISION NULL,
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 

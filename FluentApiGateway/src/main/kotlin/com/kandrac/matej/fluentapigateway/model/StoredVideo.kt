@@ -16,6 +16,9 @@ data class StoredVideo(
     @Column(nullable = false, length = 255)
     var filename: String? = null,
 
+    @Column(nullable = true)
+    var fps: Double? = null,
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: LocalDateTime = LocalDateTime.now(),

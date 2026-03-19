@@ -6,7 +6,7 @@ Content-Type: multipart/form-data; boundary=WebAppBoundary
 Content-Disposition: form-data; name="video"; filename="REC6766379630202934727.mp4"
 Content-Type: video/mp4
 
-< C:/Users/matke/Videos/testVideo5.mp4
+< C:/Users/matke/Videos/testVideo4.mp4
 --WebAppBoundary--
 
 ###############################################
@@ -54,7 +54,7 @@ POST http://localhost:8005/api/v1/pitch/10/analyze/
 POST http://localhost:8006/api/v1/volume/9/analyze/
 
 ### Arm Movement Analysis - Analyze wrist kinematics and gestures
-POST http://localhost:8002/api/v1/analyze/arm-movements/10/
+POST http://localhost:8002/api/v1/analyze/arm-movements/1/
 
 ### Eye Contact Analysis - Analyze gaze patterns
 POST http://localhost:8003/api/v1/eye-contact/10/analyze/

@@ -72,6 +72,22 @@ def get_video_by_id(video_id: int) -> Optional[dict]:
         return_db_connection(conn)
 
 
+def update_recording_fps(recording_id: int, fps: float):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE recording SET fps = %s WHERE id = %s",
+                (fps, recording_id)
+            )
+            conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        return_db_connection(conn)
+
+
 def insert_frame_data(recording_id: int, timestamp: str, frame_index: int) -> int:
     conn = get_db_connection()
     try:

@@ -73,7 +73,7 @@ def get_analysis_by_recording_id(recording_id: int) -> Optional[Dict[str, Any]]:
             # Check if recording exists
             cursor.execute(
                 """
-                SELECT id, filename, created_at
+                SELECT id, filename, fps, created_at
                 FROM recording
                 WHERE id = %s
                 """,
@@ -124,6 +124,7 @@ def get_analysis_by_recording_id(recording_id: int) -> Optional[Dict[str, Any]]:
             result = {
                 'recording_id': recording_id,
                 'total_frames': len(frames),
+                'fps': float(recording['fps']) if recording['fps'] else None,
                 'created_at': recording['created_at'].isoformat() if recording['created_at'] else None,
                 'data': [frames[i] for i in sorted(frames.keys())]
             }

@@ -37,7 +37,7 @@ services:
     restart: unless-stopped
 
   video-analysis:
-    build: video_processing_ms
+    build: processing/video_processing_ms
     container_name: fluent_video_analysis
     ports:
       - '${VIDEO_ANALYSIS_PORT}:8001'
@@ -54,7 +54,7 @@ services:
     restart: unless-stopped
 
   audio-analysis:
-    build: audio_processing_ms
+    build: processing/audio_processing_ms
     container_name: fluent_audio_analysis
     ports:
       - '${AUDIO_ANALYSIS_PORT}:8004'
@@ -70,7 +70,7 @@ services:
     restart: unless-stopped
 
   pitch-analysis:
-    build: ./pitch_analysis_ms
+    build: analysis/pitch_analysis_ms
     container_name: fluent_pitch_analysis
     ports:
       - '${PITCH_ANALYSIS_PORT}:8005'
@@ -87,7 +87,7 @@ services:
     restart: unless-stopped
 
   volume-analysis:
-    build: ./volume_analysis_ms
+    build: analysis/volume_analysis_ms
     container_name: fluent_volume_analysis
     ports:
       - '${VOLUME_ANALYSIS_PORT}:8006'
@@ -104,7 +104,7 @@ services:
     restart: unless-stopped
 
   hip-analysis:
-    build: ./hip_analysis_ms
+    build: analysis/hip_analysis_ms
     container_name: fluent_hip_analysis
     ports:
       - '${HIP_ANALYSIS_PORT}:8007'
@@ -120,7 +120,7 @@ services:
     restart: unless-stopped
 
   arm-movement:
-    build: ./arm_movement_analysis_ms
+    build: analysis/arm_movement_analysis_ms
     container_name: fluent_arm_movement
     ports:
       - '${ARM_MOVEMENT_PORT}:8002'
@@ -136,7 +136,7 @@ services:
     restart: unless-stopped
 
   eye-contact:
-    build: ./eye_contact_analysis_ms
+    build: analysis/eye_contact_analysis_ms
     container_name: fluent_eye_contact
     ports:
       - '${EYE_CONTACT_PORT}:8003'
@@ -152,7 +152,7 @@ services:
     restart: unless-stopped
 
   filler_words:
-    build: ./filler_words_analysis_ms
+    build: analysis/filler_words_analysis_ms
     container_name: fluent_filler_words
     ports:
       - '${EYE_CONTACT_PORT}:8008'
@@ -165,7 +165,7 @@ services:
     restart: unless-stopped
 
   transcript_service:
-    build: ./transcript_processing_ms
+    build: processing/transcript_processing_ms
     container_name: transcript_service
     ports:
       - '${TRANSCRIPT_SERVICE_PORT}:8009'
