@@ -14,16 +14,18 @@ from .db_connection import get_recording_by_id, get_hip_landmarks_by_recording_i
 
 class HipAnalysisService:
     def __init__(self):
-        pass
+        self.config = settings.HIP_ANALYSIS_CONFIG
+        print(f"Loaded configuration: {self.config}")
+
 
     def detect_swaying_segments(
         self,
         hip_center_y: np.ndarray,
         timestamps: List[str],
-        fps: float = 10.0,
-        window_duration: float = 10.0,
-        min_direction_changes: int = 5,
-        min_amplitude: float = 0.02
+        fps: float,
+        window_duration: float,
+        min_direction_changes: int,
+        min_amplitude: float
     ) -> List[Dict[str, Any]]:
         if len(hip_center_y) < 3:
             return []
@@ -275,17 +277,18 @@ class HipAnalysisService:
                 }
             }
 
-            # Detect swaying/dancing segments
-            # Use Y coordinate because MediaPipe frames are rotated (Y = lateral movement)
-            # Assume 10 FPS based on video processing settings (frame_interval=0.1)
-            fps = 10.0
+            min_direction_changes = self.config['min_hip_direction_changes']
+            min_amplitude_change =  self.config['min_hip_amplitude_change']
+            fps = recording['fps'] # fps of video
+            hip_window_duration = self.config['hip_window_duration'] # this is a duration in milliseconds
+            window_duration = hip_window_duration / 1000.0
             swaying_segments = self.detect_swaying_segments(
                 hip_sway_y,
                 metrics['timestamps'],
                 fps=fps,
-                window_duration=10.0,
-                min_direction_changes=5,
-                min_amplitude=0.02  # Minimum normalized position change to count as significant movement
+                window_duration=window_duration,
+                min_direction_changes=min_direction_changes,
+                min_amplitude=min_amplitude_change  # Minimum normalized position change to count as significant movement
             )
 
             print(f"[DEBUG] Detected {len(swaying_segments)} swaying segments")

@@ -63,7 +63,7 @@ def get_recording_by_id(recording_id: int) -> Optional[dict]:
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                "SELECT id, filename, created_at FROM recording WHERE id = %s",
+                "SELECT id, filename, fps, created_at FROM recording WHERE id = %s",
                 (recording_id,)
             )
             result = cursor.fetchone()

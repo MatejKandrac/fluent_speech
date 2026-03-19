@@ -60,10 +60,10 @@ EYE_CONTACT_ANALYSIS_CONFIG = {
     'audience_pitch_min': float(os.getenv('AUDIENCE_PITCH_MIN', '-15')),
     'audience_pitch_max': float(os.getenv('AUDIENCE_PITCH_MAX', '15')),
 
-    'min_consecutive_frames': int(os.getenv('EYE_CONTACT_MIN_CONSECUTIVE_FRAMES', '5')),
+    'min_looking_away_duration': int(os.getenv('EYE_CONTACT_MIN_LOOKING_AWAY_DURATION', '330')),
 
     'staring_angle_threshold': float(os.getenv('STARING_ANGLE_THRESHOLD', '3')),  # degrees
-    'min_staring_frames': int(os.getenv('MIN_STARING_FRAMES', '30')),  # ~2 seconds at 15fps
+    'min_staring_time': int(os.getenv('MIN_STARING_MS', '2000')),  # ~2 seconds at 15fps
 
     # Yaw calculation weights (must sum to 1.0)
     'yaw_weight_ear_ratio': float(os.getenv('YAW_WEIGHT_EAR_RATIO', '0.5')),

@@ -56,3 +56,9 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ],
 }
+
+HIP_ANALYSIS_CONFIG = {
+    'min_hip_direction_changes': float(os.getenv('MIN_HIP_DIRECTION_CHANGES', 4)),
+    'min_hip_amplitude_change': float(os.getenv('MIN_HIP_AMPLITUDE_CHANGE', 0.02)),
+    'hip_window_duration': float(os.getenv('HIP_WINDOW_DURATION_MS', 3000))
+}

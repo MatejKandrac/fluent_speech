@@ -173,15 +173,6 @@ class VideoProcessingService:
             print(f"Processing video: {video_path}")
             print(f"FPS: {fps}, Total frames: {total_frames}, Duration: {duration:.2f}s")
 
-            update_recording_fps(video_id, fps)
-
-            if duration > self.max_duration:
-                cap.release()
-                return {
-                    'success': False,
-                    'error': f'Video duration ({duration:.2f}s) exceeds maximum ({self.max_duration}s)'
-                }
-
             frame_skip = int(fps * self.frame_interval)
             if frame_skip < 1:
                 frame_skip = 1
@@ -189,6 +180,15 @@ class VideoProcessingService:
             frames_per_second = fps / frame_skip
             print(f"Processing every {frame_skip} frames ({self.frame_interval}s interval)")
             print(f"This will process {frames_per_second:.2f} frames per second of video")
+
+            update_recording_fps(video_id, frames_per_second)
+
+            if duration > self.max_duration:
+                cap.release()
+                return {
+                    'success': False,
+                    'error': f'Video duration ({duration:.2f}s) exceeds maximum ({self.max_duration}s)'
+                }
 
             frame_count = 0
             processed_count = 0

@@ -163,12 +163,13 @@ class EyeContactAnalysisService:
             }
         }
 
-    def detect_looking_away_events(self, angle_data: List[Dict[str, float]], frame_duration: float) -> List[Dict[str, Any]]:
+    def detect_looking_away_events(self, angle_data: List[Dict[str, float]], frame_duration: float, fps: float) -> List[Dict[str, Any]]:
         audience_yaw_min = self.config['audience_yaw_min']
         audience_yaw_max = self.config['audience_yaw_max']
         audience_pitch_min = self.config['audience_pitch_min']
         audience_pitch_max = self.config['audience_pitch_max']
-        min_frames = self.config['min_consecutive_frames']
+        min_duration = self.config['min_looking_away_duration']
+        min_frames = max(1, round(min_duration * fps / 1000))
 
         events = []
         current_streak = []
@@ -220,9 +221,10 @@ class EyeContactAnalysisService:
 
         return events
 
-    def detect_staring_events(self, angle_data: List[Dict[str, float]], frame_duration: float) -> List[Dict[str, Any]]:
+    def detect_staring_events(self, angle_data: List[Dict[str, float]], frame_duration: float, fps: float) -> List[Dict[str, Any]]:
         angle_threshold = self.config['staring_angle_threshold']
-        min_frames = self.config['min_staring_frames']
+        min_duration = self.config['min_staring_time']
+        min_frames = max(1, min_duration * fps / 1000)
 
         events = []
         current_streak = []
@@ -442,6 +444,7 @@ class EyeContactAnalysisService:
         print(f"Analyzing eye contact for recording ID: {recording_id}")
 
         analysis_data = self.get_video_analysis(recording_id)
+
         if not analysis_data:
             return {'success': False, 'error': 'Video analysis not found'}
 
@@ -476,17 +479,17 @@ class EyeContactAnalysisService:
         else:
             total_duration = last_ts - first_ts
 
-        fps = (len(angle_data) - 1) / total_duration if total_duration > 0 else 15.0
+        fps = analysis_data['fps']
         frame_duration = 1.0 / fps
         print(f"Calculated FPS: {fps:.2f} (frame duration: {frame_duration*1000:.2f}ms)")
 
         heatmap_data = self.build_heatmap(angle_data, frame_duration)
         print(f"Built heatmap with {heatmap_data['shape']['n_yaw_bins']}x{heatmap_data['shape']['n_pitch_bins']} bins")
 
-        looking_away_events = self.detect_looking_away_events(angle_data, frame_duration)
+        looking_away_events = self.detect_looking_away_events(angle_data, frame_duration, analysis_data['fps'])
         print(f"Detected {len(looking_away_events)} looking away events")
 
-        staring_events = self.detect_staring_events(angle_data, frame_duration)
+        staring_events = self.detect_staring_events(angle_data, frame_duration, analysis_data['fps'])
         print(f"Detected {len(staring_events)} staring events")
 
         statistics = self.calculate_statistics(angle_data, looking_away_events, frame_duration)
@@ -511,7 +514,7 @@ class EyeContactAnalysisService:
             },
             'staring_thresholds': {
                 'angle_threshold': self.config['staring_angle_threshold'],
-                'min_frames': self.config['min_staring_frames']
+                'min_frames': self.config['min_staring_time']
             },
             'message': 'Eye contact analysis completed successfully.'
         }
