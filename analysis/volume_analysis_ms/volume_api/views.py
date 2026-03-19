@@ -27,10 +27,17 @@ def analyze_volume(request, recording_id):
                 'success': True,
                 'recording_id': result['recording_id'],
                 'volume_frames': result['volume_frames'],
-                'volume_mean': result['volume_mean'],
-                'volume_min': result['volume_min'],
-                'volume_max': result['volume_max'],
-                'volume_std': result['volume_std']
+                'volume_mean_rms': result['volume_mean_rms'],
+                'volume_min_rms': result['volume_min_rms'],
+                'volume_max_rms': result['volume_max_rms'],
+                'volume_std_rms': result['volume_std_rms'],
+                'dbfs_mean': result['dbfs_mean'],
+                'dbfs_min': result['dbfs_min'],
+                'dbfs_max': result['dbfs_max'],
+                'too_soft_segments': result['too_soft_segments'],
+                'too_soft_count': result['too_soft_count'],
+                'too_loud_segments': result['too_loud_segments'],
+                'too_loud_count': result['too_loud_count'],
             },
             status=status.HTTP_200_OK
         )

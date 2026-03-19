@@ -58,3 +58,10 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ],
 }
+
+VOLUME_ANALYSIS_CONFIG = {
+    'too_soft_dbfs': float(os.getenv('VOLUME_TOO_SOFT_DBFS', -35.0)),   # Below this = speaking too softly
+    'too_loud_dbfs': float(os.getenv('VOLUME_TOO_LOUD_DBFS', -10.0)),   # Above this = speaking too loudly
+    'silence_floor_dbfs': float(os.getenv('VOLUME_SILENCE_FLOOR_DBFS', -60.0)),  # Below this = silence, not flagged
+    'min_segment_duration_ms': float(os.getenv('VOLUME_MIN_SEGMENT_MS', 500.0)),  # Ignore very short violations
+}
