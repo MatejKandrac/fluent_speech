@@ -48,6 +48,8 @@ REST_FRAMEWORK = {
     ],
 }
 
+PITCH_ANALYSIS_SERVICE_URL = os.getenv('PITCH_ANALYSIS_SERVICE_URL', 'http://localhost:8005')
+
 FILLER_WORDS_CONFIG = {
     'slovak_fillers': ['ehm', 'ehh', 'emm', 'hm', 'hmm', 'teda', 'jako', 'takže', 'vlastne', 'viete', 'no', 'tak'],
     'english_fillers': ['uh', 'um', 'hmm', 'like', 'you know', 'so', 'actually', 'basically', 'literally', 'well'],
@@ -55,4 +57,8 @@ FILLER_WORDS_CONFIG = {
     # Analysis thresholds
     'high_filler_threshold_per_minute': float(os.getenv('HIGH_FILLER_THRESHOLD', '5')),  # fillers per minute
     'min_speech_duration': float(os.getenv('MIN_SPEECH_DURATION', '10')),  # minimum seconds for analysis
+
+    # Uhh detection via pitch cross-referencing
+    'uhh_pitch_std_threshold': float(os.getenv('UHH_PITCH_STD_THRESHOLD', '15.0')),  # max Hz std for stable pitch
+    'uhh_min_voiced_duration_ms': float(os.getenv('UHH_MIN_VOICED_DURATION_MS', '200')),  # min voiced ms in gap
 }

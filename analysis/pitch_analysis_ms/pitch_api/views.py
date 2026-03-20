@@ -48,6 +48,25 @@ def analyze_pitch(request, recording_id):
 
 
 @api_view(['GET'])
+def get_pitch_timeseries(request, recording_id):
+    try:
+        recording_id = int(recording_id)
+    except (ValueError, TypeError):
+        return Response(
+            {'success': False, 'error': 'Invalid recording_id format - must be an integer'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    service = PitchAnalysisService()
+    result = service.get_pitch_timeseries(recording_id)
+
+    if result['success']:
+        return Response(result, status=status.HTTP_200_OK)
+    else:
+        return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
 def health_check(request):
     return Response(
         {

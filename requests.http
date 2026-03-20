@@ -1,3 +1,7 @@
+##############################################
+# Processing Endpoints
+##############################################
+
 ### Send video request
 POST http://localhost:8000/api/v1/videos/upload
 Content-Type: multipart/form-data; boundary=WebAppBoundary
@@ -6,8 +10,18 @@ Content-Type: multipart/form-data; boundary=WebAppBoundary
 Content-Disposition: form-data; name="video"; filename="REC6766379630202934727.mp4"
 Content-Type: video/mp4
 
-< C:/Users/matke/Videos/testVideo4.mp4
+< C:/Users/matke/Videos/testVideo3.mp4
 --WebAppBoundary--
+
+### Video Processing - Extract pose landmarks from video
+POST http://localhost:8001/api/v1/video/1/analyze/
+
+### Audio Processing - Extract, normalize, and resample audio
+POST http://localhost:8004/api/v1/audio/8/analyze/
+
+### Transcript Processing MS - Health Check
+# @timeout 60 m
+POST http://localhost:8009/api/v1/10/transcribe/
 
 ###############################################
 # Health Checks
@@ -41,14 +55,11 @@ GET http://localhost:8009/api/v1/health/
 # Analysis Endpoints
 ###############################################
 
-### Video Processing - Extract pose landmarks from video
-POST http://localhost:8001/api/v1/video/1/analyze/
-
-### Audio Processing - Extract, normalize, and resample audio
-POST http://localhost:8004/api/v1/audio/6/analyze/
-
 ### Pitch Analysis - Analyze pitch from processed audio
 POST http://localhost:8005/api/v1/pitch/5/analyze/
+
+### Pitch Timeseries - Get pitch timeseries data
+GET http://localhost:8005/api/v1/pitch/5/timeseries/
 
 ### Volume Analysis - Analyze volume from processed audio
 POST http://localhost:8006/api/v1/volume/5/analyze/
@@ -63,8 +74,4 @@ POST http://localhost:8003/api/v1/eye-contact/3/analyze/
 POST http://localhost:8007/api/v1/hip/3/analyze/
 
 ### Filler Words Analysis - Analyze filler words
-POST http://localhost:8008/api/v1/filler-words/9/analyze/
-
-### Transcript Processing MS - Health Check
-# @timeout 60 m
-POST http://localhost:8009/api/v1/10/transcribe/
+POST http://localhost:8008/api/v1/filler-words/8/analyze/

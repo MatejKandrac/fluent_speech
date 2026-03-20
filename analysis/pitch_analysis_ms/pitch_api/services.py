@@ -132,6 +132,77 @@ class PitchAnalysisService:
             print(f"Error saving pitch visualization: {e}")
             return None
 
+    def extract_pitch_from_audio(self, audio: np.ndarray, sr: float) -> tuple[np.ndarray, int]:
+        """
+        Extracts filtered pitch from a loaded audio array.
+        Returns (pitch_filtered, hop_length) where unvoiced/silent frames are NaN.
+        """
+        hop_length = 800
+        frame_length = 1600
+
+        pitch = librosa.yin(
+            audio, fmin=50, fmax=300, sr=sr,
+            frame_length=frame_length, hop_length=hop_length
+        )
+
+        rms = librosa.feature.rms(y=audio, frame_length=frame_length, hop_length=hop_length)[0]
+
+        energy_threshold = 0.02
+        pitch_threshold = 70
+        valid_mask = (rms > energy_threshold) & (pitch >= pitch_threshold)
+
+        pitch_filtered = pitch.copy()
+        pitch_filtered[~valid_mask] = np.nan
+
+        grace_period_ms = self.config['pitch_grace_period']
+        grace_frames = int(grace_period_ms / 1000 * sr / hop_length)
+        if grace_frames > 0:
+            transitions = np.where(~valid_mask[:-1] & valid_mask[1:])[0] + 1
+            for onset in transitions:
+                pitch_filtered[onset:onset + grace_frames] = np.nan
+
+        return pitch_filtered, hop_length
+
+    def get_pitch_timeseries(self, recording_id: int) -> dict:
+        try:
+            recording = get_recording_by_id(recording_id)
+            if not recording:
+                return {'success': False, 'error': f'Recording with ID {recording_id} not found'}
+
+            video_filename = recording['filename']
+            processed_filename = Path(video_filename).stem + '_processed.wav'
+            processed_path = Path(settings.VIDEO_STORAGE_PATH) / processed_filename
+
+            if not processed_path.exists():
+                return {'success': False, 'error': f'Processed audio file not found at: {processed_path}'}
+
+            audio, sr = librosa.load(str(processed_path), sr=None)
+            pitch_filtered, hop_length = self.extract_pitch_from_audio(audio, sr)
+
+            duration_per_frame = hop_length / sr
+            timeseries = [
+                {
+                    'time': round(i * duration_per_frame, 4),
+                    'pitch': None if np.isnan(v) else round(float(v), 2)
+                }
+                for i, v in enumerate(pitch_filtered)
+            ]
+
+            return {
+                'success': True,
+                'recording_id': recording_id,
+                'hop_length': hop_length,
+                'sample_rate': sr,
+                'duration_per_frame': duration_per_frame,
+                'timeseries': timeseries,
+            }
+
+        except Exception as e:
+            import traceback
+            print(f"Error getting pitch timeseries: {e}")
+            print(f"Full traceback:\n{traceback.format_exc()}")
+            return {'success': False, 'error': str(e)}
+
     def analyze_pitch(self, recording_id: int) -> dict:
         try:
             print(f"[DEBUG] Starting pitch analysis for recording_id: {recording_id}")
@@ -161,37 +232,8 @@ class PitchAnalysisService:
             audio, sr = librosa.load(str(processed_path), sr=None)
             print(f"[DEBUG] Audio loaded: {len(audio)} samples at {sr} Hz")
 
-            # Extract pitch using YIN algorithm
-            hop_length = 800
-            frame_length = 1600
-            pitch = librosa.yin(
-                audio, fmin=50, fmax=300, sr=sr,
-                frame_length=frame_length, hop_length=hop_length
-            )
-            print(f"Pitch extracted (raw): mean={pitch.mean():.2f} Hz, min={pitch.min():.2f}, max={pitch.max():.2f}")
-
-            # Calculate RMS energy to detect unvoiced/silent segments
-            rms = librosa.feature.rms(y=audio, frame_length=frame_length, hop_length=hop_length)[0]
-
-            # Filter pitch: set to 0 where energy is low or pitch is unreliable
-            energy_threshold = 0.02  # Minimum RMS energy for voiced segments
-            pitch_threshold = 70     # Minimum valid pitch (Hz) - below this is likely error
-
-            # Create mask for valid voiced segments
-            valid_mask = (rms > energy_threshold) & (pitch >= pitch_threshold)
-
-            # Set invalid segments to NaN (creates discontinuous plot)
-            pitch_filtered = pitch.copy()
-            pitch_filtered[~valid_mask] = np.nan
-
-            # Apply onset grace period: NaN out the first N frames after each silence-to-voice transition
-            grace_period_ms = self.config['pitch_grace_period']
-            grace_frames = int(grace_period_ms / 1000 * sr / hop_length)
-            if grace_frames > 0:
-                # valid_mask is False->True at each voice onset
-                transitions = np.where(~valid_mask[:-1] & valid_mask[1:])[0] + 1
-                for onset in transitions:
-                    pitch_filtered[onset:onset + grace_frames] = np.nan
+            # Extract pitch using shared method
+            pitch_filtered, hop_length = self.extract_pitch_from_audio(audio, sr)
 
             # Calculate statistics only from voiced segments (non-NaN)
             voiced_pitch = pitch_filtered[~np.isnan(pitch_filtered)]

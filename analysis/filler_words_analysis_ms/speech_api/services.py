@@ -7,6 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import requests
 
 from django.conf import settings
 
@@ -295,6 +296,138 @@ class FillerWordsAnalysisService:
             print(f"Error getting transcript from database: {e}")
             return None
 
+    def fetch_pitch_timeseries(self, recording_id: int) -> Optional[List[Dict[str, Any]]]:
+        try:
+            url = f"{settings.PITCH_ANALYSIS_SERVICE_URL}/api/v1/pitch/{recording_id}/timeseries/"
+            response = requests.get(url, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+            if data.get('success'):
+                return data['timeseries'], data['duration_per_frame']
+            print(f"Pitch timeseries request failed: {data.get('error')}")
+            return None, None
+        except Exception as e:
+            print(f"Error fetching pitch timeseries: {e}")
+            return None, None
+
+    def detect_uhh_sounds(
+        self,
+        words: List[Dict[str, Any]],
+        pitch_timeseries: List[Dict[str, Any]],
+        duration_per_frame: float,
+    ) -> List[Dict[str, Any]]:
+        std_threshold = self.config['uhh_pitch_std_threshold']
+        min_voiced_duration = self.config['uhh_min_voiced_duration_ms'] / 1000.0
+
+        # Find inter-word gaps only (pre-speech silence before first word is excluded)
+        gaps = []
+        if words:
+            for i in range(len(words) - 1):
+                gap_start = words[i]['end_time']
+                gap_end = words[i + 1]['start_time']
+                if gap_end - gap_start >= min_voiced_duration:
+                    gaps.append((gap_start, gap_end))
+
+        uhh_occurrences = []
+
+        for gap_start, gap_end in gaps:
+            # Collect pitch values for frames within this gap
+            voiced_values = [
+                frame['pitch']
+                for frame in pitch_timeseries
+                if gap_start <= frame['time'] < gap_end and frame['pitch'] is not None
+            ]
+
+            if not voiced_values:
+                continue
+
+            voiced_duration = len(voiced_values) * duration_per_frame
+            if voiced_duration < min_voiced_duration:
+                continue
+
+            pitch_std = float(np.std(voiced_values))
+            if pitch_std < std_threshold:
+                uhh_occurrences.append({
+                    'word': 'uhh',
+                    'language': 'non-verbal',
+                    'start_time': round(gap_start, 2),
+                    'end_time': round(gap_end, 2),
+                    'pitch_mean': round(float(np.mean(voiced_values)), 2),
+                    'pitch_std': round(pitch_std, 2),
+                    'voiced_duration': round(voiced_duration, 2),
+                })
+
+        return uhh_occurrences
+
+    def save_pitch_debug_plot(
+        self,
+        pitch_timeseries: List[Dict[str, Any]],
+        words: List[Dict[str, Any]],
+        uhh_occurrences: List[Dict[str, Any]],
+        recording_id: int,
+    ):
+        try:
+            output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            times = [f['time'] for f in pitch_timeseries]
+            pitches = [f['pitch'] if f['pitch'] is not None else np.nan for f in pitch_timeseries]
+
+            fig, ax = plt.subplots(figsize=(18, 5))
+
+            # Shade word spans (light blue) so gaps are visually obvious
+            for word in words:
+                ax.axvspan(word['start_time'], word['end_time'], color='steelblue', alpha=0.15)
+
+            # Shade detected uhh segments (orange) and annotate with std
+            for uhh in uhh_occurrences:
+                ax.axvspan(uhh['start_time'], uhh['end_time'], color='orange', alpha=0.4, label='uhh')
+                ax.text(
+                    (uhh['start_time'] + uhh['end_time']) / 2,
+                    ax.get_ylim()[1] if ax.get_ylim()[1] > 0 else 300,
+                    f"std={uhh['pitch_std']:.1f}",
+                    ha='center', va='bottom', fontsize=7, color='darkorange'
+                )
+
+            # Plot pitch on top
+            ax.plot(times, pitches, linewidth=1, color='green', label='Pitch (Hz)')
+
+            # Annotate uhh std values (re-do after plot so ylim is known)
+            ymax = ax.get_ylim()[1]
+            for uhh in uhh_occurrences:
+                ax.text(
+                    (uhh['start_time'] + uhh['end_time']) / 2,
+                    ymax * 0.95,
+                    f"std={uhh['pitch_std']:.1f}",
+                    ha='center', va='top', fontsize=7,
+                    color='darkorange',
+                    bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.6)
+                )
+
+            ax.set_xlabel('Time (s)', fontsize=11)
+            ax.set_ylabel('Pitch (Hz)', fontsize=11)
+            ax.set_title(
+                f'Pitch + Uhh Detection — Recording {recording_id}  '
+                f'(blue=word, orange=uhh, threshold std<{self.config["uhh_pitch_std_threshold"]})',
+                fontsize=12
+            )
+            ax.set_ylim([50, 350])
+            ax.grid(True, alpha=0.3)
+
+            # Deduplicate legend
+            handles, labels = ax.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            ax.legend(by_label.values(), by_label.keys(), loc='upper right')
+
+            plt.tight_layout()
+            output_path = output_dir / 'pitch_uhh.png'
+            plt.savefig(str(output_path), dpi=150, bbox_inches='tight')
+            plt.close(fig)
+            print(f"Pitch uhh debug plot saved to: {output_path}")
+
+        except Exception as e:
+            print(f"Error saving pitch debug plot: {e}")
+
     def analyze_filler_words(self, recording_id: int) -> Dict[str, Any]:
         print(f"Analyzing filler words for recording ID: {recording_id}")
 
@@ -322,12 +455,28 @@ class FillerWordsAnalysisService:
                 'error': f'Audio duration ({duration}s) is less than minimum required ({min_duration}s)'
             }
 
-        # Detect filler words
+        # Detect filler words from transcript
         filler_occurrences = self.detect_filler_words(transcript)
         print(f"Detected {len(filler_occurrences)} filler word occurrences")
 
+        # Detect uhh sounds via pitch cross-referencing
+        words = [w for seg in transcript.get('segments', []) for w in seg.get('words', [])]
+        pitch_timeseries, duration_per_frame = self.fetch_pitch_timeseries(recording_id)
+        uhh_occurrences = []
+        if pitch_timeseries is not None:
+            uhh_occurrences = self.detect_uhh_sounds(words, pitch_timeseries, duration_per_frame)
+            print(f"Detected {len(uhh_occurrences)} uhh sounds")
+        else:
+            print("Pitch timeseries unavailable, skipping uhh detection")
+
+        all_occurrences = sorted(filler_occurrences + uhh_occurrences, key=lambda x: x['start_time'])
+
         # Calculate statistics
-        statistics = self.calculate_statistics(filler_occurrences, duration)
+        statistics = self.calculate_statistics(all_occurrences, duration)
+
+        # Save pitch debug plot (always, for tuning uhh detection thresholds)
+        if pitch_timeseries is not None:
+            self.save_pitch_debug_plot(pitch_timeseries, words, uhh_occurrences, recording_id)
 
         # Create visualization if in debug mode
         if settings.DEBUG:
@@ -343,7 +492,8 @@ class FillerWordsAnalysisService:
             'duration': round(duration, 2),
             'detected_language': transcript.get('language', 'unknown'),
             'statistics': statistics,
-            'filler_occurrences': filler_occurrences[:50],  # Limit to first 50 for response size
-            'total_filler_occurrences': len(filler_occurrences),
+            'filler_occurrences': all_occurrences[:50],  # Limit to first 50 for response size
+            'total_filler_occurrences': len(all_occurrences),
+            'uhh_occurrences_count': len(uhh_occurrences),
             'message': 'Filler words analysis completed successfully.'
         }
