@@ -59,6 +59,8 @@ REST_FRAMEWORK = {
     ],
 }
 
+SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
+
 PITCH_ANALYSIS_CONFIG = {
     'pitch_grace_period': float(os.getenv('PITCH_GRACE_PERIOD_MS', 100)),
     'monotonous_window_size': int(os.getenv('MONOTONOUS_WINDOW_SIZE', 30)),
@@ -66,4 +68,6 @@ PITCH_ANALYSIS_CONFIG = {
     'monotonous_range_threshold': float(os.getenv('MONOTONOUS_RANGE_THRESHOLD', 20.0)),
     'monotonous_merge_gap_ms': float(os.getenv('MONOTONOUS_MERGE_GAP_MS', 2500)),
     'monotonous_min_duration_ms': float(os.getenv('MONOTONOUS_MIN_DURATION_MS', 3000)),
+    'segmentation_sensitivity': float(os.getenv('PITCH_SEGMENTATION_SENSITIVITY', '0.5')),
+    'median_filter_size': int(os.getenv('PITCH_MEDIAN_FILTER_SIZE', '5')),
 }

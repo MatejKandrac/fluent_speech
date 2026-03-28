@@ -33,7 +33,8 @@ def analyze_pitch(request, recording_id):
                 'pitch_max': result['pitch_max'],
                 'pitch_std': result['pitch_std'],
                 'monotonous_segments': result['monotonous_segments'],
-                'monotonous_segments_count': result['monotonous_segments_count']
+                'monotonous_segments_count': result['monotonous_segments_count'],
+                'segmentation': result.get('segmentation'),
             },
             status=status.HTTP_200_OK
         )

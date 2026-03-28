@@ -4,6 +4,8 @@ from typing import Optional
 import librosa
 import matplotlib
 import numpy as np
+import requests
+from scipy.signal import medfilt
 
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
@@ -145,6 +147,10 @@ class PitchAnalysisService:
             frame_length=frame_length, hop_length=hop_length
         )
 
+        kernel_size = self.config['median_filter_size']
+        if kernel_size > 1:
+            pitch = medfilt(pitch, kernel_size=kernel_size)
+
         rms = librosa.feature.rms(y=audio, frame_length=frame_length, hop_length=hop_length)[0]
 
         energy_threshold = 0.02
@@ -162,6 +168,39 @@ class PitchAnalysisService:
                 pitch_filtered[onset:onset + grace_frames] = np.nan
 
         return pitch_filtered, hop_length
+
+    def call_segmentation(self, pitch_filtered: np.ndarray, duration_per_frame: float, recording_id: int) -> Optional[dict]:
+        try:
+            window_size = self.config['monotonous_window_size']
+
+            # Build windowed-std series: one value per window step.
+            # Each point represents pitch variability (std) over that window,
+            # which is the signal we actually want to segment.
+            series = []
+            for i in range(len(pitch_filtered) - window_size + 1):
+                window = pitch_filtered[i:i + window_size]
+                voiced = window[~np.isnan(window)]
+                if len(voiced) < window_size * 0.5:
+                    continue
+                t = round((i + window_size / 2) * duration_per_frame, 4)
+                series.append({'time': t, 'value': round(float(np.std(voiced)), 4)})
+
+            if len(series) < 4:
+                print("Not enough voiced windows for segmentation")
+                return None
+
+            url = f"{settings.SEGMENTATION_SERVICE_URL}/api/v1/segment/"
+            response = requests.post(url, json={
+                'series': series,
+                'methods': ['std'],
+                'sensitivity': self.config['segmentation_sensitivity'],
+                'label': f'pitch_{recording_id}',
+            }, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Segmentation service call failed: {e}")
+            return None
 
     def get_pitch_timeseries(self, recording_id: int) -> dict:
         try:
@@ -282,6 +321,10 @@ class PitchAnalysisService:
 
             print(f"[DEBUG] Detected {len(monotonous_segments)} monotonous segments")
 
+            # Call segmentation service on voiced pitch timeseries
+            duration_per_frame = hop_length / sr
+            segmentation = self.call_segmentation(pitch_filtered, duration_per_frame, recording_id)
+
             # TODO: Save pitch data to database (implement later)
 
             return {
@@ -294,7 +337,8 @@ class PitchAnalysisService:
                 'pitch_max': pitch_max,
                 'pitch_std': pitch_std,
                 'monotonous_segments': monotonous_segments,
-                'monotonous_segments_count': len(monotonous_segments)
+                'monotonous_segments_count': len(monotonous_segments),
+                'segmentation': segmentation,
             }
 
         except Exception as e:

@@ -168,7 +168,7 @@ services:
     build: analysis/analysis_orchestrator_ms
     container_name: fluent_analysis_orchestrator
     ports:
-      - '${ANALYSIS_ORCHESTRATOR_PORT:-8010}:8010'
+      - '${ORCHERSTRATOR_PORT}:8010'
     env_file:
       - .env
     depends_on:
@@ -191,6 +191,17 @@ services:
       - .env
     volumes:
       - transcript-debug:/app/debug_output
+    networks:
+      - fluent-network
+    restart: unless-stopped
+
+  segmentation:
+    build: analysis/segmentation_ms
+    container_name: fluent_segmentation
+    ports:
+      - '${SEGMENTATION_ANALYSIS_PORT}:8010'
+    env_file:
+      - .env
     networks:
       - fluent-network
     restart: unless-stopped
