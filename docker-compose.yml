@@ -164,6 +164,24 @@ services:
       - fluent-network
     restart: unless-stopped
 
+  analysis-orchestrator:
+    build: analysis/analysis_orchestrator_ms
+    container_name: fluent_analysis_orchestrator
+    ports:
+      - '${ANALYSIS_ORCHESTRATOR_PORT:-8010}:8010'
+    env_file:
+      - .env
+    depends_on:
+      - arm-movement
+      - eye-contact
+      - pitch-analysis
+      - volume-analysis
+      - hip-analysis
+      - filler_words
+    networks:
+      - fluent-network
+    restart: unless-stopped
+
   transcript_service:
     build: processing/transcript_processing_ms
     container_name: transcript_service

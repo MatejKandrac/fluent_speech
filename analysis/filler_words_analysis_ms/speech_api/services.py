@@ -8,6 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
+import soundfile as sf
 
 from django.conf import settings
 
@@ -34,7 +35,7 @@ class FillerWordsAnalysisService:
             # If we have word-level data, use it for precise timestamps
             if 'words' in segment and segment['words']:
                 for word_data in segment['words']:
-                    word_text = word_data['word'].lower().strip()
+                    word_text = word_data['word'].lower().strip().rstrip('.,')
 
                     # Check if this word is a filler word
                     for filler in all_fillers:
@@ -168,59 +169,26 @@ class FillerWordsAnalysisService:
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create bins for visualization (10 second intervals)
-        time_labels, filler_counts = self.create_timeline_bins(
-            filler_occurrences,
-            duration,
-            bin_size=10.0
-        )
-
-        if not time_labels:
+        if not filler_occurrences:
             print("No data to visualize")
             return
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 10))
+        fig, ax = plt.subplots(figsize=(16, 5))
 
-        # Top plot: Bar chart of filler words over time
-        ax1.bar(time_labels, filler_counts, width=8, alpha=0.7, color='red', edgecolor='darkred')
-        ax1.set_xlabel('Time (seconds)', fontsize=12)
-        ax1.set_ylabel('Filler Words Count', fontsize=12)
-        ax1.set_title(f'Filler Words Over Time - Recording {recording_id}',
+        # Build step function from actual event timestamps
+        times = [0.0] + [f['start_time'] for f in filler_occurrences] + [duration]
+        counts = [0] + list(range(1, len(filler_occurrences) + 1)) + [len(filler_occurrences)]
+
+        ax.step(times, counts, where='post', color='red', linewidth=2)
+        ax.fill_between(times, counts, step='post', alpha=0.15, color='red')
+        ax.scatter([f['start_time'] for f in filler_occurrences],
+                   range(1, len(filler_occurrences) + 1),
+                   color='red', s=40, zorder=5)
+        ax.set_xlabel('Time (seconds)', fontsize=12)
+        ax.set_ylabel('Total Filler Words', fontsize=12)
+        ax.set_title(f'Filler Words Usage Over Time - Recording {recording_id}',
                      fontsize=14, fontweight='bold')
-        ax1.grid(True, alpha=0.3, axis='y')
-
-        # Add threshold line
-        if duration > 0:
-            threshold_per_bin = (self.config['high_filler_threshold_per_minute'] / 60) * 10  # per 10 seconds
-            ax1.axhline(
-                threshold_per_bin,
-                color='orange',
-                linestyle='--',
-                linewidth=2,
-                label=f'High Usage Threshold ({threshold_per_bin:.1f} per 10s)'
-            )
-            ax1.legend(loc='upper right')
-
-        # Bottom plot: Scatter plot of individual occurrences
-        if filler_occurrences:
-            slovak_times = [f['start_time'] for f in filler_occurrences if f['language'] == 'slovak']
-            english_times = [f['start_time'] for f in filler_occurrences if f['language'] == 'english']
-
-            if slovak_times:
-                ax2.scatter(slovak_times, [1] * len(slovak_times),
-                          color='blue', s=100, alpha=0.6, label='Slovak Fillers', marker='|')
-            if english_times:
-                ax2.scatter(english_times, [1.5] * len(english_times),
-                          color='green', s=100, alpha=0.6, label='English Fillers', marker='|')
-
-        ax2.set_xlabel('Time (seconds)', fontsize=12)
-        ax2.set_ylabel('Filler Type', fontsize=12)
-        ax2.set_title('Individual Filler Word Occurrences', fontsize=12, fontweight='bold')
-        ax2.set_ylim(0.5, 2)
-        ax2.set_yticks([1, 1.5])
-        ax2.set_yticklabels(['Slovak', 'English'])
-        ax2.grid(True, alpha=0.3, axis='x')
-        ax2.legend(loc='upper right')
+        ax.grid(True, alpha=0.3)
 
         plt.tight_layout()
 
@@ -317,6 +285,7 @@ class FillerWordsAnalysisService:
         duration_per_frame: float,
     ) -> List[Dict[str, Any]]:
         std_threshold = self.config['uhh_pitch_std_threshold']
+        min_gap_duration = self.config['uhh_min_gap_duration_ms'] / 1000.0
         min_voiced_duration = self.config['uhh_min_voiced_duration_ms'] / 1000.0
 
         # Find inter-word gaps only (pre-speech silence before first word is excluded)
@@ -325,7 +294,7 @@ class FillerWordsAnalysisService:
             for i in range(len(words) - 1):
                 gap_start = words[i]['end_time']
                 gap_end = words[i + 1]['start_time']
-                if gap_end - gap_start >= min_voiced_duration:
+                if gap_end - gap_start >= min_gap_duration:
                     gaps.append((gap_start, gap_end))
 
         uhh_occurrences = []
@@ -428,6 +397,35 @@ class FillerWordsAnalysisService:
         except Exception as e:
             print(f"Error saving pitch debug plot: {e}")
 
+    def save_uhh_audio_clips(
+        self,
+        uhh_occurrences: List[Dict[str, Any]],
+        recording_filename: str,
+        recording_id: int,
+    ):
+        try:
+            processed_wav = Path(settings.VIDEO_STORAGE_PATH) / (Path(recording_filename).stem + '_processed.wav')
+            if not processed_wav.exists():
+                print(f"Processed WAV not found at {processed_wav}, skipping uhh clip export")
+                return
+
+            audio, sr = sf.read(str(processed_wav))
+
+            output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            for i, uhh in enumerate(uhh_occurrences):
+                start_sample = int(uhh['start_time'] * sr)
+                end_sample = int(uhh['end_time'] * sr)
+                clip = audio[start_sample:end_sample]
+
+                clip_path = output_dir / f'uhh_{i + 1}_{uhh["start_time"]:.2f}s.wav'
+                sf.write(str(clip_path), clip, sr)
+                print(f"Saved uhh clip {i + 1}: {clip_path}")
+
+        except Exception as e:
+            print(f"Error saving uhh audio clips: {e}")
+
     def analyze_filler_words(self, recording_id: int) -> Dict[str, Any]:
         print(f"Analyzing filler words for recording ID: {recording_id}")
 
@@ -474,9 +472,11 @@ class FillerWordsAnalysisService:
         # Calculate statistics
         statistics = self.calculate_statistics(all_occurrences, duration)
 
-        # Save pitch debug plot (always, for tuning uhh detection thresholds)
+        # Save pitch debug plot + uhh audio clips (always, for tuning uhh detection thresholds)
         if pitch_timeseries is not None:
             self.save_pitch_debug_plot(pitch_timeseries, words, uhh_occurrences, recording_id)
+            if uhh_occurrences:
+                self.save_uhh_audio_clips(uhh_occurrences, recording['filename'], recording_id)
 
         # Create visualization if in debug mode
         if settings.DEBUG:

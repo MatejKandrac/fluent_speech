@@ -60,5 +60,6 @@ FILLER_WORDS_CONFIG = {
 
     # Uhh detection via pitch cross-referencing
     'uhh_pitch_std_threshold': float(os.getenv('UHH_PITCH_STD_THRESHOLD', '15.0')),  # max Hz std for stable pitch
-    'uhh_min_voiced_duration_ms': float(os.getenv('UHH_MIN_VOICED_DURATION_MS', '200')),  # min voiced ms in gap
+    'uhh_min_gap_duration_ms': float(os.getenv('UHH_MIN_GAP_DURATION_MS', '200')),  # min gap length to consider
+    'uhh_min_voiced_duration_ms': float(os.getenv('UHH_MIN_VOICED_DURATION_MS', '200')),  # min voiced ms within gap
 }
