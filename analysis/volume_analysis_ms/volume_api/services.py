@@ -4,6 +4,7 @@ from typing import Optional, List, Dict, Any
 import librosa
 import matplotlib
 import numpy as np
+import requests
 
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
@@ -144,6 +145,46 @@ class VolumeAnalysisService:
             print(f"Error saving volume visualization: {e}")
             return None
 
+    def call_segmentation(
+        self,
+        dbfs: np.ndarray,
+        sr: float,
+        hop_length: int,
+        recording_id: int,
+    ) -> Optional[Dict]:
+        try:
+            speech_floor = self.config['too_soft_dbfs']
+            frames_per_second = round(sr / hop_length)
+
+            # Build 1-second-averaged dBFS series using only speech-level frames.
+            # Between-word gaps sit well below too_soft_dbfs and would drag the mean
+            # down if included, so we filter them out here.
+            series = []
+            for i in range(0, len(dbfs), frames_per_second):
+                window = dbfs[i:i + frames_per_second]
+                voiced = window[window > speech_floor]
+                if len(voiced) == 0:
+                    continue
+                t = round(i / frames_per_second, 3)
+                series.append({'time': t, 'value': round(float(voiced.mean()), 3)})
+
+            if len(series) < 4:
+                print("Not enough voiced seconds for volume segmentation")
+                return None
+
+            url = f"{settings.SEGMENTATION_SERVICE_URL}/api/v1/segment/"
+            response = requests.post(url, json={
+                'series': series,
+                'methods': ['mean'],
+                'sensitivity': self.config['segmentation_sensitivity'],
+                'label': f'volume_{recording_id}',
+            }, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Segmentation service call failed: {e}")
+            return None
+
     def analyze_volume(self, recording_id: int) -> dict:
         try:
             print(f"[DEBUG] Starting volume analysis for recording_id: {recording_id}")
@@ -191,6 +232,9 @@ class VolumeAnalysisService:
             # Save debug plot
             self.save_volume_plot(rms, dbfs, sr, str(recording_id), segments)
 
+            # Call segmentation service
+            segmentation = self.call_segmentation(dbfs, sr, hop_length, recording_id)
+
             # TODO: Save volume data to database (implement later)
 
             return {
@@ -208,6 +252,7 @@ class VolumeAnalysisService:
                 'too_soft_count': len(segments['too_soft']),
                 'too_loud_segments': segments['too_loud'],
                 'too_loud_count': len(segments['too_loud']),
+                'segmentation': segmentation,
             }
 
         except Exception as e:

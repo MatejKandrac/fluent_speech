@@ -426,6 +426,40 @@ class FillerWordsAnalysisService:
         except Exception as e:
             print(f"Error saving uhh audio clips: {e}")
 
+    def call_segmentation(
+        self,
+        all_occurrences: List[Dict[str, Any]],
+        duration: float,
+        recording_id: int,
+    ) -> Optional[Dict[str, Any]]:
+        try:
+            bin_size = self.config['segmentation_bin_size']
+            time_labels, filler_counts = self.create_timeline_bins(all_occurrences, duration, bin_size)
+
+            # Filter out empty bins so PELT isn't dominated by zero-count gaps
+            series = [
+                {'time': round(t, 3), 'value': float(c)}
+                for t, c in zip(time_labels, filler_counts)
+                if c > 0 or t == 0  # keep t=0 as anchor
+            ]
+
+            if len(series) < 4:
+                print("Not enough bins for filler word segmentation")
+                return None
+
+            url = f"{settings.SEGMENTATION_SERVICE_URL}/api/v1/segment/"
+            response = requests.post(url, json={
+                'series': series,
+                'methods': ['mean'],
+                'sensitivity': self.config['segmentation_sensitivity'],
+                'label': f'filler_{recording_id}',
+            }, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Segmentation service call failed: {e}")
+            return None
+
     def analyze_filler_words(self, recording_id: int) -> Dict[str, Any]:
         print(f"Analyzing filler words for recording ID: {recording_id}")
 
@@ -486,6 +520,9 @@ class FillerWordsAnalysisService:
                 recording_id
             )
 
+        # Call segmentation on binned filler word counts
+        segmentation = self.call_segmentation(all_occurrences, duration, recording_id)
+
         return {
             'success': True,
             'recording_id': recording_id,
@@ -495,5 +532,6 @@ class FillerWordsAnalysisService:
             'filler_occurrences': all_occurrences[:50],  # Limit to first 50 for response size
             'total_filler_occurrences': len(all_occurrences),
             'uhh_occurrences_count': len(uhh_occurrences),
+            'segmentation': segmentation,
             'message': 'Filler words analysis completed successfully.'
         }

@@ -49,6 +49,7 @@ REST_FRAMEWORK = {
 }
 
 PITCH_ANALYSIS_SERVICE_URL = os.getenv('PITCH_ANALYSIS_SERVICE_URL', 'http://localhost:8005')
+SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
 
 FILLER_WORDS_CONFIG = {
     'slovak_fillers': ['ehm', 'ehh', 'emm', 'hm', 'hmm', 'teda', 'jako', 'takže', 'vlastne', 'viete', 'no', 'tak'],
@@ -62,4 +63,6 @@ FILLER_WORDS_CONFIG = {
     'uhh_pitch_std_threshold': float(os.getenv('UHH_PITCH_STD_THRESHOLD', '15.0')),  # max Hz std for stable pitch
     'uhh_min_gap_duration_ms': float(os.getenv('UHH_MIN_GAP_DURATION_MS', '200')),  # min gap length to consider
     'uhh_min_voiced_duration_ms': float(os.getenv('UHH_MIN_VOICED_DURATION_MS', '200')),  # min voiced ms within gap
+    'segmentation_bin_size': float(os.getenv('FILLER_SEGMENTATION_BIN_SIZE', '10.0')),  # seconds per bin
+    'segmentation_sensitivity': float(os.getenv('FILLER_SEGMENTATION_SENSITIVITY', '0.5')),
 }

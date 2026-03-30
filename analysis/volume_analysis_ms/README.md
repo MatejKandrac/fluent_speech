@@ -1,80 +1,56 @@
 # Volume Analysis Service
 
-A microservice that analyzes volume levels in presentation audio to provide feedback on speaking dynamics and voice projection.
+A microservice that analyzes volume levels in presentation audio to identify projection issues and find where a speaker's loudness behaviour changes.
 
 ## What This Service Does
 
-This service analyzes the volume (loudness) of a speaker's voice to identify:
-- Consistent volume levels
-- Dynamic range (how much volume varies)
-- Quiet or loud sections
-- Volume trends over time
+- Detects sustained too-soft and too-loud segments relative to configurable dBFS thresholds
+- Converts raw RMS energy to dBFS for perceptually meaningful comparisons
+- Sends a 1-second-averaged dBFS time series to the segmentation service to find where volume level meaningfully shifts
+- Saves a debug plot showing both RMS and dBFS over time
 
 ## How Volume Analysis Works
 
-### What is RMS Energy?
-RMS (Root Mean Square) Energy is a measure of the power/loudness of an audio signal.
+### RMS → dBFS
 
-**Why RMS instead of amplitude?**
-- Better represents perceived loudness
-- Smooths out rapid fluctuations
-- Standard metric in audio engineering
-- Correlates with how humans perceive volume
+Raw RMS energy is extracted per frame and converted to dBFS (decibels relative to full scale):
 
-**RMS calculation:**
 ```
-RMS = sqrt(mean(signal^2))
+dBFS = 20 * log10(RMS)
 ```
 
-### Frame-Based Analysis
-Audio is analyzed in overlapping frames for smooth tracking.
+dBFS is clamped at `VOLUME_SILENCE_FLOOR_DBFS` to avoid log(0). Values closer to 0 are louder; typical speech sits in the -40 to -15 dBFS range.
 
-**Parameters:**
-- Frame length: 2048 samples (~128ms at 16kHz)
-- Hop length: 800 samples (~50ms between frames)
-- Result: 20 volume measurements per second
+### Frame Parameters
+
+- Frame length: 2048 samples (~128ms at 16 kHz)
+- Hop length: 800 samples (~50ms between frames, 20 frames/second)
+
+### Too-Soft / Too-Loud Detection
+
+Consecutive frames outside the acceptable dBFS range are grouped into violation segments. Segments shorter than `VOLUME_MIN_SEGMENT_MS` are discarded.
+
+| Zone | Threshold | Meaning |
+|------|-----------|---------|
+| Silence | below `VOLUME_SILENCE_FLOOR_DBFS` | Not flagged — not speech |
+| Too soft | `VOLUME_SILENCE_FLOOR_DBFS` to `VOLUME_TOO_SOFT_DBFS` | Audible but too quiet |
+| Normal | `VOLUME_TOO_SOFT_DBFS` to `VOLUME_TOO_LOUD_DBFS` | Acceptable range |
+| Too loud | above `VOLUME_TOO_LOUD_DBFS` | Clipping risk / uncomfortable |
 
 ## Processing Pipeline
 
-### Step 1: Load Processed Audio
-Loads the preprocessed audio file created by audio_processing_ms.
+1. Load `{stem}_processed.wav` from `VIDEO_STORAGE_PATH`
+2. Extract RMS per frame → convert to dBFS
+3. Detect too-soft and too-loud segments
+4. Save debug plot to `debug/{recording_id}/volume.png`
+5. Build 1-second-averaged dBFS series → call segmentation service
+6. Return statistics + violation segments + segmentation result
 
-**Input:** `{filename}_processed.wav`
-- 16 kHz sample rate
-- Mono channel
-- Normalized amplitude (peak = 1.0)
+## Segmentation Integration
 
-### Step 2: Extract Volume (RMS Energy)
-Calculates RMS energy for each frame using librosa.
+Frames below `VOLUME_TOO_SOFT_DBFS` are excluded when computing each second's average — between-word gaps (which sit in the -40 to -55 dBFS range) would otherwise drag the mean down and produce false change points. Only frames where the speaker is actually projecting are averaged.
 
-**Output:** Array of RMS values for each frame
-
-**Interpretation:**
-- High RMS: Loud speaking, good projection
-- Low RMS: Quiet speaking, poor projection
-- Variation: Dynamic, engaging delivery
-
-### Step 3: Generate Visualization
-Creates a plot showing volume over time.
-
-**Plot features:**
-- Time (seconds) on X-axis
-- RMS Energy on Y-axis
-- Mean RMS displayed in title
-- Shows volume dynamics clearly
-
-**Output:** `debug/{recording_id}/volume.png`
-
-### Step 4: Calculate Statistics
-Computes summary statistics for the entire recording.
-
-**Metrics:**
-- Mean RMS: Average volume level
-- Min/Max RMS: Volume range
-- Standard deviation: Measure of volume variation
-
-### Step 5: Save to Database
-**TODO:** Store volume data for long-term analysis and feedback generation.
+The `mean` method is used. `std`-based segmentation was evaluated but found to be insufficiently discriminative on typical speech recordings.
 
 ## API Endpoints
 
@@ -88,166 +64,61 @@ GET /api/v1/health/
 POST /api/v1/volume/{recording_id}/analyze/
 ```
 
-**Parameters:**
-- `recording_id` (int): Database ID of the recording
-
 **Response:**
 ```json
 {
   "success": true,
-  "recording_id": 1,
-  "volume_frames": 3600,
-  "volume_mean": 0.125,
-  "volume_min": 0.008,
-  "volume_max": 0.456,
-  "volume_std": 0.082
+  "recording_id": 5,
+  "volume_frames": 963,
+  "volume_mean_rms": 0.0712,
+  "volume_min_rms": 0.0001,
+  "volume_max_rms": 0.342,
+  "volume_std_rms": 0.058,
+  "dbfs_mean": -26.2,
+  "dbfs_min": -60.0,
+  "dbfs_max": -9.4,
+  "too_soft_segments": [],
+  "too_soft_count": 0,
+  "too_loud_segments": [],
+  "too_loud_count": 0,
+  "segmentation": {
+    "success": true,
+    "change_points": { "mean": [28.0, 41.0] },
+    "segments": { "mean": [ ... ] },
+    "penalty_used": 144.27,
+    "sensitivity": 0.2
+  }
 }
 ```
 
-## Interpreting Results
-
-### Good Volume Dynamics:
-- **Standard deviation:** 0.05-0.15 (normalized audio)
-- **Range:** Clear difference between quiet and loud sections
-- Shows emphasis on important points
-- Keeps audience engaged
-
-### Monotonous Volume:
-- **Standard deviation:** <0.03
-- **Range:** Very small (min ≈ max)
-- Sounds flat and unengaging
-- No emphasis or variation
-- Audience may tune out
-
-### Excessive Variation:
-- **Standard deviation:** >0.20
-- **Range:** Very large
-- May indicate inconsistent microphone distance
-- Could be jarring for audience
-- Might have audio quality issues
-
-### Too Quiet Overall:
-- **Mean RMS:** <0.05
-- Indicates poor voice projection
-- Audience struggles to hear
-- May seem unconfident
-
-### Too Loud Overall:
-- **Mean RMS:** >0.30
-- May be distorted or clipping
-- Can be uncomfortable for audience
-- Check for microphone placement issues
-
 ## Configuration
 
-Set in `.env` file:
-
 ```bash
-# Video storage path (where processed audio is stored)
-VIDEO_STORAGE_PATH=D:/VideoData
+# dBFS thresholds
+VOLUME_TOO_SOFT_DBFS=-35.0          # Below this (but above silence) = too quiet
+VOLUME_TOO_LOUD_DBFS=-10.0          # Above this = too loud
+VOLUME_SILENCE_FLOOR_DBFS=-60.0     # Below this = silence, not flagged
+VOLUME_MIN_SEGMENT_MS=1000          # Ignore violations shorter than this
 
-# Database configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=fluent
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
+# Segmentation
+SEGMENTATION_SERVICE_URL=http://localhost:8010
+VOLUME_SEGMENTATION_SENSITIVITY=0.2  # 0=fewer segments, 1=more granular
 ```
-
-## Setup
-
-1. Create virtual environment:
-```bash
-python -m venv venv
-venv\Scripts\activate  # Windows
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Configure `.env` file
-
-4. Run migrations:
-```bash
-python manage.py migrate
-```
-
-5. Start the server:
-```bash
-python manage.py runserver 8006
-```
-
-The service will be available at `http://localhost:8006`
-
-## Dependencies
-
-- **librosa**: Audio analysis and RMS feature extraction
-- **matplotlib**: Visualization
-- **numpy**: Numerical computations
-- **Django**: Web framework
-- **PostgreSQL**: Database for recording metadata
-
-## Technical Notes
-
-### Data Flow:
-1. audio_processing_ms → Creates normalized `_processed.wav` file
-2. This service → Loads processed audio → Extracts RMS → Returns statistics
-3. Future: Stores volume data in database for feedback generation
-
-### Normalization Impact:
-Since the audio is normalized (max amplitude = 1.0):
-- RMS values are relative to the loudest point
-- Focus is on variation, not absolute loudness
-- Comparisons between recordings are more meaningful
-
-### Frame Rate:
-- 50ms between frames (hop_length = 800 samples / 16000 Hz)
-- 20 frames per second
-- 5-minute presentation = ~6,000 frames
-
-### Performance:
-- Processing time: ~1-2 seconds per minute of audio
-- Typical 5-minute presentation: ~5-10 seconds
 
 ## Debug Output
 
-Visualizations are saved to: `debug/{recording_id}/volume.png`
+`debug/{recording_id}/volume.png` — two subplots: RMS energy (top) and dBFS with threshold lines and shaded violation segments (bottom).
 
 **What to look for:**
-- Flat lines → No volume variation (monotonous)
-- Peaks and valleys → Good dynamics and emphasis
-- Consistent level → Steady voice projection
-- Gradual changes → Natural speaking patterns
+- Sustained region below the orange line → too-soft segment
+- Sustained region above the red line → too-loud segment
+- Deep dips to silence floor between words → normal speech rhythm, not violations
 
-## Example Usage
+## Dependencies
 
-```bash
-# Analyze volume for recording ID 1
-curl -X POST http://localhost:8006/api/v1/volume/1/analyze/
-```
-
-## Common Use Cases
-
-### Detecting Volume Issues:
-1. **No variation** → Suggest adding emphasis to key points
-2. **Too quiet** → Suggest speaking up or adjusting microphone
-3. **Erratic volume** → Suggest maintaining consistent mic distance
-4. **Gradual decrease** → Speaker may be getting tired
-
-### Combining with Pitch Analysis:
-- High pitch + high volume = Excitement/emphasis
-- Low pitch + high volume = Authority/confidence
-- High pitch + low volume = Uncertainty/nervousness
-- Low pitch + low volume = Ending/conclusion
-
-## Future Improvements
-
-- Store volume data in database (currently TODO)
-- Detect silence vs. speech automatically
-- Identify volume-based emphasis patterns
-- Compare against "ideal" presentation patterns
-- Real-time volume feedback
-- Detect microphone issues
-- Segment by volume patterns
+- **librosa** — RMS feature extraction
+- **matplotlib** — debug visualization
+- **numpy** — numerical computations
+- **requests** — calls segmentation_ms
+- **Django / DRF** — web framework
+- **psycopg2** — PostgreSQL (recording metadata)

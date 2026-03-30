@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 import math
 
 import matplotlib
 import numpy as np
+import requests
 
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
@@ -26,9 +27,9 @@ class HipAnalysisService:
         window_duration: float,
         min_direction_changes: int,
         min_amplitude: float
-    ) -> List[Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], List[int]]:
         if len(hip_center_y) < 3:
-            return []
+            return [], []
 
         # Calculate velocity (first derivative)
         velocity = np.diff(hip_center_y)
@@ -95,7 +96,7 @@ class HipAnalysisService:
                         'direction_changes': changes_in_window
                     })
 
-        return swaying_segments
+        return swaying_segments, direction_changes
 
     def calculate_hip_metrics(self, frames: List[Dict[str, Any]]) -> Dict[str, Any]:
         metrics = {
@@ -220,6 +221,42 @@ class HipAnalysisService:
             print(f"Error saving hip movement visualization: {e}")
             return None
 
+    def call_segmentation(self, direction_changes: List[int], fps: float, total_frames: int, recording_id: int) -> dict:
+        bin_size = self.config['hip_segmentation_bin_size']
+        sensitivity = self.config['hip_segmentation_sensitivity']
+        duration = total_frames / fps
+        num_bins = max(1, int(math.ceil(duration / bin_size)))
+
+        counts = [0] * num_bins
+        for frame_idx in direction_changes:
+            t = frame_idx / fps
+            bin_idx = min(int(t / bin_size), num_bins - 1)
+            counts[bin_idx] += 1
+
+        # Always include t=0 as anchor; skip empty bins after that
+        series = [{'time': 0.0, 'value': float(counts[0])}]
+        for i in range(1, num_bins):
+            if counts[i] > 0:
+                series.append({'time': round(i * bin_size, 3), 'value': float(counts[i])})
+
+        if len(series) < 2:
+            return {'success': False, 'error': 'Not enough direction changes for segmentation'}
+
+        url = f"{settings.SEGMENTATION_SERVICE_URL}/api/v1/segment/"
+        payload = {
+            'series': series,
+            'methods': ['trend'],
+            'sensitivity': sensitivity,
+            'label': f'hip_{recording_id}',
+        }
+        try:
+            resp = requests.post(url, json=payload, timeout=30)
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            print(f"Segmentation service error: {e}")
+            return {'success': False, 'error': str(e)}
+
     def analyze_hip_movement(self, recording_id: int) -> dict:
         try:
             print(f"[DEBUG] Starting hip movement analysis for recording_id: {recording_id}")
@@ -282,7 +319,7 @@ class HipAnalysisService:
             fps = recording['fps'] # fps of video
             hip_window_duration = self.config['hip_window_duration'] # this is a duration in milliseconds
             window_duration = hip_window_duration / 1000.0
-            swaying_segments = self.detect_swaying_segments(
+            swaying_segments, direction_changes = self.detect_swaying_segments(
                 hip_sway_y,
                 metrics['timestamps'],
                 fps=fps,
@@ -296,6 +333,10 @@ class HipAnalysisService:
             # Save debug plots with swaying segments highlighted
             self.save_hip_movement_plots(metrics, str(recording_id), swaying_segments)
 
+            segmentation = self.call_segmentation(
+                direction_changes, fps, len(hip_sway_y), recording_id
+            )
+
             print(f"[DEBUG] Hip movement analysis completed successfully")
 
             return {
@@ -303,7 +344,8 @@ class HipAnalysisService:
                 'recording_id': recording_id,
                 'statistics': stats,
                 'swaying_segments': swaying_segments,
-                'swaying_segments_count': len(swaying_segments)
+                'swaying_segments_count': len(swaying_segments),
+                'segmentation': segmentation,
             }
 
         except Exception as e:

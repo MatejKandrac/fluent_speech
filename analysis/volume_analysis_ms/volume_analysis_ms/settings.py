@@ -46,6 +46,8 @@ DATABASES = {
 
 VIDEO_STORAGE_PATH = os.getenv('VIDEO_STORAGE_PATH', 'D:/VideoData')
 
+SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
+
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
@@ -64,4 +66,5 @@ VOLUME_ANALYSIS_CONFIG = {
     'too_loud_dbfs': float(os.getenv('VOLUME_TOO_LOUD_DBFS', -10.0)),   # Above this = speaking too loudly
     'silence_floor_dbfs': float(os.getenv('VOLUME_SILENCE_FLOOR_DBFS', -60.0)),  # Below this = silence, not flagged
     'min_segment_duration_ms': float(os.getenv('VOLUME_MIN_SEGMENT_MS', 500.0)),  # Ignore very short violations
+    'segmentation_sensitivity': float(os.getenv('VOLUME_SEGMENTATION_SENSITIVITY', '0.5')),
 }

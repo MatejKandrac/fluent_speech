@@ -12,8 +12,9 @@ from django.conf import settings
 
 
 SUPPORTED_METHODS = {
-    'mean': 'l2',      # detects shifts in mean (least-squares cost)
-    'std':  'normal',  # detects shifts in variance/std (Gaussian log-likelihood cost)
+    'mean':  'l2',      # detects shifts in mean (least-squares cost)
+    'std':   'normal',  # detects shifts in variance/std (Gaussian log-likelihood cost)
+    'trend': 'linear',  # detects shifts in slope (piecewise linear regression cost)
 }
 
 
@@ -33,10 +34,10 @@ class SegmentationService:
         sensitivity: float,
         label: Optional[str] = None,
     ) -> Dict[str, Any]:
-        if len(series) < 4:
+        if len(series) < 2:
             return {
                 'success': False,
-                'error': 'Series too short for segmentation (minimum 4 points required)',
+                'error': 'Series too short for segmentation (minimum 2 points required)',
             }
 
         # ruptures expects a 2-D array (n_samples, n_features)

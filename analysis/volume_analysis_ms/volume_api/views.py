@@ -38,6 +38,7 @@ def analyze_volume(request, recording_id):
                 'too_soft_count': result['too_soft_count'],
                 'too_loud_segments': result['too_loud_segments'],
                 'too_loud_count': result['too_loud_count'],
+                'segmentation': result.get('segmentation'),
             },
             status=status.HTTP_200_OK
         )
