@@ -4,10 +4,13 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 -- Create recording table (replaces videos collection)
 CREATE TABLE recording
 (
-    id         BIGSERIAL PRIMARY KEY,
-    filename   VARCHAR(255) NOT NULL,
-    fps        DOUBLE PRECISION NULL,
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    id                             BIGSERIAL PRIMARY KEY,
+    filename                       VARCHAR(255)     NOT NULL,
+    fps                            DOUBLE PRECISION NULL,
+    video_processing_finished      BOOLEAN          NOT NULL DEFAULT FALSE,
+    audio_processing_finished      BOOLEAN          NOT NULL DEFAULT FALSE,
+    transcript_processing_finished BOOLEAN          NOT NULL DEFAULT FALSE,
+    created_at                     TIMESTAMPTZ      NOT NULL DEFAULT NOW()
 );
 
 -- Create frame_data table (stores timestamp information for each analyzed frame)

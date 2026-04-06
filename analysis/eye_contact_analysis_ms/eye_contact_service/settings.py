@@ -46,6 +46,8 @@ REST_FRAMEWORK = {
     ],
 }
 
+SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
+
 EYE_CONTACT_ANALYSIS_CONFIG = {
     'yaw_min': float(os.getenv('YAW_MIN', '-60')),  # degrees
     'yaw_max': float(os.getenv('YAW_MAX', '60')),
@@ -72,4 +74,9 @@ EYE_CONTACT_ANALYSIS_CONFIG = {
 
     # Back facing
     'back_facing_threshold': float(os.getenv('BACK_FACING_THRESHOLD', '-0.1')),
+
+    'pitch_scale': float(os.getenv('PITCH_SCALE', '1620')),
+    'pitch_bias': float(os.getenv('PITCH_BIAS', '5')),
+
+    'eye_segmentation_sensitivity': float(os.getenv('EYE_SEGMENTATION_SENSITIVITY', '0.5')),
 }

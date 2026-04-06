@@ -27,8 +27,8 @@ class SecurityConfig {
                 disable() // Disable CORS
             }
             authorizeHttpRequests {
-                // for now authorize all
-                authorize("/api/v1/videos/upload", permitAll)
+                authorize("/api/v1/processing/upload", permitAll)
+                authorize("/api/v1/processing/status/**", permitAll)
                 authorize(anyRequest, authenticated)
             }
             sessionManagement {

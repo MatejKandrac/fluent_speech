@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional, List
 
 import matplotlib
 import numpy as np
+import requests
 from django.conf import settings
 
 matplotlib.use('Agg')
@@ -93,9 +94,20 @@ class EyeContactAnalysisService:
         facing_back = (nose['z'] - shoulder_center_z) > self.config['back_facing_threshold']
 
         # --- PITCH CALCULATION ---
-        eye_level_y = (left_eye['y'] + right_eye['y']) / 2
-        nose_offset_y = nose['y'] - eye_level_y
-        pitch = -nose_offset_y * 150
+        # The video is rotated 90° CW (portrait saved sideways), so real-world vertical
+        # movement (pitch) maps to the image X axis, not Y.
+        # Nose X relative to ear level X, normalised by shoulder Y span
+        # (which is the real shoulder-to-shoulder distance in the rotated frame).
+        ear_level_y = (left_ear['y'] + right_ear['y']) / 2  # kept for debug
+        ear_level_x = (left_ear['x'] + right_ear['x']) / 2
+        shoulder_width = abs(right_shoulder['x'] - left_shoulder['x'])  # kept for debug
+        shoulder_y_span = abs(right_shoulder['y'] - left_shoulder['y'])
+        if shoulder_y_span > 0.001:
+            nose_ear_offset_x = nose['x'] - ear_level_x
+            pitch = -(nose_ear_offset_x / shoulder_y_span) * self.config['pitch_scale']
+        else:
+            pitch = -(nose['x'] - (left_eye['x'] + right_eye['x']) / 2) * self.config['pitch_scale']
+        pitch = max(-90.0, min(90.0, pitch - self.config['pitch_bias']))
 
         return {
             'yaw': yaw,
@@ -112,6 +124,34 @@ class EyeContactAnalysisService:
                 'nose_z': nose['z'],
                 'shoulder_center_z': shoulder_center_z,
                 'z_diff': nose['z'] - shoulder_center_z
+            },
+            'nose': {
+                'x': nose['x'],
+                'y': nose['y'],
+                'z': nose['z'],
+            },
+            'pitch_debug': {
+                # Y axis (old approach — should be flat for rotated video)
+                'nose_y': nose['y'],
+                'eye_level_y': (left_eye['y'] + right_eye['y']) / 2,
+                'ear_level_y': ear_level_y,
+                'nose_ear_offset_y': nose['y'] - ear_level_y,
+                # X axis (correct approach for 90° CW rotated video)
+                'nose_x': nose['x'],
+                'left_ear_x': left_ear['x'],
+                'right_ear_x': right_ear['x'],
+                'ear_level_x': ear_level_x,
+                'eye_level_x': (left_eye['x'] + right_eye['x']) / 2,
+                'nose_ear_offset_x': nose['x'] - ear_level_x,
+                # Normalizers
+                'shoulder_width': shoulder_width,
+                'shoulder_y_span': shoulder_y_span,
+                'left_shoulder_x': left_shoulder['x'],
+                'right_shoulder_x': right_shoulder['x'],
+                'left_shoulder_y': left_shoulder['y'],
+                'right_shoulder_y': right_shoulder['y'],
+                # Final ratio used for pitch
+                'nose_ear_ratio_x': (nose['x'] - ear_level_x) / shoulder_y_span if shoulder_y_span > 0.001 else 0,
             }
         }
 
@@ -331,6 +371,7 @@ class EyeContactAnalysisService:
     def visualize_gaze_heatmap(self, heatmap_data: Dict[str, Any],
                               angle_data: List[Dict[str, float]],
                               recording_id: int,
+                              frame_duration: float,
                               output_dir: Optional[str] = None):
         if output_dir is None:
             output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
@@ -343,7 +384,7 @@ class EyeContactAnalysisService:
         pitch_bins = np.array(heatmap_data['pitch_bins'])
         duration_matrix = np.array(heatmap_data['duration_matrix'])
 
-        frame_indices = [i for i in range(len(angle_data))]
+        times = [i * frame_duration for i in range(len(angle_data))]
         yaw_values = [frame['yaw'] for frame in angle_data]
         pitch_values = [frame['pitch'] for frame in angle_data]
         facing_back_values = [1 if frame.get('facing_back', False) else 0 for frame in angle_data]
@@ -353,13 +394,18 @@ class EyeContactAnalysisService:
         shoulder_z_values = [frame.get('z_depth', {}).get('shoulder_center_z', 0) for frame in angle_data]
         z_diff_values = [frame.get('z_depth', {}).get('z_diff', 0) for frame in angle_data]
 
-        fig = plt.figure(figsize=(16, 16))
-        gs = fig.add_gridspec(4, 1, height_ratios=[2, 1, 1, 1], hspace=0.3)
+        def pd(key):
+            return [frame.get('pitch_debug', {}).get(key, 0) for frame in angle_data]
+
+        fig = plt.figure(figsize=(16, 24))
+        gs = fig.add_gridspec(6, 1, height_ratios=[2, 1, 1, 1, 1, 1], hspace=0.3)
 
         ax1 = fig.add_subplot(gs[0])
         ax2 = fig.add_subplot(gs[1])
         ax3 = fig.add_subplot(gs[2])
         ax4 = fig.add_subplot(gs[3])
+        ax5 = fig.add_subplot(gs[4])
+        ax6 = fig.add_subplot(gs[5])
 
         extent = [yaw_bins[0], yaw_bins[-1], pitch_bins[0], pitch_bins[-1]]
         im = ax1.imshow(duration_matrix, extent=extent, origin='lower',
@@ -392,30 +438,30 @@ class EyeContactAnalysisService:
 
         ax1.grid(True, alpha=0.2, color='white')
 
-        ax2.plot(frame_indices, yaw_values, color='blue', linewidth=1, label='Yaw')
+        ax2.plot(times, yaw_values, color='blue', linewidth=1, label='Yaw')
         ax2.axhline(audience_yaw_min, color='lime', linestyle='--', linewidth=2, label=f'Audience Min ({audience_yaw_min}°)')
         ax2.axhline(audience_yaw_max, color='lime', linestyle='--', linewidth=2, label=f'Audience Max ({audience_yaw_max}°)')
         ax2.axhline(0, color='gray', linestyle=':', alpha=0.5)
-        ax2.set_xlabel('Frame Index', fontsize=12)
+        ax2.set_xlabel('Time (s)', fontsize=12)
         ax2.set_ylabel('Yaw (°)', fontsize=12)
         ax2.set_title('Yaw Angle Over Time', fontsize=12, fontweight='bold')
         ax2.legend(loc='upper right', fontsize=9)
         ax2.grid(True, alpha=0.3)
 
-        ax3.plot(frame_indices, pitch_values, color='red', linewidth=1, label='Pitch')
+        ax3.plot(times, pitch_values, color='red', linewidth=1, label='Pitch')
         ax3.axhline(audience_pitch_min, color='lime', linestyle='--', linewidth=2, label=f'Audience Min ({audience_pitch_min}°)')
         ax3.axhline(audience_pitch_max, color='lime', linestyle='--', linewidth=2, label=f'Audience Max ({audience_pitch_max}°)')
         ax3.axhline(0, color='gray', linestyle=':', alpha=0.5)
-        ax3.set_xlabel('Frame Index', fontsize=12)
+        ax3.set_xlabel('Time (s)', fontsize=12)
         ax3.set_ylabel('Pitch (°)', fontsize=12)
         ax3.set_title('Pitch Angle Over Time', fontsize=12, fontweight='bold')
         ax3.legend(loc='upper right', fontsize=9)
         ax3.grid(True, alpha=0.3)
 
         # Fourth graph: Z-Depth Analysis
-        ax4.plot(frame_indices, nose_z_values, color='blue', linewidth=1.5, label='Nose Z')
-        ax4.plot(frame_indices, shoulder_z_values, color='green', linewidth=1.5, label='Shoulder Center Z')
-        ax4.plot(frame_indices, z_diff_values, color='orange', linewidth=1.5, label='Z Difference')
+        ax4.plot(times, nose_z_values, color='blue', linewidth=1.5, label='Nose Z')
+        ax4.plot(times, shoulder_z_values, color='green', linewidth=1.5, label='Shoulder Center Z')
+        ax4.plot(times, z_diff_values, color='orange', linewidth=1.5, label='Z Difference')
 
         # Show threshold line for back-facing detection
         ax4.axhline(-0.1, color='red', linestyle='--', linewidth=2, label='Back-Facing Threshold (-0.1)')
@@ -424,13 +470,43 @@ class EyeContactAnalysisService:
         # Mark back-facing regions with red background
         for i, is_back in enumerate(facing_back_values):
             if is_back:
-                ax4.axvspan(i - 0.5, i + 0.5, color='red', alpha=0.1)
+                t = i * frame_duration
+                ax4.axvspan(t - frame_duration / 2, t + frame_duration / 2, color='red', alpha=0.1)
 
-        ax4.set_xlabel('Frame Index', fontsize=12)
+        ax4.set_xlabel('Time (s)', fontsize=12)
         ax4.set_ylabel('Z-Coordinate', fontsize=12)
         ax4.set_title('Z-Depth Analysis (Back-Facing Detection)', fontsize=12, fontweight='bold')
         ax4.legend(loc='upper right', fontsize=9)
         ax4.grid(True, alpha=0.3)
+
+        # Subplot 5: landmark positions on both axes — Y should be flat (wrong axis),
+        # X should vary with pitch (correct axis for 90° CW rotated video)
+        ax5.plot(times, pd('nose_y'),      color='black',  linewidth=1,   linestyle='--', label='Nose Y (old, should be flat)')
+        ax5.plot(times, pd('ear_level_y'), color='orange', linewidth=1,   linestyle='--', label='Ear Level Y (old)')
+        ax5.plot(times, pd('nose_x'),      color='black',  linewidth=1.5, label='Nose X (new)')
+        ax5.plot(times, pd('ear_level_x'), color='orange', linewidth=1.5, label='Ear Level X (new)')
+        ax5.plot(times, pd('eye_level_x'), color='blue',   linewidth=1.5, label='Eye Level X (new)')
+        ax5.axhline(0, color='gray', linestyle=':', alpha=0.5)
+        ax5.set_xlabel('Time (s)', fontsize=12)
+        ax5.set_ylabel('Position (normalized)', fontsize=12)
+        ax5.set_title('Pitch Debug — Y (old, flat) vs X (new, should vary)', fontsize=12, fontweight='bold')
+        ax5.legend(loc='upper right', fontsize=8, ncol=2)
+        ax5.grid(True, alpha=0.3)
+
+        # Subplot 6: normalizers and final ratios
+        ax6.plot(times, pd('shoulder_width'),    color='red',    linewidth=1,   linestyle='--', label='Shoulder Width (X span, old normaliser)')
+        ax6.plot(times, pd('shoulder_y_span'),   color='red',    linewidth=1.5, label='Shoulder Y Span (new normaliser)')
+        ax6.plot(times, pd('left_shoulder_y'),   color='purple', linewidth=1,   linestyle='--', label='Left Shoulder Y')
+        ax6.plot(times, pd('right_shoulder_y'),  color='purple', linewidth=1,   linestyle=':',  label='Right Shoulder Y')
+        ax6.plot(times, pd('nose_ear_offset_y'), color='green',  linewidth=1,   linestyle='--', label='Nose–Ear offset Y (old)')
+        ax6.plot(times, pd('nose_ear_offset_x'), color='green',  linewidth=1.5, label='Nose–Ear offset X (new)')
+        ax6.plot(times, pd('nose_ear_ratio_x'),  color='blue',   linewidth=2,   label='Nose–Ear ratio X (÷shoulder_y_span) → pitch input')
+        ax6.axhline(0, color='gray', linestyle=':', alpha=0.5)
+        ax6.set_xlabel('Time (s)', fontsize=12)
+        ax6.set_ylabel('Value (normalized)', fontsize=12)
+        ax6.set_title('Pitch Debug — Normalizers & Final Ratio', fontsize=12, fontweight='bold')
+        ax6.legend(loc='upper right', fontsize=8, ncol=2)
+        ax6.grid(True, alpha=0.3)
 
         plt.tight_layout()
 
@@ -439,6 +515,46 @@ class EyeContactAnalysisService:
         plt.close()
 
         print(f"Gaze heatmap saved to: {output_path}")
+
+    def call_segmentation(self, angle_data: List[Dict[str, float]], fps: float, recording_id: int) -> dict:
+        sensitivity = self.config['eye_segmentation_sensitivity']
+        frames_per_second = max(1, round(fps))
+
+        aud_yaw_min = self.config['audience_yaw_min']
+        aud_yaw_max = self.config['audience_yaw_max']
+        aud_pitch_min = self.config['audience_pitch_min']
+        aud_pitch_max = self.config['audience_pitch_max']
+
+        series = []
+        for i in range(0, len(angle_data), frames_per_second):
+            window = angle_data[i:i + frames_per_second]
+            if not window:
+                continue
+            outside = sum(
+                1 for f in window
+                if f['yaw'] < aud_yaw_min or f['yaw'] > aud_yaw_max
+                or f['pitch'] < aud_pitch_min or f['pitch'] > aud_pitch_max
+            )
+            t = round(i / fps, 3)
+            series.append({'time': t, 'value': round(outside / len(window), 4)})
+
+        if len(series) < 2:
+            return {'success': False, 'error': 'Not enough data for segmentation'}
+
+        url = f"{settings.SEGMENTATION_SERVICE_URL}/api/v1/segment/"
+        payload = {
+            'series': series,
+            'methods': ['mean'],
+            'sensitivity': sensitivity,
+            'label': f'eye_{recording_id}',
+        }
+        try:
+            resp = requests.post(url, json=payload, timeout=30)
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            print(f"Segmentation service error: {e}")
+            return {'success': False, 'error': str(e)}
 
     def analyze_eye_contact(self, recording_id: int) -> Dict[str, Any]:
         print(f"Analyzing eye contact for recording ID: {recording_id}")
@@ -495,7 +611,9 @@ class EyeContactAnalysisService:
         statistics = self.calculate_statistics(angle_data, looking_away_events, frame_duration)
 
         if settings.DEBUG:
-            self.visualize_gaze_heatmap(heatmap_data, angle_data, recording_id)
+            self.visualize_gaze_heatmap(heatmap_data, angle_data, recording_id, frame_duration)
+
+        segmentation = self.call_segmentation(angle_data, fps, recording_id)
 
         return {
             'success': True,
@@ -516,5 +634,6 @@ class EyeContactAnalysisService:
                 'angle_threshold': self.config['staring_angle_threshold'],
                 'min_frames': self.config['min_staring_time']
             },
+            'segmentation': segmentation,
             'message': 'Eye contact analysis completed successfully.'
         }

@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import requests
 
 from .db_connection import get_analysis_by_recording_id
 
@@ -589,6 +590,43 @@ class ArmMovementAnalysisService:
             }
         }
 
+    def call_segmentation(self, kinematics_data: List[Dict[str, Any]], fps: float, recording_id: int) -> dict:
+        sensitivity = self.config['arm_segmentation_sensitivity']
+        frames_per_second = max(1, round(fps))
+        series = []
+
+        for i in range(0, len(kinematics_data), frames_per_second):
+            window = kinematics_data[i:i + frames_per_second]
+            frame_vels = []
+            for f in window:
+                left_vel = f['left_wrist']['velocity'] if f.get('left_wrist') else None
+                right_vel = f['right_wrist']['velocity'] if f.get('right_wrist') else None
+                active = [v for v in [left_vel, right_vel] if v is not None]
+                if active:
+                    frame_vels.append(max(active))
+            if not frame_vels:
+                continue
+            t = round(i / fps, 3)
+            series.append({'time': t, 'value': round(float(sum(frame_vels) / len(frame_vels)), 6)})
+
+        if len(series) < 2:
+            return {'success': False, 'error': 'Not enough data for segmentation'}
+
+        url = f"{settings.SEGMENTATION_SERVICE_URL}/api/v1/segment/"
+        payload = {
+            'series': series,
+            'methods': ['mean', 'trend', 'std'],
+            'sensitivity': sensitivity,
+            'label': f'arm_{recording_id}',
+        }
+        try:
+            resp = requests.post(url, json=payload, timeout=30)
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            print(f"Segmentation service error: {e}")
+            return {'success': False, 'error': str(e)}
+
     def analyze_arm_movements(self, recording_id: int) -> Dict[str, Any]:
         print(f"Analyzing arm movements for recording ID: {recording_id}")
 
@@ -633,6 +671,7 @@ class ArmMovementAnalysisService:
         # Step 6: Perform segmentation
         average_segments = self.segment_by_average_change(kinematics_data)
         trend_segments = self.segment_by_trend_change(kinematics_data)
+        pelt_segmentation = self.call_segmentation(kinematics_data, fps, recording_id)
 
         # Calculate statistics
         left_velocities = [f['left_wrist']['velocity'] for f in kinematics_data if f['left_wrist'] is not None]
@@ -669,7 +708,8 @@ class ArmMovementAnalysisService:
             },
             'segmentation': {
                 'average_change': average_segments,
-                'trend_change': trend_segments
+                'trend_change': trend_segments,
+                'pelt': pelt_segmentation,
             },
             'message': 'Arm movement analysis completed successfully.'
         }

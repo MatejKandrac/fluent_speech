@@ -46,6 +46,8 @@ REST_FRAMEWORK = {
     ],
 }
 
+SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
+
 MOVEMENT_ANALYSIS_CONFIG = {
     'no_movement_velocity_threshold': float(os.getenv('NO_MOVEMENT_VELOCITY_THRESHOLD', '0.01')),
     'excessive_movement_velocity_threshold': float(os.getenv('EXCESSIVE_MOVEMENT_VELOCITY_THRESHOLD', '0.15')),
@@ -55,4 +57,6 @@ MOVEMENT_ANALYSIS_CONFIG = {
     'average_change_threshold': float(os.getenv('AVERAGE_CHANGE_THRESHOLD', '0.08')),
     'trend_change_threshold': float(os.getenv('TREND_CHANGE_THRESHOLD', '0.008')),
     'min_segment_gap_ms': int(os.getenv('MIN_SEGMENT_GAP_MS', '667')),
+
+    'arm_segmentation_sensitivity': float(os.getenv('ARM_SEGMENTATION_SENSITIVITY', '0.5')),
 }
