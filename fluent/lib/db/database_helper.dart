@@ -23,8 +23,9 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -32,15 +33,21 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE video_records (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        mongo_id INTEGER NOT NULL,
+        video_id INTEGER NOT NULL,
         name TEXT NOT NULL,
         filename TEXT NOT NULL,
+        local_path TEXT,
         created_at TEXT NOT NULL
       )
     ''');
   }
 
-  // Insert a video record
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE video_records ADD COLUMN local_path TEXT');
+    }
+  }
+
   Future<int> insertVideoRecord(VideoRecord record) async {
     final db = await database;
     return db.insert(
@@ -50,46 +57,37 @@ class DatabaseHelper {
     );
   }
 
-  // Get all video records
   Future<List<VideoRecord>> getAllVideoRecords() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'video_records',
       orderBy: 'created_at DESC',
     );
-
-    return List.generate(maps.length, (i) {
-      return VideoRecord.fromMap(maps[i]);
-    });
+    return maps.map(VideoRecord.fromMap).toList();
   }
 
-  // Get a single video record by SQLite id
   Future<VideoRecord?> getVideoRecord(int id) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
+    final maps = await db.query(
       'video_records',
       where: 'id = ?',
       whereArgs: [id],
     );
-
     if (maps.isEmpty) return null;
     return VideoRecord.fromMap(maps.first);
   }
 
-  // Get a video record by server id
   Future<VideoRecord?> getVideoRecordByServerId(int serverId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
+    final maps = await db.query(
       'video_records',
-      where: 'mongo_id = ?',
+      where: 'video_id = ?',
       whereArgs: [serverId],
     );
-
     if (maps.isEmpty) return null;
     return VideoRecord.fromMap(maps.first);
   }
 
-  // Update a video record
   Future<int> updateVideoRecord(VideoRecord record) async {
     final db = await database;
     return await db.update(
@@ -100,7 +98,6 @@ class DatabaseHelper {
     );
   }
 
-  // Delete a video record
   Future<int> deleteVideoRecord(int id) async {
     final db = await database;
     return await db.delete(
@@ -110,17 +107,6 @@ class DatabaseHelper {
     );
   }
 
-  // Delete a video record by server id
-  Future<int> deleteVideoRecordByServerId(int serverId) async {
-    final db = await database;
-    return await db.delete(
-      'video_records',
-      where: 'mongo_id = ?',
-      whereArgs: [serverId],
-    );
-  }
-
-  // Close the database
   Future<void> close() async {
     final db = await database;
     await db.close();

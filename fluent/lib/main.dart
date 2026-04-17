@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'localizations/localizations.dart';
 import 'ui/dashboard/dashboard_view.dart';
 import 'config/theme.dart';
+import 'db/database_helper.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(ProviderScope(child: const MyApp()));
 }
 

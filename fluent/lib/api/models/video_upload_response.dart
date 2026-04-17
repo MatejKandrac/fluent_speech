@@ -6,6 +6,7 @@ part 'video_upload_response.g.dart';
 class VideoUploadResponse {
   final bool success;
   final String message;
+  @JsonKey(name: 'recording_id')
   final int? id;
   final String? filename;
   final int? fileSize;

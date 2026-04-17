@@ -389,23 +389,17 @@ class EyeContactAnalysisService:
         pitch_values = [frame['pitch'] for frame in angle_data]
         facing_back_values = [1 if frame.get('facing_back', False) else 0 for frame in angle_data]
 
-        # Extract Z-depth values for debugging
         nose_z_values = [frame.get('z_depth', {}).get('nose_z', 0) for frame in angle_data]
         shoulder_z_values = [frame.get('z_depth', {}).get('shoulder_center_z', 0) for frame in angle_data]
         z_diff_values = [frame.get('z_depth', {}).get('z_diff', 0) for frame in angle_data]
 
-        def pd(key):
-            return [frame.get('pitch_debug', {}).get(key, 0) for frame in angle_data]
-
-        fig = plt.figure(figsize=(16, 24))
-        gs = fig.add_gridspec(6, 1, height_ratios=[2, 1, 1, 1, 1, 1], hspace=0.3)
+        fig = plt.figure(figsize=(16, 16))
+        gs = fig.add_gridspec(4, 1, height_ratios=[2, 1, 1, 1], hspace=0.3)
 
         ax1 = fig.add_subplot(gs[0])
         ax2 = fig.add_subplot(gs[1])
         ax3 = fig.add_subplot(gs[2])
         ax4 = fig.add_subplot(gs[3])
-        ax5 = fig.add_subplot(gs[4])
-        ax6 = fig.add_subplot(gs[5])
 
         extent = [yaw_bins[0], yaw_bins[-1], pitch_bins[0], pitch_bins[-1]]
         im = ax1.imshow(duration_matrix, extent=extent, origin='lower',
@@ -478,35 +472,6 @@ class EyeContactAnalysisService:
         ax4.set_title('Z-Depth Analysis (Back-Facing Detection)', fontsize=12, fontweight='bold')
         ax4.legend(loc='upper right', fontsize=9)
         ax4.grid(True, alpha=0.3)
-
-        # Subplot 5: landmark positions on both axes — Y should be flat (wrong axis),
-        # X should vary with pitch (correct axis for 90° CW rotated video)
-        ax5.plot(times, pd('nose_y'),      color='black',  linewidth=1,   linestyle='--', label='Nose Y (old, should be flat)')
-        ax5.plot(times, pd('ear_level_y'), color='orange', linewidth=1,   linestyle='--', label='Ear Level Y (old)')
-        ax5.plot(times, pd('nose_x'),      color='black',  linewidth=1.5, label='Nose X (new)')
-        ax5.plot(times, pd('ear_level_x'), color='orange', linewidth=1.5, label='Ear Level X (new)')
-        ax5.plot(times, pd('eye_level_x'), color='blue',   linewidth=1.5, label='Eye Level X (new)')
-        ax5.axhline(0, color='gray', linestyle=':', alpha=0.5)
-        ax5.set_xlabel('Time (s)', fontsize=12)
-        ax5.set_ylabel('Position (normalized)', fontsize=12)
-        ax5.set_title('Pitch Debug — Y (old, flat) vs X (new, should vary)', fontsize=12, fontweight='bold')
-        ax5.legend(loc='upper right', fontsize=8, ncol=2)
-        ax5.grid(True, alpha=0.3)
-
-        # Subplot 6: normalizers and final ratios
-        ax6.plot(times, pd('shoulder_width'),    color='red',    linewidth=1,   linestyle='--', label='Shoulder Width (X span, old normaliser)')
-        ax6.plot(times, pd('shoulder_y_span'),   color='red',    linewidth=1.5, label='Shoulder Y Span (new normaliser)')
-        ax6.plot(times, pd('left_shoulder_y'),   color='purple', linewidth=1,   linestyle='--', label='Left Shoulder Y')
-        ax6.plot(times, pd('right_shoulder_y'),  color='purple', linewidth=1,   linestyle=':',  label='Right Shoulder Y')
-        ax6.plot(times, pd('nose_ear_offset_y'), color='green',  linewidth=1,   linestyle='--', label='Nose–Ear offset Y (old)')
-        ax6.plot(times, pd('nose_ear_offset_x'), color='green',  linewidth=1.5, label='Nose–Ear offset X (new)')
-        ax6.plot(times, pd('nose_ear_ratio_x'),  color='blue',   linewidth=2,   label='Nose–Ear ratio X (÷shoulder_y_span) → pitch input')
-        ax6.axhline(0, color='gray', linestyle=':', alpha=0.5)
-        ax6.set_xlabel('Time (s)', fontsize=12)
-        ax6.set_ylabel('Value (normalized)', fontsize=12)
-        ax6.set_title('Pitch Debug — Normalizers & Final Ratio', fontsize=12, fontweight='bold')
-        ax6.legend(loc='upper right', fontsize=8, ncol=2)
-        ax6.grid(True, alpha=0.3)
 
         plt.tight_layout()
 
@@ -581,11 +546,14 @@ class EyeContactAnalysisService:
         from datetime import datetime
 
         def parse_timestamp(ts_str):
-            try:
-                return datetime.fromisoformat(ts_str)
-            except ValueError:
-                t = datetime.strptime(ts_str, '%H:%M:%S.%f').time() if '.' in ts_str else datetime.strptime(ts_str, '%H:%M:%S').time()
-                return t.hour * 3600 + t.minute * 60 + t.second + t.microsecond / 1_000_000
+            s = str(ts_str)
+            for fmt in ('%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S',
+                        '%H:%M:%S.%f', '%H:%M:%S'):
+                try:
+                    return datetime.strptime(s, fmt)
+                except ValueError:
+                    continue
+            raise ValueError(f"Unrecognised timestamp format: {ts_str!r}")
 
         first_ts = parse_timestamp(angle_data[0]['timestamp'])
         last_ts = parse_timestamp(angle_data[-1]['timestamp'])
@@ -594,6 +562,15 @@ class EyeContactAnalysisService:
             total_duration = (last_ts - first_ts).total_seconds()
         else:
             total_duration = last_ts - first_ts
+
+        # Convert all frame timestamps to relative float seconds so that
+        # event start_timestamp / end_timestamp are proper numbers, not ISO strings.
+        for frame in angle_data:
+            ts = parse_timestamp(frame['timestamp'])
+            if isinstance(first_ts, datetime):
+                frame['timestamp'] = round((ts - first_ts).total_seconds(), 3)
+            else:
+                frame['timestamp'] = round(ts - first_ts, 3)
 
         fps = analysis_data['fps']
         frame_duration = 1.0 / fps

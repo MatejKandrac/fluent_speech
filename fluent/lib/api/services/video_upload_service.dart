@@ -27,19 +27,13 @@ class VideoUploadService {
 
     return _apiClient.uploadVideo(video: multipartFile);
   }
-
-  Future<void> deleteVideo(String filename) async {
-    await _apiClient.deleteVideo(filename: filename);
-  }
 }
 
-// Provider for VideoUploadService
 final videoUploadServiceProvider = Provider<VideoUploadService>((ref) {
   final apiClient = ref.watch(videoApiClientProvider);
   return VideoUploadService(apiClient);
 });
 
-// StateNotifier for handling upload state
 class VideoUploadState {
   final bool isUploading;
   final VideoUploadResponse? response;
@@ -59,11 +53,11 @@ class VideoUploadState {
     String? error,
     double? progress,
   }) => VideoUploadState(
-      isUploading: isUploading ?? this.isUploading,
-      response: response ?? this.response,
-      error: error ?? this.error,
-      progress: progress ?? this.progress,
-    );
+        isUploading: isUploading ?? this.isUploading,
+        response: response ?? this.response,
+        error: error ?? this.error,
+        progress: progress ?? this.progress,
+      );
 }
 
 class VideoUploadNotifier extends StateNotifier<VideoUploadState> {
@@ -76,16 +70,9 @@ class VideoUploadNotifier extends StateNotifier<VideoUploadState> {
 
     try {
       final response = await _service.uploadVideo(filePath);
-      state = VideoUploadState(
-        isUploading: false,
-        response: response,
-        progress: 1.0,
-      );
+      state = VideoUploadState(isUploading: false, response: response, progress: 1.0);
     } catch (e) {
-      state = VideoUploadState(
-        isUploading: false,
-        error: e.toString(),
-      );
+      state = VideoUploadState(isUploading: false, error: e.toString());
     }
   }
 
@@ -94,7 +81,6 @@ class VideoUploadNotifier extends StateNotifier<VideoUploadState> {
   }
 }
 
-// Provider for VideoUploadNotifier
 final videoUploadNotifierProvider =
     StateNotifierProvider<VideoUploadNotifier, VideoUploadState>((ref) {
   final service = ref.watch(videoUploadServiceProvider);

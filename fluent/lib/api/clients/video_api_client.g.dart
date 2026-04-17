@@ -20,9 +20,7 @@ class _VideoApiClient implements VideoApiClient {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<VideoUploadResponse> uploadVideo({
-    required MultipartFile video,
-  }) async {
+  Future<VideoUploadResponse> uploadVideo({required MultipartFile video}) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -37,7 +35,7 @@ class _VideoApiClient implements VideoApiClient {
           )
           .compose(
             _dio.options,
-            '/api/v1/videos/upload',
+            '/api/v1/processing/upload',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -55,22 +53,32 @@ class _VideoApiClient implements VideoApiClient {
   }
 
   @override
-  Future<void> deleteVideo({required String filename}) async {
+  Future<ProcessingStatusResponse> getProcessingStatus({
+    required int recordingId,
+  }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(
-      Options(method: 'DELETE', headers: _headers, extra: _extra)
+    final _options = _setStreamType<ProcessingStatusResponse>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/api/v1/videos/${filename}',
+            '/api/v1/processing/status/${recordingId}',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    await _dio.fetch<void>(_options);
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ProcessingStatusResponse _value;
+    try {
+      _value = ProcessingStatusResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {

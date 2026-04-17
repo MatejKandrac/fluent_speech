@@ -6,6 +6,7 @@ import '../../core/detection_mode.dart';
 import '../../db/database_helper.dart';
 import '../../db/models/video_record.dart';
 import '../../localizations/localizations.dart';
+import '../recording_detail/recording_detail_view.dart';
 import '../widgets/large_app_bar.dart';
 
 class SummariseView extends ConsumerStatefulWidget {
@@ -33,48 +34,55 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
   }
 
   Future<void> _handleUpload(BuildContext context) async {
-    // Validate the form
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
+    // Save locally immediately with remoteId = -1 (not yet uploaded)
+    final localRecord = VideoRecord(
+      remoteId: -1,
+      name: _nameController.text.trim(),
+      filename: '',
+      localPath: widget.filePath,
+      createdAt: DateTime.now(),
+    );
+
+    final db = DatabaseHelper();
+    final localId = await db.insertVideoRecord(localRecord);
+    final savedRecord = localRecord.copyWith(id: localId);
+
+    // Attempt upload
     final notifier = ref.read(videoUploadNotifierProvider.notifier);
-
     await notifier.uploadVideo(widget.filePath);
 
     final state = ref.read(videoUploadNotifierProvider);
-
     if (!context.mounted) return;
 
-    if (state.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Upload failed: ${state.error}'),
-          backgroundColor: Colors.red,
-        ),
+    VideoRecord finalRecord = savedRecord;
+
+    if (state.response != null && state.response!.success &&
+        state.response!.id != null && state.response!.filename != null) {
+      // Upload succeeded — update the local record with server data
+      finalRecord = savedRecord.copyWith(
+        remoteId: state.response!.id!,
+        filename: state.response!.filename!,
       );
-    } else if (state.response != null && state.response!.success) {
-      // Save to local database
-      if (state.response!.id != null && state.response!.filename != null) {
-        final record = VideoRecord(
-          remoteId: state.response!.id!,
-          name: _nameController.text.trim(),
-          filename: state.response!.filename!,
-          createdAt: DateTime.now(),
+      await db.updateVideoRecord(finalRecord);
+    } else if (state.error != null) {
+      // Show snackbar — ScaffoldMessenger survives pushReplacement
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload failed: ${state.error}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
         );
-
-        try {
-          await DatabaseHelper().insertVideoRecord(record);
-          print('✅ Video record saved to local database');
-        } catch (e) {
-          print('❌ Failed to save video record: $e');
-        }
       }
+    }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Upload successful: ${state.response!.message}'),
-          backgroundColor: Colors.green,
+    if (context.mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => RecordingDetailView(record: finalRecord),
         ),
       );
     }
@@ -127,18 +135,6 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
                           },
                         ),
                         const SizedBox(height: 24),
-                        Text(
-                          'File Path',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        SelectableText(
-                          widget.filePath,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 24),
                         if (uploadState.isUploading) ...[
                           const Center(
                             child: Column(
@@ -150,57 +146,6 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
                             ),
                           ),
                         ],
-                        if (uploadState.response != null && !uploadState.isUploading) ...[
-                          Center(
-                            child: Column(
-                              children: [
-                                Icon(
-                                  uploadState.response!.success ? Icons.check_circle : Icons.error,
-                                  color: uploadState.response!.success ? Colors.green : Colors.red,
-                                  size: 48,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  uploadState.response!.message,
-                                  textAlign: TextAlign.center,
-                                ),
-                                if (uploadState.response!.filename != null) ...[
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Filename: ${uploadState.response!.filename}',
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ],
-                                if (uploadState.response!.id != null) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'ID: ${uploadState.response!.id}',
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                        if (uploadState.error != null && !uploadState.isUploading) ...[
-                          const Center(
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.error,
-                                  color: Colors.red,
-                                  size: 48,
-                                ),
-                                SizedBox(height: 8),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            'Error: ${uploadState.error}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -208,9 +153,7 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: uploadState.isUploading
-                        ? null
-                        : () => _handleUpload(context),
+                    onPressed: uploadState.isUploading ? null : () => _handleUpload(context),
                     child: Text(
                       uploadState.isUploading
                           ? 'Uploading...'

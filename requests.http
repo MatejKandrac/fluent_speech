@@ -65,7 +65,7 @@ GET http://localhost:8005/api/v1/pitch/5/timeseries/
 POST http://localhost:8006/api/v1/volume/5/analyze/
 
 ### Arm Movement Analysis - Analyze wrist kinematics and gestures
-POST http://localhost:8002/api/v1/analyze/arm-movements/1/
+POST http://localhost:8002/api/v1/analyze/arm-movements/11/
 
 ### Eye Contact Analysis - Analyze gaze patterns
 POST http://localhost:8003/api/v1/eye-contact/9/analyze/

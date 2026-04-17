@@ -1,74 +1,53 @@
-# Segmentation Service
+# segmentation_ms
 
-A stateless microservice that finds change points in any time series using the PELT algorithm. Other analysis services call it to identify where a speaker's behaviour meaningfully shifts during a presentation.
+**Port:** 8010  
+**Účel:** Generická detekcia zmien vzoru v časovom rade (change point detection) pomocou PELT algoritmu. Volajú ho ostatné analytické mikroslužby, aby identifikovali, kde sa správanie prezentujúceho v čase výrazne mení.
 
-## What This Service Does
+Táto mikroslužba nepozná kontext (pitch, pohyb, ...) — iba prijme sériu `{time, value}` bodov a vráti change pointy a štatistiky segmentov.
 
-- Accepts an arbitrary `{time, value}` time series
-- Runs PELT change point detection with one or more cost models
-- Returns change point timestamps and per-segment statistics (mean, std, min, max)
-- Saves a debug plot and JSON to `debug_output/{label}/` on every call
+---
 
-## Algorithm
+## Ktoré javy sa segmentujú
 
-### PELT (Pruned Exact Linear Time)
+| Mikroslužba | Jav | Signál poslaný do segmentation_ms | Metóda | Hodnota series |
+|---|---|---|---|---|
+| `pitch_analysis_ms` | Monotónnosť hlasu | Windowed **std** výšky hlasu (Hz) | `std` | Variabilita hlasu v okne (vyššia = pestrejší hlas) |
+| `volume_analysis_ms` | Hlasitosť | 1-sekundový **priemer dBFS** (len rečové rámy) | `mean` | Priemerná hlasitosť v sekunde |
+| `filler_words_analysis_ms` | Výplňové slová | **Počet výplňových slov** v časovom bine | `mean` | Frekvencia výplňových slov v intervale |
+| `arm_movement_analysis_ms` | Pohyb rúk | 1-sekundový **priemer max. rýchlosti zápästia** | `mean`, `std`, `trend` | Priemerná rýchlosť zápästia |
+| `hip_analysis_ms` | Kývanie bokov | **Počet zmien smeru bokov** v časovom bine | `trend` | Počet oscilácií bokov za interval |
+| `eye_contact_analysis_ms` | Očný kontakt | **Podiel snímkov** za sekundu, kde hlava mieri mimo publikum | `mean` | Pomer 0–1 (0 = stále kontakt, 1 = nikdy kontakt) |
 
-PELT finds the globally optimal set of change points by minimising a cost function plus a penalty for adding segments. It is exact (not approximate) and runs in linear time on average.
+---
 
-**Cost models available:**
+## Metódy detekcie
 
-| Method | ruptures model | What it detects |
-|--------|---------------|-----------------|
-| `mean` | `l2` | Shifts in the mean level of the signal |
-| `std`  | `normal` | Shifts in variance/standard deviation (Gaussian log-likelihood) |
+| Metóda | ruptures model | Čo detekuje |
+|---|---|---|
+| `mean` | `l2` | Zmenu priemernej úrovne signálu (napr. hlasitosť naraz stúpne) |
+| `std` | `normal` | Zmenu rozptylu/variability signálu (napr. hlas náhle prestane variovať) |
+| `trend` | `linear` | Zmenu sklonu trendu (napr. kývanie pribúda alebo ubúda v čase) |
 
-Trend detection is not yet implemented.
+---
 
-### Sensitivity → Penalty Mapping
+## Príprava signálu (pred volaním)
 
-The penalty controls how many change points PELT is allowed to place — higher penalty means fewer, more significant segments. Rather than exposing the raw penalty value, callers pass a `sensitivity` in `[0, 1]`:
+Každá mikroslužba predspracuje surové dáta na zmysluplný signál:
 
-```
-sensitivity = 0.0  →  max_penalty  (very few change points, major transitions only)
-sensitivity = 1.0  →  min_penalty  (many change points, fine-grained)
-```
+- **pitch** — slidingové okno (default 30 framov) → std voiced framov; okná s < 50 % voiced framov sa preskočia
+- **volume** — 1-sekundové okná → priemer dBFS len framov nad speech floором (ticho filtrované)
+- **filler words** — časové biny (konfig. veľkosť) → počet výplňových slov; prázdne biny filtrované (okrem t=0)
+- **arm movement** — 1-sekundové okná → priemer max. rýchlosti aktívnych zápästí za okno
+- **hip** — časové biny → počet zmien smeru bokov za bin; prázdne biny preskočené
+- **eye contact** — 1-sekundové okná → podiel framov mimo yaw/pitch rozsahu publika
 
-The mapping is logarithmic so that small changes in sensitivity near 0 have a large effect (coarse control) and changes near 1 have a smaller effect (fine control). Default bounds: min=1.0, max=500.0.
+---
 
-## How Callers Should Prepare Their Time Series
+## API
 
-The segmentation service is generic — it knows nothing about pitch, volume, or filler words. Each calling service is responsible for preparing a meaningful signal:
+### `POST /api/v1/segment/`
 
-- **Do not send raw frame-level data** if the signal is noisy. Pre-compute a windowed statistic (e.g. rolling std) so PELT sees semantically meaningful values rather than measurement noise.
-- **Pitch service** sends windowed pitch std (variability over time) using `method=std` only — mean pitch is not used because octave errors distort it.
-- Future services should follow the same pattern: decide which statistic represents the behaviour you want to segment, compute it over an appropriate window, then send it here.
-
-**Series format:**
-```json
-[
-  {"time": 0.65, "value": 4.12},
-  {"time": 0.70, "value": 3.98},
-  ...
-]
-```
-
-- `time` — seconds from start of recording
-- `value` — the pre-processed signal value at that time
-- Minimum 4 points required
-
-## API Endpoints
-
-### Health Check
-```
-GET /api/v1/health/
-```
-
-### Segment
-```
-POST /api/v1/segment/
-```
-
-**Request body:**
+**Vstup:**
 ```json
 {
   "series": [{"time": 0.65, "value": 4.12}, ...],
@@ -78,14 +57,14 @@ POST /api/v1/segment/
 }
 ```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `series` | array | Yes | List of `{time, value}` objects |
-| `methods` | array | No | Subset of `["mean", "std"]`. Defaults to both. |
-| `sensitivity` | float | No | 0–1. Defaults to `SEGMENTATION_DEFAULT_SENSITIVITY`. |
-| `label` | string | No | Used to name debug output files. Defaults to `"unknown"`. |
+| Pole | Typ | Povinné | Popis |
+|---|---|---|---|
+| `series` | array | Áno | `[{time, value}]`, minimum 2 body |
+| `methods` | array | Nie | Podmnožina `["mean", "std", "trend"]`. Default: obe. |
+| `sensitivity` | float | Nie | 0–1. Default z `SEGMENTATION_DEFAULT_SENSITIVITY`. |
+| `label` | string | Nie | Názov pre debug výstup. Default: `"unknown"`. |
 
-**Response:**
+**Výstup:**
 ```json
 {
   "success": true,
@@ -95,7 +74,6 @@ POST /api/v1/segment/
   "segments": {
     "std": [
       {"start": 0.65, "end": 13.05, "mean": 4.21, "std": 1.83, "min": 0.85, "max": 8.94, "count": 95},
-      {"start": 13.1,  "end": 26.6,  "mean": 2.18, "std": 0.91, "min": 0.72, "max": 4.10, "count": 110},
       ...
     ]
   },
@@ -104,41 +82,58 @@ POST /api/v1/segment/
 }
 ```
 
-`change_points` contains one list per method — each value is the timestamp (seconds) of the **start** of a new segment.
+---
 
-## Debug Output
+## Sensitivity → Penalty
 
-On every request the service writes two files to `debug_output/{label}/`:
-
-- **`segmentation.json`** — full response as JSON
-- **`segmentation.png`** — one subplot per method showing:
-  - The input series in gray
-  - Dashed vertical lines at each change point (colour-coded by method)
-  - Alternating shaded regions per segment
-  - µ and σ annotations at the top of each segment
-
-Use the plot to judge whether the sensitivity is appropriate: too many change points → lower sensitivity, too few → raise it.
-
-## Configuration
-
-```bash
-SEGMENTATION_MIN_PENALTY=1.0             # Lower bound on penalty (sensitivity=1)
-SEGMENTATION_MAX_PENALTY=500.0           # Upper bound on penalty (sensitivity=0)
-SEGMENTATION_DEFAULT_SENSITIVITY=0.5     # Used when caller omits sensitivity
-SEGMENTATION_MIN_SEGMENT_SAMPLES=2       # Minimum samples per segment (ruptures min_size)
+```
+sensitivity = 0.0  →  max_penalty  (málo change pointov, len výrazné zmeny)
+sensitivity = 1.0  →  min_penalty  (veľa change pointov, jemné zmeny)
 ```
 
-## Dependencies
+Mapovanie je logaritmické (default rozsah: min=1.0, max=500.0).
+
+---
+
+## Debug výstup
+
+Pri každom volaní sa do `debug_output/{label}/` uloží:
+- `segmentation.json` — plný výsledok
+- `segmentation.png` — graf s change pointmi, tienovanými segmentmi a anotáciami µ/σ
+
+Použí graf na posúdenie sensitivity: príliš veľa change pointov → zníž sensitivity, príliš málo → zvýš.
+
+---
+
+## Aktuálny stav a čo je otestované
+
+| Jav | Metóda | Debug výstupy | Stav |
+|---|---|---|---|
+| pitch | `std` | `debug_output/pitch_5/` | Otestované, funguje |
+| volume | `mean` | `debug_output/volume_5/` | Otestované, funguje |
+| filler words | `mean` | `debug_output/filler_5/` | Otestované, funguje |
+| arm movement | `mean`, `std`, `trend` | `debug_output/arm_9/` | Otestované, funguje |
+| hip | `trend` | `debug_output/hip_3/`, `debug_output/hip_9/` | Otestované, funguje |
+| eye contact | `mean` | `debug_output/eye_3/`, `debug_output/eye_9/`, `debug_output/eye_10/` | Otestované, funguje |
+
+Všetky 6 javov boli spustené a vrátili výsledky. **Segmentačný výstup sa zatiaľ neposiela do performance_ms** — aktuálne slúži iba na vizualizáciu/debugovanie. Prepojenie segmentácie s performance hodnotením je otvorené ako budúce rozšírenie (validácia H2.1–H2.3 v HYPOTHESES.md).
+
+---
+
+## Konfigurácia
+
+```bash
+SEGMENTATION_MIN_PENALTY=1.0             # Dolná hranica penalty (sensitivity=1)
+SEGMENTATION_MAX_PENALTY=500.0           # Horná hranica penalty (sensitivity=0)
+SEGMENTATION_DEFAULT_SENSITIVITY=0.5     # Default pri vynechaní parametra
+SEGMENTATION_MIN_SEGMENT_SAMPLES=2       # Minimálna dĺžka segmentu (ruptures min_size)
+```
+
+---
+
+## Závislosti
 
 - **ruptures** — PELT change point detection
-- **matplotlib** — debug visualization
-- **numpy** — numerical computations
+- **matplotlib** — debug vizualizácia
+- **numpy** — numerické výpočty
 - **Django / DRF** — web framework
-
-## Adding a New Caller
-
-1. Compute your windowed signal (e.g. rolling std over a 1–2 s window)
-2. Format as `[{"time": ..., "value": ...}]`
-3. POST to `/api/v1/segment/` with an appropriate `sensitivity` and a descriptive `label`
-4. Check `debug_output/{label}/segmentation.png` to validate results
-5. Add `SEGMENTATION_SERVICE_URL` to the calling service's settings

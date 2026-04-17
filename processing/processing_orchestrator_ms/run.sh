@@ -13,5 +13,5 @@ set -a
 source "$ENV_FILE"
 set +a
 
-echo Starting Processing Orchestrator Microservice at ${PROCESSING_ORCHESTRATOR_URL:-8013}
-python manage.py runserver ${PROCESSING_ORCHESTRATOR_URL:-8013}
+echo Starting Processing Orchestrator Microservice at ${PROCESSING_ORCHESTRATOR_PORT:-8013}
+python manage.py runserver ${PROCESSING_ORCHESTRATOR_PORT:-8013}

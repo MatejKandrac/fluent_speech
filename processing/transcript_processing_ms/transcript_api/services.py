@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 
 from django.conf import settings
 
-from .db_connection import get_recording_by_id, save_transcript_words
+from .db_connection import get_recording_by_id, save_transcript_words, mark_transcript_processing_finished
 
 
 class TranscriptProcessingService:
@@ -117,6 +117,9 @@ class TranscriptProcessingService:
                 f.write(transcript["text"])
 
             print(f"Transcript saved to: {transcript_file}")
+
+        mark_transcript_processing_finished(recording_id)
+        print(f"Marked transcript_processing_finished=True for recording ID: {recording_id}")
 
         return {
             'success': True,

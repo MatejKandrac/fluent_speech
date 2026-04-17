@@ -29,6 +29,7 @@ class SecurityConfig {
             authorizeHttpRequests {
                 authorize("/api/v1/processing/upload", permitAll)
                 authorize("/api/v1/processing/status/**", permitAll)
+                authorize("/api/v1/analysis/**", permitAll)
                 authorize(anyRequest, authenticated)
             }
             sessionManagement {

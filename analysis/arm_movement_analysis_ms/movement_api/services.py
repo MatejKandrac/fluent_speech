@@ -249,49 +249,80 @@ class ArmMovementAnalysisService:
         print(f"Visualization saved to: {output_path}")
         return str(output_path)
 
+    def _merge_excessive_events(self, events: List[Dict[str, Any]], merge_gap_s: float) -> List[Dict[str, Any]]:
+        """Merge events of the same wrist that are closer than merge_gap_s seconds."""
+        if not events:
+            return []
+        merged = []
+        current = dict(events[0])
+        for ev in events[1:]:
+            gap = ev['start_timestamp'] - current['end_timestamp']
+            if gap <= merge_gap_s:
+                current['end_timestamp'] = ev['end_timestamp']
+                current['duration_frames'] += ev['duration_frames']
+            else:
+                merged.append(current)
+                current = dict(ev)
+        merged.append(current)
+        return merged
+
     def detect_movement_anomalies(self, kinematics_data: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Detect periods of no movement and excessive movement."""
+        """Detect periods of no movement and excessive movement.
+
+        No-movement: bilateral — ALL visible wrists must be below threshold
+        simultaneously for min_consecutive_frames.  A single active hand breaks
+        the streak.
+
+        Excessive movement: per-hand — any frame above threshold starts an
+        event (min_excessive_frames is typically 1).  Nearby events from the
+        same hand are then merged so that a single back-and-forth swing
+        produces one event rather than several isolated spikes.
+        """
         no_movement_threshold = self.config['no_movement_velocity_threshold']
         excessive_movement_threshold = self.config['excessive_movement_velocity_threshold']
         min_frames = self.config['min_consecutive_frames']
+        min_excessive_frames = self.config['min_excessive_frames']
+        merge_gap_s = self.config['excessive_merge_gap_s']
 
         print(f"Detecting movement anomalies with thresholds:")
-        print(f"  No movement: velocity < {no_movement_threshold}")
-        print(f"  Excessive movement: velocity > {excessive_movement_threshold}")
-        print(f"  Minimum consecutive frames: {min_frames}")
+        print(f"  No movement: all visible wrists velocity < {no_movement_threshold}, min_frames={min_frames}")
+        print(f"  Excessive movement: velocity > {excessive_movement_threshold}, min_frames={min_excessive_frames}, merge_gap={merge_gap_s}s")
 
         no_movement_periods = []
-        excessive_movement_periods = []
+        raw_left_excessive = []
+        raw_right_excessive = []
 
-        left_no_movement_streak = []
-        right_no_movement_streak = []
+        no_movement_streak = []
         left_excessive_streak = []
         right_excessive_streak = []
 
         for frame in kinematics_data:
             timestamp = frame.get('timestamp')
+            left_vel = frame['left_wrist']['velocity'] if frame.get('left_wrist') else None
+            right_vel = frame['right_wrist']['velocity'] if frame.get('right_wrist') else None
 
-            # Check left wrist
-            if frame.get('left_wrist'):
-                left_vel = frame['left_wrist']['velocity']
+            # ── Bilateral no-movement ──────────────────────────────────────────
+            active_vels = [v for v in [left_vel, right_vel] if v is not None]
+            both_still = bool(active_vels) and max(active_vels) < no_movement_threshold
 
-                if left_vel < no_movement_threshold:
-                    left_no_movement_streak.append(timestamp)
-                else:
-                    if len(left_no_movement_streak) >= min_frames:
-                        no_movement_periods.append({
-                            'wrist': 'left',
-                            'start_timestamp': left_no_movement_streak[0],
-                            'end_timestamp': left_no_movement_streak[-1],
-                            'duration_frames': len(left_no_movement_streak)
-                        })
-                    left_no_movement_streak = []
+            if both_still:
+                no_movement_streak.append(timestamp)
+            else:
+                if len(no_movement_streak) >= min_frames:
+                    no_movement_periods.append({
+                        'start_timestamp': no_movement_streak[0],
+                        'end_timestamp': no_movement_streak[-1],
+                        'duration_frames': len(no_movement_streak)
+                    })
+                no_movement_streak = []
 
+            # ── Per-hand excessive movement ────────────────────────────────────
+            if left_vel is not None:
                 if left_vel > excessive_movement_threshold:
                     left_excessive_streak.append(timestamp)
                 else:
-                    if len(left_excessive_streak) >= min_frames:
-                        excessive_movement_periods.append({
+                    if len(left_excessive_streak) >= min_excessive_frames:
+                        raw_left_excessive.append({
                             'wrist': 'left',
                             'start_timestamp': left_excessive_streak[0],
                             'end_timestamp': left_excessive_streak[-1],
@@ -299,27 +330,12 @@ class ArmMovementAnalysisService:
                         })
                     left_excessive_streak = []
 
-            # Check right wrist
-            if frame.get('right_wrist'):
-                right_vel = frame['right_wrist']['velocity']
-
-                if right_vel < no_movement_threshold:
-                    right_no_movement_streak.append(timestamp)
-                else:
-                    if len(right_no_movement_streak) >= min_frames:
-                        no_movement_periods.append({
-                            'wrist': 'right',
-                            'start_timestamp': right_no_movement_streak[0],
-                            'end_timestamp': right_no_movement_streak[-1],
-                            'duration_frames': len(right_no_movement_streak)
-                        })
-                    right_no_movement_streak = []
-
+            if right_vel is not None:
                 if right_vel > excessive_movement_threshold:
                     right_excessive_streak.append(timestamp)
                 else:
-                    if len(right_excessive_streak) >= min_frames:
-                        excessive_movement_periods.append({
+                    if len(right_excessive_streak) >= min_excessive_frames:
+                        raw_right_excessive.append({
                             'wrist': 'right',
                             'start_timestamp': right_excessive_streak[0],
                             'end_timestamp': right_excessive_streak[-1],
@@ -327,41 +343,37 @@ class ArmMovementAnalysisService:
                         })
                     right_excessive_streak = []
 
-        # Handle remaining streaks at the end
-        if len(left_no_movement_streak) >= min_frames:
+        # Flush remaining streaks
+        if len(no_movement_streak) >= min_frames:
             no_movement_periods.append({
-                'wrist': 'left',
-                'start_timestamp': left_no_movement_streak[0],
-                'end_timestamp': left_no_movement_streak[-1],
-                'duration_frames': len(left_no_movement_streak)
+                'start_timestamp': no_movement_streak[0],
+                'end_timestamp': no_movement_streak[-1],
+                'duration_frames': len(no_movement_streak)
             })
-
-        if len(right_no_movement_streak) >= min_frames:
-            no_movement_periods.append({
-                'wrist': 'right',
-                'start_timestamp': right_no_movement_streak[0],
-                'end_timestamp': right_no_movement_streak[-1],
-                'duration_frames': len(right_no_movement_streak)
-            })
-
-        if len(left_excessive_streak) >= min_frames:
-            excessive_movement_periods.append({
+        if len(left_excessive_streak) >= min_excessive_frames:
+            raw_left_excessive.append({
                 'wrist': 'left',
                 'start_timestamp': left_excessive_streak[0],
                 'end_timestamp': left_excessive_streak[-1],
                 'duration_frames': len(left_excessive_streak)
             })
-
-        if len(right_excessive_streak) >= min_frames:
-            excessive_movement_periods.append({
+        if len(right_excessive_streak) >= min_excessive_frames:
+            raw_right_excessive.append({
                 'wrist': 'right',
                 'start_timestamp': right_excessive_streak[0],
                 'end_timestamp': right_excessive_streak[-1],
                 'duration_frames': len(right_excessive_streak)
             })
 
+        # Merge nearby events per hand, then combine
+        excessive_movement_periods = (
+            self._merge_excessive_events(raw_left_excessive, merge_gap_s) +
+            self._merge_excessive_events(raw_right_excessive, merge_gap_s)
+        )
+
         print(f"Detected {len(no_movement_periods)} no-movement periods")
-        print(f"Detected {len(excessive_movement_periods)} excessive-movement periods")
+        print(f"Detected {len(excessive_movement_periods)} excessive-movement periods "
+              f"(from {len(raw_left_excessive)} left + {len(raw_right_excessive)} right raw events)")
 
         return {
             'no_movement_periods': no_movement_periods,
@@ -369,224 +381,9 @@ class ArmMovementAnalysisService:
             'thresholds_used': {
                 'no_movement_velocity_threshold': no_movement_threshold,
                 'excessive_movement_velocity_threshold': excessive_movement_threshold,
-                'min_consecutive_frames': min_frames
-            }
-        }
-
-    def _filter_segments_by_gap(self, segments: List[Dict[str, Any]], min_gap: int) -> List[Dict[str, Any]]:
-        """Filter segments to ensure minimum gap between them."""
-        if not segments:
-            return []
-
-        sorted_segments = sorted(segments, key=lambda s: s['frame_index'])
-        filtered = []
-        i = 0
-
-        while i < len(sorted_segments):
-            group = [sorted_segments[i]]
-            j = i + 1
-
-            # Find all segments within min_gap
-            while j < len(sorted_segments) and sorted_segments[j]['frame_index'] - sorted_segments[i]['frame_index'] < min_gap:
-                group.append(sorted_segments[j])
-                j += 1
-
-            # Keep the one with largest change_magnitude
-            best_segment = max(group, key=lambda s: s['change_magnitude'])
-            filtered.append(best_segment)
-
-            i = j
-
-        return filtered
-
-    def segment_by_average_change(self, kinematics_data: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Detect sudden changes in movement intensity using sliding window averages."""
-        window_size = self.config['segmentation_window_size']
-        threshold = self.config['average_change_threshold']
-
-        print(f"Segmenting by average change:")
-        print(f"  Window size: {window_size} frames")
-        print(f"  Change threshold: {threshold}")
-
-        # Process left wrist
-        left_velocities = [
-            f['left_wrist']['velocity'] if f.get('left_wrist') else 0.0
-            for f in kinematics_data
-        ]
-
-        left_segments_raw = []
-        for i in range(len(left_velocities) - window_size):
-            current_window = left_velocities[i:i + window_size]
-            current_avg = sum(current_window) / len(current_window)
-
-            next_window = left_velocities[i + window_size:i + 2 * window_size]
-            if len(next_window) < window_size:
-                break
-
-            next_avg = sum(next_window) / len(next_window)
-            change = abs(next_avg - current_avg)
-
-            if change > threshold:
-                segment_idx = i + window_size
-                left_segments_raw.append({
-                    'frame_index': segment_idx,
-                    'timestamp': kinematics_data[segment_idx]['timestamp'],
-                    'average_before': current_avg,
-                    'average_after': next_avg,
-                    'change_magnitude': change,
-                    'change_type': 'increase' if next_avg > current_avg else 'decrease'
-                })
-
-        # Process right wrist
-        right_velocities = [
-            f['right_wrist']['velocity'] if f.get('right_wrist') else 0.0
-            for f in kinematics_data
-        ]
-
-        right_segments_raw = []
-        for i in range(len(right_velocities) - window_size):
-            current_window = right_velocities[i:i + window_size]
-            current_avg = sum(current_window) / len(current_window)
-
-            next_window = right_velocities[i + window_size:i + 2 * window_size]
-            if len(next_window) < window_size:
-                break
-
-            next_avg = sum(next_window) / len(next_window)
-            change = abs(next_avg - current_avg)
-
-            if change > threshold:
-                segment_idx = i + window_size
-                right_segments_raw.append({
-                    'frame_index': segment_idx,
-                    'timestamp': kinematics_data[segment_idx]['timestamp'],
-                    'average_before': current_avg,
-                    'average_after': next_avg,
-                    'change_magnitude': change,
-                    'change_type': 'increase' if next_avg > current_avg else 'decrease'
-                })
-
-        # Filter segments by minimum gap
-        min_gap = self.config['min_segment_gap']
-        left_segments = self._filter_segments_by_gap(left_segments_raw, min_gap)
-        right_segments = self._filter_segments_by_gap(right_segments_raw, min_gap)
-
-        print(f"Found {len(left_segments_raw)} raw left segments, filtered to {len(left_segments)}")
-        print(f"Found {len(right_segments_raw)} raw right segments, filtered to {len(right_segments)}")
-
-        return {
-            'left_wrist_segments': left_segments,
-            'right_wrist_segments': right_segments,
-            'parameters': {
-                'window_size': window_size,
-                'threshold': threshold
-            }
-        }
-
-    def segment_by_trend_change(self, kinematics_data: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Detect changes in movement trend (slope) using linear regression."""
-        window_size = self.config['segmentation_window_size']
-        threshold = self.config['trend_change_threshold']
-
-        print(f"Segmenting by trend change:")
-        print(f"  Window size: {window_size} frames")
-        print(f"  Trend change threshold: {threshold}")
-
-        def calculate_trend(values):
-            """Calculate linear regression slope."""
-            n = len(values)
-            if n < 2:
-                return 0.0
-
-            x_vals = list(range(n))
-            sum_x = sum(x_vals)
-            sum_y = sum(values)
-            sum_xy = sum(x * y for x, y in zip(x_vals, values))
-            sum_x2 = sum(x ** 2 for x in x_vals)
-
-            denominator = (n * sum_x2 - sum_x ** 2)
-            if abs(denominator) < 1e-10:
-                return 0.0
-
-            slope = (n * sum_xy - sum_x * sum_y) / denominator
-            return slope
-
-        # Process left wrist
-        left_velocities = [
-            f['left_wrist']['velocity'] if f.get('left_wrist') else 0.0
-            for f in kinematics_data
-        ]
-
-        left_segments_raw = []
-        prev_trend = None
-        for i in range(len(left_velocities) - window_size):
-            window = left_velocities[i:i + window_size]
-            current_trend = calculate_trend(window)
-
-            if prev_trend is not None:
-                sign_changed = (prev_trend > 0 and current_trend < 0) or (prev_trend < 0 and current_trend > 0)
-                trend_change = abs(current_trend - prev_trend)
-                significant_change = trend_change > threshold
-
-                if sign_changed or significant_change:
-                    segment_idx = i + window_size // 2
-                    if segment_idx < len(kinematics_data):
-                        left_segments_raw.append({
-                            'frame_index': segment_idx,
-                            'timestamp': kinematics_data[segment_idx]['timestamp'],
-                            'trend_before': prev_trend,
-                            'trend_after': current_trend,
-                            'change_magnitude': trend_change,
-                            'change_type': 'reversal' if sign_changed else 'magnitude_change'
-                        })
-
-            prev_trend = current_trend
-
-        # Process right wrist
-        right_velocities = [
-            f['right_wrist']['velocity'] if f.get('right_wrist') else 0.0
-            for f in kinematics_data
-        ]
-
-        right_segments_raw = []
-        prev_trend = None
-        for i in range(len(right_velocities) - window_size):
-            window = right_velocities[i:i + window_size]
-            current_trend = calculate_trend(window)
-
-            if prev_trend is not None:
-                sign_changed = (prev_trend > 0 and current_trend < 0) or (prev_trend < 0 and current_trend > 0)
-                trend_change = abs(current_trend - prev_trend)
-                significant_change = trend_change > threshold
-
-                if sign_changed or significant_change:
-                    segment_idx = i + window_size // 2
-                    if segment_idx < len(kinematics_data):
-                        right_segments_raw.append({
-                            'frame_index': segment_idx,
-                            'timestamp': kinematics_data[segment_idx]['timestamp'],
-                            'trend_before': prev_trend,
-                            'trend_after': current_trend,
-                            'change_magnitude': trend_change,
-                            'change_type': 'reversal' if sign_changed else 'magnitude_change'
-                        })
-
-            prev_trend = current_trend
-
-        # Filter segments by minimum gap
-        min_gap = self.config['min_segment_gap']
-        left_segments = self._filter_segments_by_gap(left_segments_raw, min_gap)
-        right_segments = self._filter_segments_by_gap(right_segments_raw, min_gap)
-
-        print(f"Found {len(left_segments_raw)} raw left trend changes, filtered to {len(left_segments)}")
-        print(f"Found {len(right_segments_raw)} raw right trend changes, filtered to {len(right_segments)}")
-
-        return {
-            'left_wrist_trend_changes': left_segments,
-            'right_wrist_trend_changes': right_segments,
-            'parameters': {
-                'window_size': window_size,
-                'threshold': threshold
+                'min_consecutive_frames': min_frames,
+                'min_excessive_frames': min_excessive_frames,
+                'excessive_merge_gap_s': merge_gap_s,
             }
         }
 
@@ -615,7 +412,7 @@ class ArmMovementAnalysisService:
         url = f"{settings.SEGMENTATION_SERVICE_URL}/api/v1/segment/"
         payload = {
             'series': series,
-            'methods': ['mean', 'trend', 'std'],
+            'methods': ['std'],
             'sensitivity': sensitivity,
             'label': f'arm_{recording_id}',
         }
@@ -637,11 +434,11 @@ class ArmMovementAnalysisService:
 
         fps = analysis_data.get('fps') or 30.0
         self.config['min_consecutive_frames'] = max(1, round(self.config['min_consecutive_duration_ms'] * fps / 1000))
-        self.config['segmentation_window_size'] = max(1, round(self.config['segmentation_window_duration_ms'] * fps / 1000))
-        self.config['min_segment_gap'] = max(1, round(self.config['min_segment_gap_ms'] * fps / 1000))
+        self.config['min_excessive_frames'] = max(1, round(self.config['excessive_min_consecutive_duration_ms'] * fps / 1000)) if self.config['excessive_min_consecutive_duration_ms'] > 0 else 1
+        self.config['excessive_merge_gap_s'] = self.config['excessive_merge_gap_ms'] / 1000.0
         print(f"Using fps={fps}: min_consecutive_frames={self.config['min_consecutive_frames']}, "
-              f"segmentation_window_size={self.config['segmentation_window_size']}, "
-              f"min_segment_gap={self.config['min_segment_gap']}")
+              f"min_excessive_frames={self.config['min_excessive_frames']}, "
+              f"excessive_merge_gap={self.config['excessive_merge_gap_s']}s")
 
         total_frames = len(analysis_data.get('data', []))
         print(f"Retrieved {total_frames} frames from database")
@@ -658,6 +455,26 @@ class ArmMovementAnalysisService:
 
         print(f"Normalized {len(normalized_frames)} frames")
 
+        # Convert string timestamps to relative float seconds so that
+        # anomaly period start_timestamp / end_timestamp are proper numbers.
+        from datetime import datetime
+
+        def _parse_ts(ts_str):
+            s = str(ts_str)
+            for fmt in ('%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S',
+                        '%H:%M:%S.%f', '%H:%M:%S'):
+                try:
+                    return datetime.strptime(s, fmt)
+                except ValueError:
+                    continue
+            return None
+
+        first_dt = _parse_ts(normalized_frames[0]['timestamp'])
+        if first_dt is not None:
+            for frame in normalized_frames:
+                dt = _parse_ts(frame['timestamp'])
+                frame['timestamp'] = round((dt - first_dt).total_seconds(), 3) if dt else 0.0
+
         # Step 3: Calculate kinematics
         kinematics_data = self.calculate_wrist_kinematics(normalized_frames)
         print(f"Calculated kinematics for {len(kinematics_data)} frames")
@@ -668,9 +485,7 @@ class ArmMovementAnalysisService:
         # Step 5: Detect anomalies
         anomalies = self.detect_movement_anomalies(kinematics_data)
 
-        # Step 6: Perform segmentation
-        average_segments = self.segment_by_average_change(kinematics_data)
-        trend_segments = self.segment_by_trend_change(kinematics_data)
+        # Step 6: Segmentation via segmentation_ms
         pelt_segmentation = self.call_segmentation(kinematics_data, fps, recording_id)
 
         # Calculate statistics
@@ -706,10 +521,6 @@ class ArmMovementAnalysisService:
                 'excessive_movement_periods': anomalies['excessive_movement_periods'],
                 'thresholds': anomalies['thresholds_used']
             },
-            'segmentation': {
-                'average_change': average_segments,
-                'trend_change': trend_segments,
-                'pelt': pelt_segmentation,
-            },
+            'segmentation': pelt_segmentation,
             'message': 'Arm movement analysis completed successfully.'
         }

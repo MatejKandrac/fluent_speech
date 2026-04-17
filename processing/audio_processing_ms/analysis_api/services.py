@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from django.conf import settings
 
-from .db_connection import get_recording_by_id
+from .db_connection import get_recording_by_id, mark_audio_processing_finished
 
 
 class AudioAnalysisService:
@@ -187,6 +187,9 @@ class AudioAnalysisService:
                 self.trigger_transcription_async(recording_id)
             else:
                 print(f"[DEBUG] Auto-trigger transcription is disabled")
+
+            mark_audio_processing_finished(recording_id)
+            print(f"Marked audio_processing_finished=True for recording ID: {recording_id}")
 
             return {
                 'success': True,

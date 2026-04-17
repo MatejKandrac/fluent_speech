@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
 import '../models/video_upload_response.dart';
+import '../models/processing_status_response.dart';
 
 part 'video_api_client.g.dart';
 
@@ -9,14 +10,14 @@ part 'video_api_client.g.dart';
 abstract class VideoApiClient {
   factory VideoApiClient(Dio dio, {String baseUrl}) = _VideoApiClient;
 
-  @POST('/api/v1/videos/upload')
+  @POST('/api/v1/processing/upload')
   @MultiPart()
   Future<VideoUploadResponse> uploadVideo({
     @Part(name: 'video') required MultipartFile video,
   });
 
-  @DELETE('/api/v1/videos/{filename}')
-  Future<void> deleteVideo({
-    @Path('filename') required String filename,
+  @GET('/api/v1/processing/status/{recording-id}')
+  Future<ProcessingStatusResponse> getProcessingStatus({
+    @Path('recording-id') required int recordingId,
   });
 }

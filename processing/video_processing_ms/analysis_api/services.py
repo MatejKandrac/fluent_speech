@@ -8,6 +8,7 @@ import mediapipe as mp
 import requests
 from django.conf import settings
 
+from .db_connection import mark_video_processing_finished
 from .db_connection import (
     get_video_by_id,
     update_recording_fps,
@@ -238,6 +239,9 @@ class VideoProcessingService:
                 insert_landmarks_batch(frame_data_id, frame_data['landmarks'])
 
             print(f"Frame data saved to PostgreSQL for recording ID: {video_id}")
+
+            mark_video_processing_finished(video_id)
+            print(f"Marked video_processing_finished=True for recording ID: {video_id}")
 
             return {
                 'success': True,

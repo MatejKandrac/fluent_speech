@@ -58,6 +58,22 @@ def return_db_connection(conn):
     PostgreSQLConnection().return_connection(conn)
 
 
+def mark_transcript_processing_finished(recording_id: int):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE recording SET transcript_processing_finished = TRUE WHERE id = %s",
+                (recording_id,)
+            )
+            conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        return_db_connection(conn)
+
+
 def get_recording_by_id(recording_id: int) -> Optional[dict]:
     """Get recording by ID"""
     conn = get_db_connection()

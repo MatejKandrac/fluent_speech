@@ -47,5 +47,7 @@ ANALYSIS_SERVICES = {
     'filler_words': os.getenv('FILLER_WORDS_SERVICE_URL',  'http://localhost:8008'),
 }
 
+PERFORMANCE_SERVICE_URL = os.getenv('PERFORMANCE_SERVICE_URL', 'http://localhost:8012')
+
 # Timeout per analysis service call in seconds
 ANALYSIS_TIMEOUT = int(os.getenv('ANALYSIS_TIMEOUT', 120))

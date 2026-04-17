@@ -1,3 +1,4 @@
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any
 
@@ -81,10 +82,41 @@ class AnalysisOrchestratorService:
                 else:
                     failed.append(name)
 
-        return {
+        # Call performance_ms with the aggregated results
+        performance = self._call_performance(recording_id, results)
+
+        response = {
             'success': len(failed) == 0,
             'recording_id': recording_id,
             'completed_analyses': completed,
             'failed_analyses': failed,
             'results': results,
+            'performance': performance,
         }
+
+        debug_dir = settings.BASE_DIR / 'debug_output' / str(recording_id)
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        debug_file = debug_dir / 'analysis_response.json'
+        with open(debug_file, 'w', encoding='utf-8') as f:
+            json.dump(response, f, indent=2, default=str)
+        print(f"[ANALYSIS RESPONSE] recording_id={recording_id} → saved to {debug_file}")
+
+        return response
+
+    def _call_performance(self, recording_id: int, analysis_results: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            payload = {
+                'recording_id': recording_id,
+                'pitch':        analysis_results.get('pitch'),
+                'volume':       analysis_results.get('volume'),
+                'filler_words': analysis_results.get('filler_words'),
+                'arm_movement': analysis_results.get('arm_movement'),
+                'hip_movement': analysis_results.get('hip'),
+                'eye_contact':  analysis_results.get('eye_contact'),
+            }
+            url = f"{settings.PERFORMANCE_SERVICE_URL}/api/v1/performance/"
+            response = requests.post(url, json=payload, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
