@@ -1,6 +1,7 @@
 package com.kandrac.matej.fluentapigateway.controller
 
 import com.kandrac.matej.fluentapigateway.service.VideoProcessingService
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -18,11 +19,13 @@ class VideoProcessingController(
     @PostMapping("/upload")
     fun uploadVideo(
         @RequestParam("video") video: MultipartFile,
-    ): ResponseEntity<Any> =
-        when (val result = videoProcessingService.forwardVideo(video)) {
+    ): ResponseEntity<Any> {
+        LoggerFactory.getLogger(VideoProcessingController::class.java).info("GOT REQUEST")
+        return when (val result = videoProcessingService.forwardVideo(video)) {
             null -> ResponseEntity.internalServerError().build()
             else -> result
         }
+    }
 
     @GetMapping("/status/{recording-id}")
     fun getProcessingStatus(

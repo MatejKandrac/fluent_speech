@@ -168,9 +168,10 @@ class AudioAnalysisService:
             audio_resampled = librosa.resample(audio_normalized, orig_sr=sr_original, target_sr=target_sr)
             print(f"Audio resampled to 16kHz: {len(audio_resampled)} samples at {target_sr} Hz")
 
-            # Noise reduction
-            # TODO: Implement noise reduction
-            audio_final = audio_resampled
+            # Noise reduction — stationary mode targets constant mic hiss/hum
+            import noisereduce as nr
+            audio_final = nr.reduce_noise(y=audio_resampled, sr=target_sr, stationary=True)
+            print(f"Noise reduction applied (stationary mode)")
 
             # Save file
             import soundfile as sf

@@ -8,7 +8,24 @@ import 'db/database_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _assignTestRecording();
   runApp(ProviderScope(child: const MyApp()));
+}
+
+/// Debug utility: assigns remoteId=11 to the local record named "Test video 1".
+/// Safe to leave in — does nothing if the record doesn't exist or is already uploaded.
+Future<void> _assignTestRecording() async {
+  try {
+    final db = DatabaseHelper();
+    final records = await db.getAllVideoRecords();
+    final match = records.where((r) => r.name == 'Hip2' && r.remoteId == -1).firstOrNull;
+    if (match != null) {
+      await db.updateVideoRecord(match.copyWith(remoteId: 49, filename: 'Hip2.mp4'));
+      print('[DEBUG] Assigned remoteId=49 to "Hip2"');
+    }
+  } catch (e) {
+    print('[DEBUG] _assignTestRecording failed: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {

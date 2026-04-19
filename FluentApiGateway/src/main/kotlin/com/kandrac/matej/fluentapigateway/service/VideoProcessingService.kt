@@ -28,12 +28,15 @@ class VideoProcessingService(
     fun forwardVideo(video: MultipartFile): ResponseEntity<Any>? {
         logger.info("Forwarding video upload to processing orchestrator")
         return try {
-            val contentType = ContentType.create(
-                video.contentType?.takeIf { it.isNotBlank() } ?: "video/mp4"
-            )
-            val entity = MultipartEntityBuilder.create()
-                .addBinaryBody("file", video.bytes, contentType, video.originalFilename ?: "upload")
-                .build()
+            val contentType =
+                ContentType.create(
+                    video.contentType?.takeIf { it.isNotBlank() } ?: "video/mp4",
+                )
+            val entity =
+                MultipartEntityBuilder
+                    .create()
+                    .addBinaryBody("file", video.bytes, contentType, video.originalFilename ?: "upload")
+                    .build()
 
             val request = HttpPost("$orchestratorUrl/api/v1/processing/upload/")
             request.entity = entity

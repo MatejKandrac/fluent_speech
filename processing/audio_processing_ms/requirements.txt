@@ -8,3 +8,4 @@ soundfile==0.12.1
 matplotlib==3.8.2
 setuptools>=65.5.0
 requests>=2.31.0
+noisereduce==3.0.2

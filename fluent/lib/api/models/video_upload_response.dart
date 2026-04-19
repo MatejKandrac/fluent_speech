@@ -5,7 +5,7 @@ part 'video_upload_response.g.dart';
 @JsonSerializable()
 class VideoUploadResponse {
   final bool success;
-  final String message;
+  final String? message;
   @JsonKey(name: 'recording_id')
   final int? id;
   final String? filename;
@@ -14,7 +14,7 @@ class VideoUploadResponse {
 
   VideoUploadResponse({
     required this.success,
-    required this.message,
+    this.message,
     this.id,
     this.filename,
     this.fileSize,

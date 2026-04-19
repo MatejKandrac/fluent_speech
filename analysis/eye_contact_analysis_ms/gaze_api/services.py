@@ -93,21 +93,39 @@ class EyeContactAnalysisService:
         # If nose is further from camera than shoulders, person is facing backwards
         facing_back = (nose['z'] - shoulder_center_z) > self.config['back_facing_threshold']
 
-        # --- PITCH CALCULATION ---
-        # The video is rotated 90° CW (portrait saved sideways), so real-world vertical
-        # movement (pitch) maps to the image X axis, not Y.
-        # Nose X relative to ear level X, normalised by shoulder Y span
-        # (which is the real shoulder-to-shoulder distance in the rotated frame).
-        ear_level_y = (left_ear['y'] + right_ear['y']) / 2  # kept for debug
+        # --- PITCH CALCULATION (rotation-independent) ---
+        # Build a body-frame "up" vector from the shoulder axis so that the
+        # pitch formula works regardless of whether the video is landscape,
+        # portrait, or rotated 90°.
         ear_level_x = (left_ear['x'] + right_ear['x']) / 2
-        shoulder_width = abs(right_shoulder['x'] - left_shoulder['x'])  # kept for debug
-        shoulder_y_span = abs(right_shoulder['y'] - left_shoulder['y'])
-        if shoulder_y_span > 0.001:
-            nose_ear_offset_x = nose['x'] - ear_level_x
-            pitch = -(nose_ear_offset_x / shoulder_y_span) * self.config['pitch_scale']
+        ear_level_y = (left_ear['y'] + right_ear['y']) / 2
+        ear_level_z = (left_ear['z'] + right_ear['z']) / 2
+        shoulder_vec_x = right_shoulder['x'] - left_shoulder['x']
+        shoulder_vec_y = right_shoulder['y'] - left_shoulder['y']
+        shoulder_len = math.sqrt(shoulder_vec_x ** 2 + shoulder_vec_y ** 2)
+        shoulder_width = abs(shoulder_vec_x)   # kept for debug
+        shoulder_y_span = abs(shoulder_vec_y)  # kept for debug
+
+        if shoulder_len > 0.001:
+            su_x = shoulder_vec_x / shoulder_len  # shoulder unit vector
+            su_y = shoulder_vec_y / shoulder_len
+            bu_x = -su_y  # body "up" = 90° CCW rotation of shoulder unit
+            bu_y = su_x
+
+            # Nose-to-ear vector projected onto body "up" axis
+            nex = nose['x'] - ear_level_x
+            ney = nose['y'] - ear_level_y
+            nose_ear_vertical = nex * bu_x + ney * bu_y
+
+            inter_ear_dist = math.sqrt(
+                (right_ear['x'] - left_ear['x']) ** 2 +
+                (right_ear['y'] - left_ear['y']) ** 2
+            )
+            face_radius = inter_ear_dist / 2 if inter_ear_dist > 0.001 else shoulder_len * 0.15
+            pitch = math.degrees(math.atan2(nose_ear_vertical, face_radius))
         else:
-            pitch = -(nose['x'] - (left_eye['x'] + right_eye['x']) / 2) * self.config['pitch_scale']
-        pitch = max(-90.0, min(90.0, pitch - self.config['pitch_bias']))
+            pitch = 0.0
+        pitch = max(-90.0, min(90.0, pitch + self.config['pitch_bias'] + self.config['pitch_debug_offset']))
 
         return {
             'yaw': yaw,
@@ -131,27 +149,13 @@ class EyeContactAnalysisService:
                 'z': nose['z'],
             },
             'pitch_debug': {
-                # Y axis (old approach — should be flat for rotated video)
-                'nose_y': nose['y'],
-                'eye_level_y': (left_eye['y'] + right_eye['y']) / 2,
-                'ear_level_y': ear_level_y,
-                'nose_ear_offset_y': nose['y'] - ear_level_y,
-                # X axis (correct approach for 90° CW rotated video)
-                'nose_x': nose['x'],
-                'left_ear_x': left_ear['x'],
-                'right_ear_x': right_ear['x'],
-                'ear_level_x': ear_level_x,
-                'eye_level_x': (left_eye['x'] + right_eye['x']) / 2,
-                'nose_ear_offset_x': nose['x'] - ear_level_x,
-                # Normalizers
+                'nose_ear_vertical': nose_ear_vertical if shoulder_len > 0.001 else 0,
+                'face_radius': face_radius if shoulder_len > 0.001 else 0,
+                'pitch_ratio': (nose_ear_vertical / face_radius) if shoulder_len > 0.001 and face_radius > 0.001 else 0,
+                'body_up': {'x': bu_x, 'y': bu_y} if shoulder_len > 0.001 else {'x': 0, 'y': 0},
+                'shoulder_len': shoulder_len,
                 'shoulder_width': shoulder_width,
                 'shoulder_y_span': shoulder_y_span,
-                'left_shoulder_x': left_shoulder['x'],
-                'right_shoulder_x': right_shoulder['x'],
-                'left_shoulder_y': left_shoulder['y'],
-                'right_shoulder_y': right_shoulder['y'],
-                # Final ratio used for pitch
-                'nose_ear_ratio_x': (nose['x'] - ear_level_x) / shoulder_y_span if shoulder_y_span > 0.001 else 0,
             }
         }
 

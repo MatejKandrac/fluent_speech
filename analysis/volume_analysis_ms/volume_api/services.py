@@ -23,15 +23,20 @@ class VolumeAnalysisService:
         min_rms = 10 ** (silence_floor / 20.0)
         return 20.0 * np.log10(np.maximum(rms, min_rms))
 
+    def compute_silence_floor(self, dbfs: np.ndarray) -> float:
+        # 10th-percentile of all frames estimates the noise floor; +6 dB headroom
+        dynamic = float(np.percentile(dbfs, 10)) + 6.0
+        return max(dynamic, self.config['silence_floor_dbfs'])
+
     def detect_volume_segments(
         self,
         dbfs: np.ndarray,
         sr: float,
         hop_length: int,
+        silence_floor: float,
     ) -> Dict[str, List[Dict[str, Any]]]:
         too_soft_threshold = self.config['too_soft_dbfs']
         too_loud_threshold = self.config['too_loud_dbfs']
-        silence_floor = self.config['silence_floor_dbfs']
         min_duration = self.config['min_segment_duration_ms'] / 1000.0
         duration_per_frame = hop_length / sr
 
@@ -78,7 +83,8 @@ class VolumeAnalysisService:
         dbfs: np.ndarray,
         sr: float,
         recording_id: str,
-        segments: Dict[str, List[Dict[str, Any]]] = None
+        segments: Dict[str, List[Dict[str, Any]]] = None,
+        silence_floor: float = None,
     ) -> Optional[str]:
         try:
             debug_dir = Path(settings.BASE_DIR) / 'debug' / recording_id
@@ -101,7 +107,8 @@ class VolumeAnalysisService:
             # --- dBFS plot ---
             too_soft = self.config['too_soft_dbfs']
             too_loud = self.config['too_loud_dbfs']
-            silence_floor = self.config['silence_floor_dbfs']
+            if silence_floor is None:
+                silence_floor = self.config['silence_floor_dbfs']
 
             ax_dbfs.plot(time, dbfs, linewidth=1, color='steelblue',
                          label=f'dBFS (mean: {dbfs[dbfs > silence_floor].mean():.1f} dBFS)')
@@ -109,6 +116,8 @@ class VolumeAnalysisService:
                             label=f'Too soft ({too_soft} dBFS)')
             ax_dbfs.axhline(too_loud, color='red', linestyle='--', linewidth=1.5,
                             label=f'Too loud ({too_loud} dBFS)')
+            ax_dbfs.axhline(silence_floor, color='gray', linestyle=':', linewidth=1.0,
+                            label=f'Silence floor ({silence_floor:.1f} dBFS, auto)')
 
             # Shade violation segments
             if segments:
@@ -151,9 +160,10 @@ class VolumeAnalysisService:
         sr: float,
         hop_length: int,
         recording_id: int,
+        silence_floor: float,
     ) -> Optional[Dict]:
         try:
-            speech_floor = self.config['too_soft_dbfs']
+            speech_floor = max(silence_floor, self.config['too_soft_dbfs'])
             frames_per_second = round(sr / hop_length)
 
             # Build 1-second-averaged dBFS series using only speech-level frames.
@@ -221,19 +231,19 @@ class VolumeAnalysisService:
 
             # Convert to dBFS
             dbfs = self.rms_to_dbfs(rms)
-            silence_floor = self.config['silence_floor_dbfs']
+            silence_floor = self.compute_silence_floor(dbfs)
             voiced_dbfs = dbfs[dbfs > silence_floor]
-            print(f"dBFS: mean={voiced_dbfs.mean():.1f}, min={dbfs.min():.1f}, max={dbfs.max():.1f}")
+            print(f"dBFS: mean={voiced_dbfs.mean():.1f}, min={dbfs.min():.1f}, max={dbfs.max():.1f} (silence_floor={silence_floor:.1f} dBFS)")
 
             # Detect too-soft and too-loud segments
-            segments = self.detect_volume_segments(dbfs, sr, hop_length)
+            segments = self.detect_volume_segments(dbfs, sr, hop_length, silence_floor)
             print(f"[DEBUG] Too-soft segments: {len(segments['too_soft'])}, Too-loud segments: {len(segments['too_loud'])}")
 
             # Save debug plot
-            self.save_volume_plot(rms, dbfs, sr, str(recording_id), segments)
+            self.save_volume_plot(rms, dbfs, sr, str(recording_id), segments, silence_floor)
 
             # Call segmentation service
-            segmentation = self.call_segmentation(dbfs, sr, hop_length, recording_id)
+            segmentation = self.call_segmentation(dbfs, sr, hop_length, recording_id, silence_floor)
 
             # TODO: Save volume data to database (implement later)
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../capture/capture_view.dart';
 import '../recording_detail/recording_detail_view.dart';
+import '../summarise/summarise_view.dart';
 import '../widgets/large_app_bar.dart';
 import '../../core/detection_mode.dart';
 import '../../db/database_helper.dart';
@@ -34,6 +36,48 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
+  Future<void> _pickFromGallery() async {
+    final video = await ImagePicker().pickVideo(source: ImageSource.gallery);
+    if (video == null || !mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SummariseView(
+          mode: DetectionMode.stage,
+          filePath: video.path,
+        ),
+      ),
+    );
+  }
+
+  void _showAddOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.videocam),
+              title: const Text('Record video'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _startRecording();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from gallery'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _pickFromGallery();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: LargeAppBar(
@@ -46,7 +90,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _startRecording,
+          onPressed: _showAddOptions,
           child: const Icon(Icons.add),
         ),
         body: FutureBuilder<List<VideoRecord>>(

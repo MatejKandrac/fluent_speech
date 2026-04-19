@@ -153,7 +153,8 @@ class HipAnalysisService:
         self,
         metrics: Dict[str, Any],
         recording_id: str,
-        swaying_segments: List[Dict[str, Any]] = None
+        swaying_segments: List[Dict[str, Any]] = None,
+        lateral_axis: str = 'Y',
     ) -> Optional[str]:
         try:
             debug_dir = Path(settings.BASE_DIR) / 'debug' / recording_id
@@ -167,12 +168,11 @@ class HipAnalysisService:
             fig, ax = plt.subplots(figsize=(16, 6))
             fig.suptitle(f'Hip Movement Analysis - Recording {recording_id}', fontsize=16)
 
-            # Plot Hip Center Y position (lateral movement - side to side)
-            # Note: Y is used because MediaPipe frames are rotated
-            ax.plot(frame_indices, metrics['hip_center_y'], linewidth=1.5, color='blue', label='Hip Center Y')
+            lateral_data = metrics[f'hip_center_{lateral_axis.lower()}']
+            ax.plot(frame_indices, lateral_data, linewidth=1.5, color='blue', label=f'Hip Center {lateral_axis}')
             ax.set_xlabel('Frame Index', fontsize=12)
-            ax.set_ylabel('Y Position (normalized)', fontsize=12)
-            ax.set_title('Hip Center - Lateral Movement (Side to Side)', fontsize=14)
+            ax.set_ylabel(f'{lateral_axis} Position (normalized)', fontsize=12)
+            ax.set_title(f'Hip Center - Lateral Movement (Side to Side) [{lateral_axis} axis]', fontsize=14)
             ax.grid(True, alpha=0.3)
 
             # Highlight swaying segments
@@ -319,19 +319,25 @@ class HipAnalysisService:
             fps = recording['fps'] # fps of video
             hip_window_duration = self.config['hip_window_duration'] # this is a duration in milliseconds
             window_duration = hip_window_duration / 1000.0
+
+            # Use the axis with higher variance — X for landscape video, Y for rotated portrait
+            lateral_signal = hip_sway_x if np.var(hip_sway_x) >= np.var(hip_sway_y) else hip_sway_y
+            lateral_axis = 'X' if np.var(hip_sway_x) >= np.var(hip_sway_y) else 'Y'
+            print(f"[DEBUG] Using hip center {lateral_axis} axis for lateral sway (var_x={np.var(hip_sway_x):.6f}, var_y={np.var(hip_sway_y):.6f})")
+
             swaying_segments, direction_changes = self.detect_swaying_segments(
-                hip_sway_y,
+                lateral_signal,
                 metrics['timestamps'],
                 fps=fps,
                 window_duration=window_duration,
                 min_direction_changes=min_direction_changes,
-                min_amplitude=min_amplitude_change  # Minimum normalized position change to count as significant movement
+                min_amplitude=min_amplitude_change
             )
 
             print(f"[DEBUG] Detected {len(swaying_segments)} swaying segments")
 
             # Save debug plots with swaying segments highlighted
-            self.save_hip_movement_plots(metrics, str(recording_id), swaying_segments)
+            self.save_hip_movement_plots(metrics, str(recording_id), swaying_segments, lateral_axis)
 
             segmentation = self.call_segmentation(
                 direction_changes, fps, len(hip_sway_y), recording_id

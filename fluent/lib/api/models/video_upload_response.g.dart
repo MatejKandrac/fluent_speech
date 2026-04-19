@@ -9,7 +9,7 @@ part of 'video_upload_response.dart';
 VideoUploadResponse _$VideoUploadResponseFromJson(Map<String, dynamic> json) =>
     VideoUploadResponse(
       success: json['success'] as bool,
-      message: json['message'] as String,
+      message: json['message'] as String?,
       id: (json['recording_id'] as num?)?.toInt(),
       filename: json['filename'] as String?,
       fileSize: (json['fileSize'] as num?)?.toInt(),

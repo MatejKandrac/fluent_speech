@@ -75,8 +75,9 @@ EYE_CONTACT_ANALYSIS_CONFIG = {
     # Back facing
     'back_facing_threshold': float(os.getenv('BACK_FACING_THRESHOLD', '-0.1')),
 
-    'pitch_scale': float(os.getenv('PITCH_SCALE', '1620')),
-    'pitch_bias': float(os.getenv('PITCH_BIAS', '5')),
+    'pitch_scale': float(os.getenv('PITCH_SCALE', '1.0')),  # unused by current formula, kept for config compat
+    'pitch_bias': float(os.getenv('PITCH_BIAS', '20')),
+    'pitch_debug_offset': float(os.getenv('PITCH_DEBUG_OFFSET', '0')),
 
     'eye_segmentation_sensitivity': float(os.getenv('EYE_SEGMENTATION_SENSITIVITY', '0.5')),
 }
