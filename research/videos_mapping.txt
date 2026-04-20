@@ -1,0 +1,7 @@
+Videos:
+53 -> Filler words, middle segment has many of them (V6)
+52 -> Filler words, equally throuought the presentation (V5)
+51 -> Monotonous speaking (V4)
+50 -> Eye contact (V2)
+49 -> Hip swaying and no hand movements (V3)
+54 -> Baseline (V1)

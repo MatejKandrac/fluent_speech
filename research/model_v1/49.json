@@ -1,0 +1,1001 @@
+{
+  "success": true,
+  "recording_id": 49,
+  "completed_analyses": [
+    "hip",
+    "arm_movement",
+    "eye_contact",
+    "filler_words",
+    "pitch",
+    "volume"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "hip": {
+      "success": true,
+      "recording_id": 49,
+      "statistics": {
+        "total_frames": 534,
+        "valid_frames": 534,
+        "hip_sway": {
+          "x_mean": 0.4613543248522594,
+          "x_std": 0.020803225019942435,
+          "x_range": 0.07508477568626404,
+          "y_mean": 0.773352447520481,
+          "y_std": 0.004713944607499008,
+          "y_range": 0.03875437378883362
+        },
+        "hip_distance": {
+          "mean": 0.07902855838340478,
+          "std": 0.0036003793280747574,
+          "min": 0.0723809852715162,
+          "max": 0.09421886256540446
+        }
+      },
+      "swaying_segments": [],
+      "swaying_segments_count": 0,
+      "segmentation": {
+        "success": false,
+        "error": "Not enough direction changes for segmentation"
+      }
+    },
+    "arm_movement": {
+      "success": true,
+      "recording_id": 49,
+      "total_frames": 534,
+      "normalized_frames_count": 534,
+      "visualization_path": "C:\\Users\\matke\\fluent_speech\\analysis\\arm_movement_analysis_ms\\debug_output\\49\\wrist_kinematics_recording_49.png",
+      "statistics": {
+        "left_wrist": {
+          "avg_velocity": 0.15511796323474067,
+          "max_velocity": 1.117300963366424,
+          "avg_acceleration": 0.12006491643249158,
+          "max_acceleration": 0.7200592171709963
+        },
+        "right_wrist": {
+          "avg_velocity": 0.1478664199886094,
+          "max_velocity": 1.3300085537540298,
+          "avg_acceleration": 0.10797659867475398,
+          "max_acceleration": 1.0726871729453933
+        }
+      },
+      "anomalies": {
+        "no_movement_periods": [],
+        "excessive_movement_periods": [
+          {
+            "wrist": "left",
+            "start_timestamp": 9.091,
+            "end_timestamp": 9.291,
+            "duration_frames": 3
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 20.579,
+            "end_timestamp": 21.678,
+            "duration_frames": 6
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 23.477,
+            "end_timestamp": 23.676,
+            "duration_frames": 3
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 24.775,
+            "end_timestamp": 26.074,
+            "duration_frames": 6
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 28.771,
+            "end_timestamp": 28.971,
+            "duration_frames": 3
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 30.869,
+            "end_timestamp": 31.069,
+            "duration_frames": 3
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 36.963,
+            "end_timestamp": 38.062,
+            "duration_frames": 8
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 39.56,
+            "end_timestamp": 40.759,
+            "duration_frames": 7
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 44.555,
+            "end_timestamp": 48.751,
+            "duration_frames": 27
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 49.85,
+            "end_timestamp": 50.649,
+            "duration_frames": 8
+          },
+          {
+            "wrist": "left",
+            "start_timestamp": 52.547,
+            "end_timestamp": 53.247,
+            "duration_frames": 8
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 10.589,
+            "end_timestamp": 10.789,
+            "duration_frames": 3
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 19.281,
+            "end_timestamp": 19.58,
+            "duration_frames": 4
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 30.869,
+            "end_timestamp": 31.069,
+            "duration_frames": 3
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 44.555,
+            "end_timestamp": 50.649,
+            "duration_frames": 40
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 52.547,
+            "end_timestamp": 53.247,
+            "duration_frames": 8
+          }
+        ],
+        "thresholds": {
+          "no_movement_velocity_threshold": 0.05,
+          "excessive_movement_velocity_threshold": 0.15,
+          "min_consecutive_frames": 20,
+          "min_excessive_frames": 3,
+          "excessive_merge_gap_s": 1.0
+        }
+      },
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "std": [
+            9.99,
+            44.955
+          ]
+        },
+        "segments": {
+          "std": [
+            {
+              "start": 0.0,
+              "end": 8.991,
+              "mean": 0.1314,
+              "std": 0.0166,
+              "min": 0.1101,
+              "max": 0.1544,
+              "count": 10
+            },
+            {
+              "start": 9.99,
+              "end": 43.956,
+              "mean": 0.1646,
+              "std": 0.0364,
+              "min": 0.0908,
+              "max": 0.249,
+              "count": 35
+            },
+            {
+              "start": 44.955,
+              "end": 52.947,
+              "mean": 0.389,
+              "std": 0.1849,
+              "min": 0.1014,
+              "max": 0.698,
+              "count": 9
+            }
+          ]
+        },
+        "penalty_used": 6.452,
+        "sensitivity": 0.7
+      },
+      "message": "Arm movement analysis completed successfully."
+    },
+    "eye_contact": {
+      "success": true,
+      "recording_id": 49,
+      "total_frames": 534,
+      "analyzed_frames": 534,
+      "heatmap": {
+        "yaw_bins": [
+          -75.0,
+          -70.0,
+          -65.0,
+          -60.0,
+          -55.0,
+          -50.0,
+          -45.0,
+          -40.0,
+          -35.0,
+          -30.0,
+          -25.0,
+          -20.0,
+          -15.0,
+          -10.0,
+          -5.0,
+          0.0,
+          5.0,
+          10.0,
+          15.0,
+          20.0,
+          25.0,
+          30.0,
+          35.0,
+          40.0,
+          45.0,
+          50.0,
+          55.0,
+          60.0,
+          65.0,
+          70.0,
+          75.0
+        ],
+        "pitch_bins": [
+          -30.0,
+          -25.0,
+          -20.0,
+          -15.0,
+          -10.0,
+          -5.0,
+          0.0,
+          5.0,
+          10.0,
+          15.0,
+          20.0,
+          25.0,
+          30.0
+        ],
+        "duration_matrix": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1998,
+            0.1998,
+            0.3996,
+            0.5994,
+            0.3996,
+            1.0989,
+            2.2977,
+            3.996,
+            4.5954,
+            6.3936,
+            3.6963,
+            0.999,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.3996,
+            0.0999,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0999,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0999,
+            0.0,
+            0.1998,
+            0.0999,
+            0.2997,
+            0.0,
+            0.2997,
+            0.0999,
+            0.0999,
+            0.2997,
+            0.2997,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1998,
+            0.7992,
+            0.3996,
+            0.0999,
+            0.3996,
+            0.4995,
+            0.2997,
+            0.4995,
+            0.1998,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0999,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1998,
+            0.0999,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1998,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0999,
+            0.1998,
+            0.0999,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0999,
+            0.0,
+            0.2997,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.3996,
+            1.0989,
+            3.5964,
+            2.997,
+            5.3946000000000005,
+            3.4965,
+            1.6983000000000001,
+            1.7982,
+            0.6993,
+            0.0999,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "bin_size": {
+          "yaw": 5.0,
+          "pitch": 5.0
+        },
+        "shape": {
+          "n_yaw_bins": 30,
+          "n_pitch_bins": 12
+        }
+      },
+      "statistics": {
+        "total_frames": 534,
+        "total_duration": 53.35,
+        "looking_at_audience_frames": 134,
+        "looking_at_audience_duration": 13.39,
+        "looking_at_audience_percentage": 25.09,
+        "looking_away_frames": 400,
+        "looking_away_duration": 39.96,
+        "looking_away_percentage": 74.91,
+        "avg_yaw": 1.63,
+        "avg_pitch": -4.44,
+        "yaw_range": 97.75,
+        "pitch_range": 180.0,
+        "num_looking_away_events": 17
+      },
+      "looking_away_events": [
+        {
+          "start_timestamp": 2.298,
+          "end_timestamp": 4.296,
+          "duration_frames": 21,
+          "duration_seconds": 2.0979,
+          "avg_yaw": -16.675296359145882,
+          "avg_pitch": -58.80816726319048
+        },
+        {
+          "start_timestamp": 4.995,
+          "end_timestamp": 6.294,
+          "duration_frames": 14,
+          "duration_seconds": 1.3986,
+          "avg_yaw": 29.26323411964599,
+          "avg_pitch": 85.64870355434
+        },
+        {
+          "start_timestamp": 6.494,
+          "end_timestamp": 7.492,
+          "duration_frames": 11,
+          "duration_seconds": 1.0989,
+          "avg_yaw": -6.448336212751693,
+          "avg_pitch": -75.29479069297525
+        },
+        {
+          "start_timestamp": 8.292,
+          "end_timestamp": 11.089,
+          "duration_frames": 29,
+          "duration_seconds": 2.8971,
+          "avg_yaw": -14.62097421013328,
+          "avg_pitch": -69.48017401424471
+        },
+        {
+          "start_timestamp": 11.289,
+          "end_timestamp": 14.186,
+          "duration_frames": 30,
+          "duration_seconds": 2.997,
+          "avg_yaw": -6.888294933430192,
+          "avg_pitch": -25.23796139975318
+        },
+        {
+          "start_timestamp": 14.585,
+          "end_timestamp": 16.284,
+          "duration_frames": 18,
+          "duration_seconds": 1.7982,
+          "avg_yaw": 25.188531197767343,
+          "avg_pitch": 80.27046915462398
+        },
+        {
+          "start_timestamp": 18.282,
+          "end_timestamp": 20.38,
+          "duration_frames": 22,
+          "duration_seconds": 2.1978,
+          "avg_yaw": -28.81402211360593,
+          "avg_pitch": -90.0
+        },
+        {
+          "start_timestamp": 20.879,
+          "end_timestamp": 22.577,
+          "duration_frames": 18,
+          "duration_seconds": 1.7982,
+          "avg_yaw": 20.54996862062324,
+          "avg_pitch": 83.09237442278385
+        },
+        {
+          "start_timestamp": 22.777,
+          "end_timestamp": 25.974,
+          "duration_frames": 33,
+          "duration_seconds": 3.2967,
+          "avg_yaw": -10.689431591068432,
+          "avg_pitch": -78.90932414128152
+        },
+        {
+          "start_timestamp": 28.571,
+          "end_timestamp": 31.169,
+          "duration_frames": 27,
+          "duration_seconds": 2.6973000000000003,
+          "avg_yaw": 3.6372973232778882,
+          "avg_pitch": 11.66753688657727
+        },
+        {
+          "start_timestamp": 31.369,
+          "end_timestamp": 32.867,
+          "duration_frames": 16,
+          "duration_seconds": 1.5984,
+          "avg_yaw": -12.932019784973305,
+          "avg_pitch": -72.30129560625505
+        },
+        {
+          "start_timestamp": 33.966,
+          "end_timestamp": 36.264,
+          "duration_frames": 24,
+          "duration_seconds": 2.3976,
+          "avg_yaw": 2.9833654372799905,
+          "avg_pitch": 2.804174716292119
+        },
+        {
+          "start_timestamp": 36.763,
+          "end_timestamp": 39.96,
+          "duration_frames": 33,
+          "duration_seconds": 3.2967,
+          "avg_yaw": 3.6815393628345543,
+          "avg_pitch": -6.8101180144134
+        },
+        {
+          "start_timestamp": 40.36,
+          "end_timestamp": 42.757,
+          "duration_frames": 25,
+          "duration_seconds": 2.4975,
+          "avg_yaw": -15.158555656644085,
+          "avg_pitch": -77.12273611214158
+        },
+        {
+          "start_timestamp": 42.957,
+          "end_timestamp": 44.855,
+          "duration_frames": 20,
+          "duration_seconds": 1.998,
+          "avg_yaw": 13.041689361233887,
+          "avg_pitch": 74.82030718104875
+        },
+        {
+          "start_timestamp": 46.553,
+          "end_timestamp": 47.752,
+          "duration_frames": 13,
+          "duration_seconds": 1.2987,
+          "avg_yaw": 12.656022771184004,
+          "avg_pitch": 32.21462553018152
+        },
+        {
+          "start_timestamp": 48.751,
+          "end_timestamp": 53.247,
+          "duration_frames": 46,
+          "duration_seconds": 4.5954,
+          "avg_yaw": 8.66339555048914,
+          "avg_pitch": 57.37567579289255
+        }
+      ],
+      "staring_events": [],
+      "audience_zone_thresholds": {
+        "yaw_min": -60.0,
+        "yaw_max": 60.0,
+        "pitch_min": -15.0,
+        "pitch_max": 15.0
+      },
+      "staring_thresholds": {
+        "angle_threshold": 10.0,
+        "min_frames": 2000
+      },
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "mean": []
+        },
+        "segments": {
+          "mean": [
+            {
+              "start": 0.0,
+              "end": 52.947,
+              "mean": 0.8926,
+              "std": 0.1687,
+              "min": 0.1,
+              "max": 1.0,
+              "count": 54
+            }
+          ]
+        },
+        "penalty_used": 22.361,
+        "sensitivity": 0.5
+      },
+      "message": "Eye contact analysis completed successfully."
+    },
+    "filler_words": {
+      "success": true,
+      "recording_id": 49,
+      "duration": 52.0,
+      "detected_language": "unknown",
+      "statistics": {
+        "total_filler_words": 0,
+        "fillers_per_minute": 0,
+        "most_common_filler": null,
+        "slovak_fillers_count": 0,
+        "english_fillers_count": 0,
+        "duration": 52.0,
+        "is_high_usage": false
+      },
+      "filler_occurrences": [],
+      "total_filler_occurrences": 0,
+      "uhh_occurrences_count": 0,
+      "segmentation": null,
+      "message": "Filler words analysis completed successfully."
+    },
+    "pitch": {
+      "success": true,
+      "recording_id": 49,
+      "pitch_frames": 1067,
+      "voiced_frames": 177,
+      "pitch_mean": 152.82941512815296,
+      "pitch_min": 107.7902302781589,
+      "pitch_max": 220.32682235595996,
+      "pitch_std": 23.71569916596777,
+      "monotonous_segments": [],
+      "monotonous_segments_count": 0,
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "std": [
+            15.45
+          ]
+        },
+        "segments": {
+          "std": [
+            {
+              "start": 14.7,
+              "end": 15.4,
+              "mean": 19.2625,
+              "std": 0.0,
+              "min": 19.2625,
+              "max": 19.2625,
+              "count": 15
+            },
+            {
+              "start": 15.45,
+              "end": 41.4,
+              "mean": 18.9752,
+              "std": 0.4534,
+              "min": 18.3718,
+              "max": 19.906,
+              "count": 19
+            }
+          ]
+        },
+        "penalty_used": 144.27,
+        "sensitivity": 0.2
+      }
+    },
+    "volume": {
+      "success": true,
+      "recording_id": 49,
+      "volume_frames": 1067,
+      "volume_mean_rms": 0.017683837562799454,
+      "volume_min_rms": 0.0,
+      "volume_max_rms": 0.15398280322551727,
+      "volume_std_rms": 0.020107997581362724,
+      "dbfs_mean": -35.66,
+      "dbfs_min": -60.0,
+      "dbfs_max": -16.25,
+      "too_soft_segments": [],
+      "too_soft_count": 0,
+      "too_loud_segments": [],
+      "too_loud_count": 0,
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "mean": []
+        },
+        "segments": {
+          "mean": [
+            {
+              "start": 1.0,
+              "end": 51.0,
+              "mean": -29.8844,
+              "std": 2.2749,
+              "min": -34.243,
+              "max": -23.794,
+              "count": 46
+            }
+          ]
+        },
+        "penalty_used": 144.27,
+        "sensitivity": 0.2
+      }
+    }
+  },
+  "performance": {
+    "success": true,
+    "recording_id": 49,
+    "total_score": 81.8,
+    "total_label": "Dobr\u00e9",
+    "dimensions": {
+      "voice": {
+        "score": 100.0,
+        "label": "V\u00fdborn\u00e9",
+        "weight": 0.25,
+        "issues": [],
+        "issue_locations": {}
+      },
+      "fluency": {
+        "score": 100.0,
+        "label": "V\u00fdborn\u00e9",
+        "weight": 0.2,
+        "issues": [],
+        "issue_locations": {},
+        "filler_per_minute": 0.0
+      },
+      "body": {
+        "score": 69.4,
+        "label": "Priemer",
+        "weight": 0.25,
+        "issues": [
+          "body_excessive_movement"
+        ],
+        "issue_locations": {
+          "body_excessive_movement": "end"
+        }
+      },
+      "eye_contact": {
+        "score": 65.0,
+        "label": "Priemer",
+        "weight": 0.3,
+        "issues": [
+          "eye_contact_away"
+        ],
+        "issue_locations": {
+          "eye_contact_away": "throughout"
+        }
+      }
+    },
+    "recommendations": [
+      "Ruky ste pohybovali pr\u00edli\u0161 r\u00fdchlo alebo nerv\u00f3zne. Sk\u00faste z\u00e1mernej\u0161iu a pomal\u0161iu gestikul\u00e1ciu. Prejavilo sa to najm\u00e4 na konci prezent\u00e1cie.",
+      "Pr\u00edli\u0161 \u010dasto ste sa pozerali mimo publikum. Sna\u017ete sa udr\u017eiava\u0165 o\u010dn\u00fd kontakt s r\u00f4znymi \u010das\u0165ami publika. Vyskytovalo sa to po\u010das celej prezent\u00e1cie."
+    ]
+  }
+}

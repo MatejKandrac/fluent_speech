@@ -6,6 +6,20 @@ from django.conf import settings
 
 from .db_connection import get_recording_by_id, save_transcript_words, mark_transcript_processing_finished
 
+_whisper_model = None
+
+
+def load_whisper_model():
+    global _whisper_model
+    if _whisper_model is not None:
+        return
+    import whisper
+    model_name = settings.WHISPER_CONFIG['whisper_model']
+    download_root = os.getenv('WHISPER_CACHE_DIR', None)
+    print(f"[STARTUP] Loading Whisper model '{model_name}' (cache: {download_root or 'default'})...")
+    _whisper_model = whisper.load_model(model_name, download_root=download_root)
+    print(f"[STARTUP] Whisper model '{model_name}' loaded and ready.")
+
 
 class TranscriptProcessingService:
 
@@ -15,11 +29,12 @@ class TranscriptProcessingService:
 
     def transcribe_audio(self, audio_path: str) -> Optional[Dict[str, Any]]:
         try:
-            import whisper
-
-            model_name = self.config['whisper_model']
-            print(f"Loading Whisper model: {model_name}")
-            model = whisper.load_model(model_name)
+            model = _whisper_model
+            if model is None:
+                # Fallback in case ready() wasn't called (e.g. management commands)
+                import whisper
+                download_root = os.getenv('WHISPER_CACHE_DIR', None)
+                model = whisper.load_model(self.config['whisper_model'], download_root=download_root)
 
             # Parse suppress_tokens - empty string means suppress nothing (preserve filler words)
             suppress_tokens_str = self.config.get('suppress_tokens', '')

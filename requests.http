@@ -10,14 +10,14 @@ Content-Type: multipart/form-data; boundary=WebAppBoundary
 Content-Disposition: form-data; name="video"; filename="REC6766379630202934727.mp4"
 Content-Type: video/mp4
 
-< C:/Users/matke/Videos/testVideo11.mp4
+< C:/Users/matke/Videos/DiplomovkaVideaDotaznik/Video1Baseline.mp4
 --WebAppBoundary--
 
 ### Video Processing status
 GET http://localhost:8000/api/v1/processing/status/13
 
 ### Analyze video
-POST http://localhost:8000/api/v1/analysis/analyze?recording-id=13
+POST http://localhost:8000/api/v1/analysis/analyze?recording-id=54
 Content-Type: application/json
 
 {
