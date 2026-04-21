@@ -12,33 +12,50 @@ sústredených úsekov negatívnych javov. Tieto dizajnové rozhodnutia vychádz
 hypotézy tieto predpoklady empiricky testujú — ich potvrdenie alebo vyvrátenie spätne validuje, resp. spochybňuje
 konkrétne nastavenia systému.
 
-| Hypotéza | Čo validuje v systéme                                                                                                                      |
-|----------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| H1.1     | Oprávnenosť vyšších váh neverbálnych dimenzií (eye contact 30 % + body 25 % = 55 %) oproti verbálnym (voice 25 % + fluency 20 % = 45 %)    |
-| H1.2     | Oprávnenosť vyššej váhy hlasu (25 %) oproti plynulosti reči (20 %)                                                                         |
-| H2.1     | Oprávnenosť segmentačného prístupu — PELT deteguje sústredené úseky, ktoré sú pre poslucháča relevantnejšie ako rovnomerne roztrúsené javy |
+| Hypotéza | Čo validuje v systéme                                                                                                                              |
+|----------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| H1.1a    | Oprávnenosť toho, že vizuálne + hlasové dimenzie (55 % + 25 % = 80 %) majú vyššiu váhu ako plynulosť reči (20 %)                                  |
+| H1.1b    | Oprávnenosť hierarchie váh: vizuálne (55 %) > hlasové (25 %) > plynulosť (20 %)                                                                   |
+| H1.2     | Oprávnenosť vyššej váhy hlasu (25 %) oproti plynulosti reči (20 %)                                                                                |
+| H2.1     | Oprávnenosť segmentačného prístupu — PELT deteguje sústredené úseky, ktoré sú pre poslucháča relevantnejšie ako rovnomerne roztrúsené javy        |
 
 ---
 
 ## RQ1 — Vplyv dimenzií na vnímanú kvalitu prezentácie
 
 **Výskumná otázka:**  
-Majú neverbálne dimenzie (očný kontakt, pohyb tela) väčší vplyv na vnímané celkové hodnotenie prezentácie ako verbálne
-dimenzie (hlas, plynulosť reči)? A je v rámci verbálnych dimenzií monotónnosť hlasu vnímaná negatívnejšie ako výplňové
-slová?
+Majú vizuálne dimenzie (očný kontakt, pohyb tela) a hlasové dimenzie (výška hlasu, hlasitosť) väčší vplyv na vnímané
+celkové hodnotenie prezentácie ako plynulosť reči (výplňové slová)? A platí hierarchia vizuálne > hlasové > plynulosť?
+
+Dimenzie sú rozdelené do troch skupín podľa charakteru:
+- **Vizuálne** — očný kontakt (`eye`) + pohyb tela (`body`)
+- **Hlasové** — hlas, výška, hlasitosť (`voice`)
+- **Plynulosť** — výplňové slová, tempo (`fluency`)
 
 ---
 
-### H1.1 — Neverbálne dimenzie majú väčší skutočný vplyv na celkové hodnotenie ako verbálne
+### H1.1a — Vizuálne a hlasové dimenzie majú spolu väčší vplyv na celkové hodnotenie ako plynulosť reči
 
-*Miera, do akej respondenta rušili neverbálne dimenzie (očný kontakt, pohyb tela), bude silnejším prediktorom jeho
-celkového hodnotenia prezentácie ako miera, do akej ho rušili verbálne dimenzie (hlas, plynulosť reči).*
+*Miera, do akej respondenta rušili vizuálne a hlasové dimenzie (očný kontakt, pohyb tela, hlas), bude silnejším
+prediktorom jeho celkového hodnotenia prezentácie ako miera, do akej ho rušila plynulosť reči.*
 
-- **Nulová hypotéza:** Neverbálne a verbálne dimenzie sú rovnako silnými prediktormi celkového hodnotenia.
-- **Smer:** Regresný koeficient pre neverbálne dimenzie bude štatisticky vyšší ako pre verbálne.
-- **Meranie:** Pre každého respondenta a každé video sú k dispozícii hodnotenia rušivosti každej dimenzie (1–5) a
-  celkové hodnotenie prezentácie (1–5). Pomocou viacnásobnej lineárnej regresie sa porovnajú beta koeficienty pre
-  skupinu neverbálnych a skupinu verbálnych prediktorov. Test štatistickej významnosti rozdielov koeficientov.
+- **Nulová hypotéza:** Vizuálne+hlasové a plynulosť sú rovnako silnými prediktormi celkového hodnotenia.
+- **Smer:** Priemerný regresný koeficient pre skupinu (eye + body + voice) bude vyšší ako koeficient pre fluency.
+- **Meranie:** Viacnásobná lineárna regresia (štandardizované beta koeficienty) na dátach respondent × video.
+  Párový t-test na per-respondent koreláciách vizuálnych+hlasových dimenzií vs plynulosti s celkovým hodnotením.
+- **Vzorka:** ≥ 30 respondentov, každý hodnotí všetky videá (within-subjects).
+
+---
+
+### H1.1b — Platí hierarchia vplyvu: vizuálne > hlasové > plynulosť
+
+*Vizuálne dimenzie (očný kontakt, pohyb tela) budú silnejším prediktorom celkového hodnotenia ako hlasové dimenzie
+(hlas), ktoré budú silnejším prediktorom ako plynulosť reči (výplňové slová).*
+
+- **Nulová hypotéza:** Medzi troma skupinami nie je štatisticky významný rozdiel vo vplyve na celkové hodnotenie.
+- **Smer:** beta(vizuálne) > beta(hlasové) > beta(plynulosť).
+- **Meranie:** Porovnanie štandardizovaných beta koeficientov z regresie; párový t-test vizuálne vs hlasové
+  a hlasové vs plynulosť na per-respondent koreláciách.
 - **Vzorka:** ≥ 30 respondentov, každý hodnotí všetky videá (within-subjects).
 
 ---
