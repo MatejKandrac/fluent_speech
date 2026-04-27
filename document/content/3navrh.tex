@@ -156,7 +156,10 @@ Nakoľko som počas analýzy zistil, že nevhodných javov ktoré je možné det
     \end{itemize}
     \item \textbf{Pitch Analysis Service (Django/Python)} - analýza výšky hlasu (trendy) a detekovanie monotónnosti
     \item \textbf{Volume Analysis Service (Django/Python)} - analýza hlasitosti hlasu, spolu s analýzou časových radov pre trendy
-    \item \textbf{Mediator Service (Django/Python)} - orchestrácia paralelného spracovania analýz a spájanie výsledkov
+    \item \textbf{Analysis Orchestrator (Django/Python)} - orchestrácia paralelného spracovania analýz a spájanie výsledkov
+    \item \textbf{Performance Service (Django/Python)} - agregácia výsledkov analytických služieb do celkového hodnotenia prezentácie a generovanie odporúčaní
+    \item \textbf{Segmentation Service (Django/Python)} - spoločná mikroslužba pre detekciu bodov zmien v časových radoch, využívaná všetkými analytickými mikroslužbami
+    \item \textbf{Transcript Processing Service (Django/Python)} - automatická transkripcia reči pomocou OpenAI Whisper s word-level timestamps
     \item \textbf{Databáza (PostgreSQL/TimescaleDB)} - ukladanie pozícií tela, natočených videí a analýz
     \item \textbf{Súborové úložisko} - ukladanie nahratých video súborov, spolu s príslušnými zvukovými súbormi
 \end{itemize}
@@ -178,8 +181,11 @@ Detekcia pohybov rúk a gestikulácie & Arm Movement Analysis Service \\ \hline
 Detekcia monotónnosti hlasu & Pitch Analysis Service \\ \hline
 Detekcia hlasitosti hlasu & Volume Analysis Service \\ \hline
 Detekcia výplňových slov v reči & Filler Words Analysis Service \\ \hline
-Detekcia kritických bodov zmien v časových radoch & Všetky analytické mikroslužby (segmentácia) \\ \hline
-Generovanie komplexných výsledkov a odporúčaní & Mediator Service \\ \hline
+Detekcia kritických bodov zmien v časových radoch & Segmentation Service \\ \hline
+Orchestrácia paralelného spracovania analýz & Analysis Orchestrator \\ \hline
+Generovanie celkového hodnotenia a odporúčaní & Performance Service \\ \hline
+Transkripcia reči pre detekciu výplňových slov & Transcript Processing Service \\ \hline
+Transkripcia reči pre detekciu výplňových slov & Transcript Processing Service \\ \hline
 Extrakcia kľúčových bodov tela z videa & Video Processing Service \\ \hline
 Extrakcia a normalizácia audio signálu & Audio Processing Service \\ \hline
 \end{tabularx}
@@ -250,7 +256,7 @@ Nasledujúci obrázok zobrazuje všetky kľúčové body, ktoré MediaPipe Pose 
     \caption{33 kľúčových bodov detekovaných MediaPipe Pose\cite{mediapipe} \label{fig:mediapipeLandmarks}}
 \end{figure}
 
-V prípade, že by chcel používateľ spustiť celkovú analýzu prezentácie, požiadavka pôjde na mediátor a ten by spustil analýzu vo všetkých službách, výsledky spojil a vŕatil by tieto údaje.
+V prípade, že by chcel používateľ spustiť celkovú analýzu prezentácie, požiadavka pôjde na Analysis Orchestrator, ktorý spustí analýzy vo všetkých zvolených službách paralelne, výsledky spojí a vráti tieto údaje spolu s celkovým hodnotením z Performance Service.
 
 \subsection{Spracovanie zvuku}
 

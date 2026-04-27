@@ -50,9 +50,9 @@ SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localho
 
 MOVEMENT_ANALYSIS_CONFIG = {
     'no_movement_velocity_threshold': float(os.getenv('NO_MOVEMENT_VELOCITY_THRESHOLD', '0.01')),
-    'excessive_movement_velocity_threshold': float(os.getenv('EXCESSIVE_MOVEMENT_VELOCITY_THRESHOLD', '0.15')),
+    'excessive_z_score_k': float(os.getenv('EXCESSIVE_Z_SCORE_K', '2.5')),
+    'excessive_rolling_window': int(os.getenv('EXCESSIVE_ROLLING_WINDOW', '15')),
     'min_consecutive_duration_ms': int(os.getenv('MIN_CONSECUTIVE_DURATION_MS', '333')),
-    'excessive_min_consecutive_duration_ms': int(os.getenv('EXCESSIVE_MIN_CONSECUTIVE_DURATION_MS', '0')),
     'excessive_merge_gap_ms': int(os.getenv('EXCESSIVE_MERGE_GAP_MS', '600')),
     'arm_segmentation_sensitivity': float(os.getenv('ARM_SEGMENTATION_SENSITIVITY', '0.5')),
 }

@@ -198,18 +198,66 @@ def _score_voice(
 
 
 # ---------------------------------------------------------------------------
-# Fluency dimension  (weight 0.20)
+# Fluency dimension  (weight 0.27)
 # ---------------------------------------------------------------------------
+
+def _filler_distribution_penalty(
+    occurrences: list,
+    duration: float,
+    n_bins: int,
+    max_penalty: float,
+    cv_threshold: float,
+) -> float:
+    """
+    Additional penalty for uniformly distributed filler words (H2.1 finding).
+
+    Divides the presentation into n_bins equal time windows and counts fillers
+    per window. Coefficient of Variation (CV = std/mean) measures concentration:
+      - low CV (uniform spread)    → cv_threshold penalty
+      - high CV (one dense block)  → 0 penalty
+
+    Only applied when occurrences >= 3 (too few fillers → distribution irrelevant).
+    """
+    if len(occurrences) < 3 or duration <= 0 or n_bins < 2:
+        return 0.0
+
+    bin_size = duration / n_bins
+    counts = [0] * n_bins
+    for occ in occurrences:
+        t = float(occ.get('start_time', 0))
+        idx = min(int(t / bin_size), n_bins - 1)
+        counts[idx] += 1
+
+    mean_count = sum(counts) / n_bins
+    if mean_count == 0:
+        return 0.0
+
+    variance = sum((c - mean_count) ** 2 for c in counts) / n_bins
+    cv = (variance ** 0.5) / mean_count
+
+    # cv >= cv_threshold → concentrated → no extra penalty
+    # cv = 0 → perfectly uniform → full max_penalty
+    penalty = max(0.0, (1.0 - min(cv, cv_threshold) / cv_threshold) * max_penalty)
+    return round(penalty, 2)
+
 
 def _score_fluency(
     filler: Optional[Dict],
     total_duration: float,
+    distribution_bins: int = 6,
+    distribution_max_penalty: float = 20.0,
+    distribution_cv_threshold: float = 1.0,
 ) -> Dict[str, Any]:
     """
-    Filler words per minute:
+    Filler words per minute (base penalty):
       0–2  → 0 penalty
       2–5  → linear 0–40 penalty
       5+   → linear 40–100 penalty (capped at 100)
+
+    Distribution penalty (model v3, additive):
+      Uniform spread across the presentation adds up to distribution_max_penalty.
+      Based on H2.1: evenly distributed fillers are perceived worse than concentrated.
+      Applied only when fpm > 2 (meaningful filler usage).
     """
     issues: List[str] = []
     issue_locations: Dict[str, Optional[str]] = {}
@@ -232,10 +280,19 @@ def _score_fluency(
     else:
         penalty = 40.0 + min((fpm - 5.0) / 10.0 * 60.0, 60.0)
 
+    # Distribution penalty — only when fpm exceeds threshold (meaningful usage)
+    occurrences = filler.get('filler_occurrences', [])
+    if fpm > 2.0:
+        penalty += _filler_distribution_penalty(
+            occurrences, duration_sec,
+            n_bins=distribution_bins,
+            max_penalty=distribution_max_penalty,
+            cv_threshold=distribution_cv_threshold,
+        )
+
     penalty = _clamp(penalty, 0.0, 100.0)
     if penalty >= 20:
         issues.append('fluency_filler')
-        occurrences = filler.get('filler_occurrences', [])
         issue_locations['fluency_filler'] = _locate_events(
             occurrences, total_duration,
             start_key='start_time', end_key='end_time',
@@ -388,12 +445,23 @@ def _score_eye_contact(
 # Main service
 # ---------------------------------------------------------------------------
 
-DIMENSION_WEIGHTS = {
-    'voice':       0.25,
-    'fluency':     0.20,
-    'body':        0.25,
-    'eye_contact': 0.30,
-}
+def _load_weights() -> dict:
+    from django.conf import settings
+    return {
+        'voice':       settings.WEIGHT_VOICE,
+        'fluency':     settings.WEIGHT_FLUENCY,
+        'body':        settings.WEIGHT_BODY,
+        'eye_contact': settings.WEIGHT_EYE_CONTACT,
+    }
+
+
+def _load_fluency_distribution_config() -> dict:
+    from django.conf import settings
+    return {
+        'distribution_bins':         settings.FILLER_DISTRIBUTION_BINS,
+        'distribution_max_penalty':  settings.FILLER_DISTRIBUTION_MAX_PENALTY,
+        'distribution_cv_threshold': settings.FILLER_DISTRIBUTION_CV_THRESHOLD,
+    }
 
 SCORE_LABELS = [
     (90, 'Výborné'),
@@ -424,7 +492,7 @@ class PerformanceService:
         total_duration = _get_total_duration(pitch, volume, filler, arm, hip, eye)
 
         voice_result   = _score_voice(pitch, volume, total_duration)
-        fluency_result = _score_fluency(filler, total_duration)
+        fluency_result = _score_fluency(filler, total_duration, **_load_fluency_distribution_config())
         body_result    = _score_body(arm, hip, total_duration)
         eye_result     = _score_eye_contact(eye, total_duration)
 
@@ -435,9 +503,10 @@ class PerformanceService:
             'eye_contact': eye_result,
         }
 
+        weights = _load_weights()
         total_score = sum(
             dimensions[dim]['score'] * weight
-            for dim, weight in DIMENSION_WEIGHTS.items()
+            for dim, weight in weights.items()
         )
         total_score = round(_clamp(total_score), 1)
 
@@ -459,7 +528,7 @@ class PerformanceService:
                 dim: {
                     'score': dimensions[dim]['score'],
                     'label': _label(dimensions[dim]['score']),
-                    'weight': DIMENSION_WEIGHTS[dim],
+                    'weight': weights[dim],
                     **{k: v for k, v in dimensions[dim].items() if k not in ('score',)},
                 }
                 for dim in dimensions

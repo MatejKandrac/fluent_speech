@@ -25,94 +25,55 @@ class EyeContactAnalysisService:
     def calculate_head_angles(self, frame_data: Dict[str, Any]) -> Optional[Dict[str, float]]:
         landmarks = frame_data.get('landmarks', {})
 
-        # Check required landmarks
         required = ['nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear', 'left_shoulder', 'right_shoulder']
         if not all(lm in landmarks for lm in required):
             return None
 
         nose = landmarks['nose']
-        left_eye = landmarks['left_eye']
-        right_eye = landmarks['right_eye']
         left_ear = landmarks['left_ear']
         right_ear = landmarks['right_ear']
         left_shoulder = landmarks['left_shoulder']
         right_shoulder = landmarks['right_shoulder']
 
-        # Get configuration
-        pitch_min = self.config['pitch_min']
-        pitch_max = self.config['pitch_max']
-        yaw_min = self.config['yaw_min']
-        yaw_max = self.config['yaw_max']
-
-        # Get yaw calculation weights
-        weight_ear = self.config['yaw_weight_ear_ratio']
-        weight_nose_face = self.config['yaw_weight_nose_face']
-        weight_nose_shoulder = self.config['yaw_weight_nose_shoulder']
-
-        # --- YAW CALCULATION 1: Ear ratio (pomer vzdialeností k ušiam) ---
-        dist_to_left_ear = math.sqrt(
-            (nose['x'] - left_ear['x']) ** 2 +
-            (nose['y'] - left_ear['y']) ** 2
-        )
-        dist_to_right_ear = math.sqrt(
-            (nose['x'] - right_ear['x']) ** 2 +
-            (nose['y'] - right_ear['y']) ** 2
-        )
-
-        if dist_to_right_ear > 0:
-            ear_ratio = dist_to_left_ear / dist_to_right_ear
-        else:
-            ear_ratio = 1.0
-
-        if ear_ratio > 0:
-            ear_yaw = math.log(ear_ratio) * 50  # Scale factor for sensitivity
-        else:
-            ear_yaw = 0
-
-        # --- YAW CALCULATION 2: Nose vs face center (nos voči stredu tváre) ---
-        face_center_x = (left_eye['x'] + right_eye['x']) / 2
-        nose_offset_face_x = nose['x'] - face_center_x
-        nose_face_yaw = nose_offset_face_x * 100
-
-        # --- YAW CALCULATION 3: Nose vs shoulder center (nos voči stredu ramien) ---
-        shoulder_center_x = (left_shoulder['x'] + right_shoulder['x']) / 2
-        nose_offset_shoulder_x = nose['x'] - shoulder_center_x
-        nose_shoulder_yaw = nose_offset_shoulder_x * 100
-
-        # --- WEIGHTED AVERAGE of all three yaw calculations ---
-        yaw = (
-            ear_yaw * weight_ear +
-            nose_face_yaw * weight_nose_face +
-            nose_shoulder_yaw * weight_nose_shoulder
-        )
-
         # --- BACK-FACING DETECTION ---
-        # Calculate center of shoulders in Z-axis
         shoulder_center_z = (left_shoulder['z'] + right_shoulder['z']) / 2
-
-        # If nose is further from camera than shoulders, person is facing backwards
         facing_back = (nose['z'] - shoulder_center_z) > self.config['back_facing_threshold']
 
+        # --- YAW CALCULATION (rotation-invariant) ---
+        # Decompose the interaural axis (3D ear-to-ear vector) into:
+        #   • its magnitude projected onto the image plane: sqrt(Δx² + Δy²)
+        #   • its depth component: Δz
+        # atan2 of these gives yaw — the angle between the interaural axis and its
+        # image-plane projection. Using the 2D Euclidean distance (rather than just
+        # Δx) makes this work regardless of camera roll or portrait/landscape
+        # orientation, which is essential since MediaPipe landmarks come in raw
+        # image coordinates. Result naturally bounded to (-90°, +90°), monotonic
+        # across the full range, no calibration needed.
+        #
+        # Sign convention: MediaPipe z grows away from camera. When the subject
+        # turns to their right, the right ear moves away (right.z > left.z), so
+        # Δz = right.z - left.z > 0 → positive yaw. Matches prior convention.
+        delta_x_ear = right_ear['x'] - left_ear['x']
+        delta_y_ear = right_ear['y'] - left_ear['y']
+        ear_image_dist = math.sqrt(delta_x_ear ** 2 + delta_y_ear ** 2)
+        delta_z_ear = right_ear['z'] - left_ear['z']
+        yaw_raw = math.degrees(math.atan2(delta_z_ear, ear_image_dist))
+
         # --- PITCH CALCULATION (rotation-independent) ---
-        # Build a body-frame "up" vector from the shoulder axis so that the
-        # pitch formula works regardless of whether the video is landscape,
-        # portrait, or rotated 90°.
         ear_level_x = (left_ear['x'] + right_ear['x']) / 2
         ear_level_y = (left_ear['y'] + right_ear['y']) / 2
-        ear_level_z = (left_ear['z'] + right_ear['z']) / 2
         shoulder_vec_x = right_shoulder['x'] - left_shoulder['x']
         shoulder_vec_y = right_shoulder['y'] - left_shoulder['y']
         shoulder_len = math.sqrt(shoulder_vec_x ** 2 + shoulder_vec_y ** 2)
-        shoulder_width = abs(shoulder_vec_x)   # kept for debug
-        shoulder_y_span = abs(shoulder_vec_y)  # kept for debug
 
+        nose_ear_vertical = 0.0
+        face_radius = 0.0
         if shoulder_len > 0.001:
-            su_x = shoulder_vec_x / shoulder_len  # shoulder unit vector
+            su_x = shoulder_vec_x / shoulder_len
             su_y = shoulder_vec_y / shoulder_len
-            bu_x = -su_y  # body "up" = 90° CCW rotation of shoulder unit
+            bu_x = -su_y
             bu_y = su_x
 
-            # Nose-to-ear vector projected onto body "up" axis
             nex = nose['x'] - ear_level_x
             ney = nose['y'] - ear_level_y
             nose_ear_vertical = nex * bu_x + ney * bu_y
@@ -125,23 +86,27 @@ class EyeContactAnalysisService:
             pitch = math.degrees(math.atan2(nose_ear_vertical, face_radius))
         else:
             pitch = 0.0
-        pitch = max(-90.0, min(90.0, pitch + self.config['pitch_bias'] + self.config['pitch_debug_offset']))
+
+        pitch = max(-90.0, min(90.0, pitch + self.config['pitch_bias']))
+
+        # When facing backwards yaw/pitch are geometrically meaningless —
+        # nullify so downstream detection and visualisation skip these frames.
+        yaw = None if facing_back else yaw_raw
+        if facing_back:
+            pitch = None
 
         return {
             'yaw': yaw,
+            'yaw_raw': yaw,
             'pitch': pitch,
             'timestamp': frame_data.get('timestamp'),
             'facing_back': facing_back,
-            # Debug info
-            'yaw_components': {
-                'ear_yaw': ear_yaw,
-                'nose_face_yaw': nose_face_yaw,
-                'nose_shoulder_yaw': nose_shoulder_yaw
-            },
+            'delta_z_ear': delta_z_ear,
+            'ear_image_dist': ear_image_dist,
             'z_depth': {
                 'nose_z': nose['z'],
                 'shoulder_center_z': shoulder_center_z,
-                'z_diff': nose['z'] - shoulder_center_z
+                'z_diff': nose['z'] - shoulder_center_z,
             },
             'nose': {
                 'x': nose['x'],
@@ -149,15 +114,41 @@ class EyeContactAnalysisService:
                 'z': nose['z'],
             },
             'pitch_debug': {
-                'nose_ear_vertical': nose_ear_vertical if shoulder_len > 0.001 else 0,
-                'face_radius': face_radius if shoulder_len > 0.001 else 0,
-                'pitch_ratio': (nose_ear_vertical / face_radius) if shoulder_len > 0.001 and face_radius > 0.001 else 0,
-                'body_up': {'x': bu_x, 'y': bu_y} if shoulder_len > 0.001 else {'x': 0, 'y': 0},
+                'nose_ear_vertical': nose_ear_vertical,
+                'face_radius': face_radius,
+                'pitch_ratio': (nose_ear_vertical / face_radius) if face_radius > 0.001 else 0,
                 'shoulder_len': shoulder_len,
-                'shoulder_width': shoulder_width,
-                'shoulder_y_span': shoulder_y_span,
-            }
+            },
         }
+
+    def smooth_yaw(self, angle_data: List[Dict[str, Any]]) -> None:
+        # Median-filter Δz across frames, then recompute yaw. Smoothing the depth
+        # signal (the noisy input) rather than the yaw output keeps the geometry
+        # honest at all angles, where atan2 is non-linear w.r.t. Δz.
+        window = max(1, int(self.config.get('yaw_smoothing_window', 5)))
+        if window <= 1 or not angle_data:
+            return
+
+        half = window // 2
+        n = len(angle_data)
+        delta_z_series = [f['delta_z_ear'] for f in angle_data]
+
+        for i, frame in enumerate(angle_data):
+            if frame['yaw'] is None:
+                continue
+            lo = max(0, i - half)
+            hi = min(n, i + half + 1)
+            window_vals = [
+                delta_z_series[j] for j in range(lo, hi)
+                if angle_data[j]['yaw'] is not None
+            ]
+            if not window_vals:
+                continue
+            sorted_vals = sorted(window_vals)
+            smoothed_dz = sorted_vals[len(sorted_vals) // 2]
+            denom = frame['ear_image_dist']
+            yaw_smoothed = math.degrees(math.atan2(smoothed_dz, denom))
+            frame['yaw'] = max(-90.0, min(90.0, yaw_smoothed))
 
     def build_heatmap(self, angle_data: List[Dict[str, float]], frame_duration: float) -> Dict[str, Any]:
         yaw_min = self.config['yaw_min']
@@ -179,7 +170,6 @@ class EyeContactAnalysisService:
             yaw = frame['yaw']
             pitch = frame['pitch']
 
-            # Skip frames where person is facing backwards (yaw is None)
             if yaw is None or pitch is None:
                 continue
 
@@ -199,12 +189,12 @@ class EyeContactAnalysisService:
             'duration_matrix': heatmap_duration.tolist(),
             'bin_size': {
                 'yaw': yaw_bin_size,
-                'pitch': pitch_bin_size
+                'pitch': pitch_bin_size,
             },
             'shape': {
                 'n_yaw_bins': n_yaw_bins,
-                'n_pitch_bins': n_pitch_bins
-            }
+                'n_pitch_bins': n_pitch_bins,
+            },
         }
 
     def detect_looking_away_events(self, angle_data: List[Dict[str, float]], frame_duration: float, fps: float) -> List[Dict[str, Any]]:
@@ -218,10 +208,28 @@ class EyeContactAnalysisService:
         events = []
         current_streak = []
 
+        def flush():
+            if len(current_streak) >= min_frames:
+                avg_yaw = sum(f['yaw'] for f in current_streak) / len(current_streak)
+                avg_pitch = sum(f['pitch'] for f in current_streak) / len(current_streak)
+                events.append({
+                    'start_timestamp': current_streak[0]['timestamp'],
+                    'end_timestamp': current_streak[-1]['timestamp'],
+                    'duration_frames': len(current_streak),
+                    'duration_seconds': len(current_streak) * frame_duration,
+                    'avg_yaw': avg_yaw,
+                    'avg_pitch': avg_pitch,
+                })
+
         for frame in angle_data:
             yaw = frame['yaw']
             pitch = frame['pitch']
             timestamp = frame['timestamp']
+
+            if yaw is None or pitch is None:
+                flush()
+                current_streak = []
+                continue
 
             looking_away = (
                 yaw < audience_yaw_min or yaw > audience_yaw_max or
@@ -229,40 +237,12 @@ class EyeContactAnalysisService:
             )
 
             if looking_away:
-                current_streak.append({
-                    'timestamp': timestamp,
-                    'yaw': yaw,
-                    'pitch': pitch
-                })
+                current_streak.append({'timestamp': timestamp, 'yaw': yaw, 'pitch': pitch})
             else:
-                if len(current_streak) >= min_frames:
-                    avg_yaw = sum(f['yaw'] for f in current_streak) / len(current_streak)
-                    avg_pitch = sum(f['pitch'] for f in current_streak) / len(current_streak)
-
-                    events.append({
-                        'start_timestamp': current_streak[0]['timestamp'],
-                        'end_timestamp': current_streak[-1]['timestamp'],
-                        'duration_frames': len(current_streak),
-                        'duration_seconds': len(current_streak) * frame_duration,
-                        'avg_yaw': avg_yaw,
-                        'avg_pitch': avg_pitch
-                    })
-
+                flush()
                 current_streak = []
 
-        if len(current_streak) >= min_frames:
-            avg_yaw = sum(f['yaw'] for f in current_streak) / len(current_streak)
-            avg_pitch = sum(f['pitch'] for f in current_streak) / len(current_streak)
-
-            events.append({
-                'start_timestamp': current_streak[0]['timestamp'],
-                'end_timestamp': current_streak[-1]['timestamp'],
-                'duration_frames': len(current_streak),
-                'duration_seconds': len(current_streak) * frame_duration,
-                'avg_yaw': avg_yaw,
-                'avg_pitch': avg_pitch
-            })
-
+        flush()
         return events
 
     def detect_staring_events(self, angle_data: List[Dict[str, float]], frame_duration: float, fps: float) -> List[Dict[str, Any]]:
@@ -273,61 +253,69 @@ class EyeContactAnalysisService:
         events = []
         current_streak = []
 
-        for i, frame in enumerate(angle_data):
+        def flush():
+            if len(current_streak) >= min_frames:
+                avg_yaw = sum(f['yaw'] for f in current_streak) / len(current_streak)
+                avg_pitch = sum(f['pitch'] for f in current_streak) / len(current_streak)
+                events.append({
+                    'start_timestamp': current_streak[0]['timestamp'],
+                    'end_timestamp': current_streak[-1]['timestamp'],
+                    'duration_frames': len(current_streak),
+                    'duration_seconds': len(current_streak) * frame_duration,
+                    'avg_yaw': avg_yaw,
+                    'avg_pitch': avg_pitch,
+                })
+
+        for frame in angle_data:
             yaw = frame['yaw']
             pitch = frame['pitch']
             timestamp = frame['timestamp']
 
+            if yaw is None or pitch is None:
+                flush()
+                current_streak = []
+                continue
+
             if current_streak:
                 avg_yaw = sum(f['yaw'] for f in current_streak) / len(current_streak)
                 avg_pitch = sum(f['pitch'] for f in current_streak) / len(current_streak)
-
-                yaw_diff = abs(yaw - avg_yaw)
-                pitch_diff = abs(pitch - avg_pitch)
-
-                if yaw_diff <= angle_threshold and pitch_diff <= angle_threshold:
-                    current_streak.append({
-                        'timestamp': timestamp,
-                        'yaw': yaw,
-                        'pitch': pitch
-                    })
+                if abs(yaw - avg_yaw) <= angle_threshold and abs(pitch - avg_pitch) <= angle_threshold:
+                    current_streak.append({'timestamp': timestamp, 'yaw': yaw, 'pitch': pitch})
                 else:
-                    if len(current_streak) >= min_frames:
-                        final_avg_yaw = sum(f['yaw'] for f in current_streak) / len(current_streak)
-                        final_avg_pitch = sum(f['pitch'] for f in current_streak) / len(current_streak)
-
-                        events.append({
-                            'start_timestamp': current_streak[0]['timestamp'],
-                            'end_timestamp': current_streak[-1]['timestamp'],
-                            'duration_frames': len(current_streak),
-                            'duration_seconds': len(current_streak) * frame_duration,
-                            'avg_yaw': final_avg_yaw,
-                            'avg_pitch': final_avg_pitch
-                        })
-
-                    current_streak = [{
-                        'timestamp': timestamp,
-                        'yaw': yaw,
-                        'pitch': pitch
-                    }]
+                    flush()
+                    current_streak = [{'timestamp': timestamp, 'yaw': yaw, 'pitch': pitch}]
             else:
-                current_streak.append({
-                    'timestamp': timestamp,
-                    'yaw': yaw,
-                    'pitch': pitch
-                })
+                current_streak.append({'timestamp': timestamp, 'yaw': yaw, 'pitch': pitch})
+
+        flush()
+        return events
+
+    def detect_back_facing_events(self, angle_data: List[Dict[str, float]], frame_duration: float, fps: float) -> List[Dict[str, Any]]:
+        min_duration = self.config.get('min_back_facing_duration', 300)
+        min_frames = max(1, round(min_duration * fps / 1000))
+
+        events = []
+        current_streak = []
+
+        for frame in angle_data:
+            if frame.get('facing_back', False):
+                current_streak.append(frame)
+            else:
+                if len(current_streak) >= min_frames:
+                    events.append({
+                        'start_timestamp': current_streak[0]['timestamp'],
+                        'end_timestamp': current_streak[-1]['timestamp'],
+                        'duration_frames': len(current_streak),
+                        'duration_seconds': len(current_streak) * frame_duration,
+                    })
+                current_streak = []
 
         if len(current_streak) >= min_frames:
-            final_avg_yaw = sum(f['yaw'] for f in current_streak) / len(current_streak)
-            final_avg_pitch = sum(f['pitch'] for f in current_streak) / len(current_streak)
-
             events.append({
                 'start_timestamp': current_streak[0]['timestamp'],
                 'end_timestamp': current_streak[-1]['timestamp'],
                 'duration_frames': len(current_streak),
                 'duration_seconds': len(current_streak) * frame_duration,
-                'avg_yaw': final_avg_yaw,
-                'avg_pitch': final_avg_pitch
             })
 
         return events
@@ -338,27 +326,32 @@ class EyeContactAnalysisService:
         total_frames = len(angle_data)
         total_duration = total_frames * frame_duration
 
+        back_facing_frames = sum(1 for f in angle_data if f.get('facing_back', False))
+        back_facing_duration = back_facing_frames * frame_duration
+
         looking_away_frames = sum(event['duration_frames'] for event in looking_away_events)
         looking_away_duration = looking_away_frames * frame_duration
 
-        looking_at_audience_frames = total_frames - looking_away_frames
+        active_frames = total_frames - back_facing_frames
+        looking_at_audience_frames = max(0, active_frames - looking_away_frames)
         looking_at_audience_duration = looking_at_audience_frames * frame_duration
 
-        looking_at_audience_pct = (looking_at_audience_frames / total_frames * 100) if total_frames > 0 else 0
-        looking_away_pct = (looking_away_frames / total_frames * 100) if total_frames > 0 else 0
+        looking_at_audience_pct = (looking_at_audience_frames / active_frames * 100) if active_frames > 0 else 0
+        looking_away_pct = (looking_away_frames / active_frames * 100) if active_frames > 0 else 0
 
-        avg_yaw = sum(f['yaw'] for f in angle_data) / len(angle_data) if angle_data else 0
-        avg_pitch = sum(f['pitch'] for f in angle_data) / len(angle_data) if angle_data else 0
-
-        yaw_values = [f['yaw'] for f in angle_data]
-        pitch_values = [f['pitch'] for f in angle_data]
-
+        valid_frames = [f for f in angle_data if f['yaw'] is not None and f['pitch'] is not None]
+        yaw_values = [f['yaw'] for f in valid_frames]
+        pitch_values = [f['pitch'] for f in valid_frames]
+        avg_yaw = sum(yaw_values) / len(yaw_values) if yaw_values else 0
+        avg_pitch = sum(pitch_values) / len(pitch_values) if pitch_values else 0
         yaw_range = max(yaw_values) - min(yaw_values) if yaw_values else 0
         pitch_range = max(pitch_values) - min(pitch_values) if pitch_values else 0
 
         return {
             'total_frames': total_frames,
             'total_duration': round(total_duration, 2),
+            'back_facing_frames': back_facing_frames,
+            'back_facing_duration': round(back_facing_duration, 2),
             'looking_at_audience_frames': looking_at_audience_frames,
             'looking_at_audience_duration': round(looking_at_audience_duration, 2),
             'looking_at_audience_percentage': round(looking_at_audience_pct, 2),
@@ -369,7 +362,7 @@ class EyeContactAnalysisService:
             'avg_pitch': round(avg_pitch, 2),
             'yaw_range': round(yaw_range, 2),
             'pitch_range': round(pitch_range, 2),
-            'num_looking_away_events': len(looking_away_events)
+            'num_looking_away_events': len(looking_away_events),
         }
 
     def visualize_gaze_heatmap(self, heatmap_data: Dict[str, Any],
@@ -389,21 +382,24 @@ class EyeContactAnalysisService:
         duration_matrix = np.array(heatmap_data['duration_matrix'])
 
         times = [i * frame_duration for i in range(len(angle_data))]
-        yaw_values = [frame['yaw'] for frame in angle_data]
-        pitch_values = [frame['pitch'] for frame in angle_data]
+        yaw_values = [frame['yaw'] if frame['yaw'] is not None else float('nan') for frame in angle_data]
+        yaw_raw_values = [frame.get('yaw_raw') if frame.get('yaw_raw') is not None else float('nan') for frame in angle_data]
+        pitch_values = [frame['pitch'] if frame['pitch'] is not None else float('nan') for frame in angle_data]
         facing_back_values = [1 if frame.get('facing_back', False) else 0 for frame in angle_data]
+        delta_z_values = [frame.get('delta_z_ear', 0.0) for frame in angle_data]
 
         nose_z_values = [frame.get('z_depth', {}).get('nose_z', 0) for frame in angle_data]
         shoulder_z_values = [frame.get('z_depth', {}).get('shoulder_center_z', 0) for frame in angle_data]
         z_diff_values = [frame.get('z_depth', {}).get('z_diff', 0) for frame in angle_data]
 
-        fig = plt.figure(figsize=(16, 16))
-        gs = fig.add_gridspec(4, 1, height_ratios=[2, 1, 1, 1], hspace=0.3)
+        fig = plt.figure(figsize=(16, 20))
+        gs = fig.add_gridspec(5, 1, height_ratios=[2, 1, 1, 1, 1], hspace=0.35)
 
         ax1 = fig.add_subplot(gs[0])
         ax2 = fig.add_subplot(gs[1])
         ax3 = fig.add_subplot(gs[2])
         ax4 = fig.add_subplot(gs[3])
+        ax5 = fig.add_subplot(gs[4])
 
         extent = [yaw_bins[0], yaw_bins[-1], pitch_bins[0], pitch_bins[-1]]
         im = ax1.imshow(duration_matrix, extent=extent, origin='lower',
@@ -424,25 +420,22 @@ class EyeContactAnalysisService:
 
         ax1.axhline(0, color='white', linestyle='--', alpha=0.5, linewidth=1)
         ax1.axvline(0, color='white', linestyle='--', alpha=0.5, linewidth=1)
-
         ax1.set_xlabel('Yaw (°) - Left/Right', fontsize=12)
         ax1.set_ylabel('Pitch (°) - Down/Up', fontsize=12)
         ax1.set_title(f'Gaze Heatmap - Recording {recording_id}', fontsize=14, fontweight='bold')
-
         cbar = plt.colorbar(im, ax=ax1)
         cbar.set_label('Time (seconds)', fontsize=10)
-
         ax1.legend(loc='upper right', fontsize=10)
-
         ax1.grid(True, alpha=0.2, color='white')
 
-        ax2.plot(times, yaw_values, color='blue', linewidth=1, label='Yaw')
+        ax2.plot(times, yaw_raw_values, color='lightsteelblue', linewidth=1, alpha=0.6, label='Yaw (raw)')
+        ax2.plot(times, yaw_values, color='blue', linewidth=1.2, label='Yaw (smoothed)')
         ax2.axhline(audience_yaw_min, color='lime', linestyle='--', linewidth=2, label=f'Audience Min ({audience_yaw_min}°)')
         ax2.axhline(audience_yaw_max, color='lime', linestyle='--', linewidth=2, label=f'Audience Max ({audience_yaw_max}°)')
         ax2.axhline(0, color='gray', linestyle=':', alpha=0.5)
         ax2.set_xlabel('Time (s)', fontsize=12)
         ax2.set_ylabel('Yaw (°)', fontsize=12)
-        ax2.set_title('Yaw Angle Over Time', fontsize=12, fontweight='bold')
+        ax2.set_title('Yaw Angle Over Time (atan2 of ear vector)', fontsize=12, fontweight='bold')
         ax2.legend(loc='upper right', fontsize=9)
         ax2.grid(True, alpha=0.3)
 
@@ -456,16 +449,13 @@ class EyeContactAnalysisService:
         ax3.legend(loc='upper right', fontsize=9)
         ax3.grid(True, alpha=0.3)
 
-        # Fourth graph: Z-Depth Analysis
         ax4.plot(times, nose_z_values, color='blue', linewidth=1.5, label='Nose Z')
         ax4.plot(times, shoulder_z_values, color='green', linewidth=1.5, label='Shoulder Center Z')
         ax4.plot(times, z_diff_values, color='orange', linewidth=1.5, label='Z Difference')
-
-        # Show threshold line for back-facing detection
-        ax4.axhline(-0.1, color='red', linestyle='--', linewidth=2, label='Back-Facing Threshold (-0.1)')
+        ax4.axhline(self.config['back_facing_threshold'], color='red', linestyle='--', linewidth=2,
+                    label=f'Back-Facing Threshold ({self.config["back_facing_threshold"]})')
         ax4.axhline(0, color='gray', linestyle=':', alpha=0.5)
 
-        # Mark back-facing regions with red background
         for i, is_back in enumerate(facing_back_values):
             if is_back:
                 t = i * frame_duration
@@ -477,12 +467,18 @@ class EyeContactAnalysisService:
         ax4.legend(loc='upper right', fontsize=9)
         ax4.grid(True, alpha=0.3)
 
-        plt.tight_layout()
+        ax5.plot(times, delta_z_values, color='darkorange', linewidth=1, label='Δz (right_ear − left_ear)')
+        ax5.axhline(0, color='gray', linestyle=':', alpha=0.5)
+        ax5.set_xlabel('Time (s)', fontsize=12)
+        ax5.set_ylabel('Δz', fontsize=10)
+        ax5.set_title('Ear Δz — drives the yaw atan2 (positive = turning right)', fontsize=11, fontweight='bold')
+        ax5.legend(loc='upper right', fontsize=9)
+        ax5.grid(True, alpha=0.3)
 
+        plt.tight_layout()
         output_path = output_dir / f'gaze_heatmap_{recording_id}.png'
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         plt.close()
-
         print(f"Gaze heatmap saved to: {output_path}")
 
     def call_segmentation(self, angle_data: List[Dict[str, float]], fps: float, recording_id: int) -> dict:
@@ -501,8 +497,9 @@ class EyeContactAnalysisService:
                 continue
             outside = sum(
                 1 for f in window
-                if f['yaw'] < aud_yaw_min or f['yaw'] > aud_yaw_max
-                or f['pitch'] < aud_pitch_min or f['pitch'] > aud_pitch_max
+                if f['yaw'] is None or f['pitch'] is None or
+                   f['yaw'] < aud_yaw_min or f['yaw'] > aud_yaw_max or
+                   f['pitch'] < aud_pitch_min or f['pitch'] > aud_pitch_max
             )
             t = round(i / fps, 3)
             series.append({'time': t, 'value': round(outside / len(window), 4)})
@@ -567,8 +564,6 @@ class EyeContactAnalysisService:
         else:
             total_duration = last_ts - first_ts
 
-        # Convert all frame timestamps to relative float seconds so that
-        # event start_timestamp / end_timestamp are proper numbers, not ISO strings.
         for frame in angle_data:
             ts = parse_timestamp(frame['timestamp'])
             if isinstance(first_ts, datetime):
@@ -580,6 +575,11 @@ class EyeContactAnalysisService:
         frame_duration = 1.0 / fps
         print(f"Calculated FPS: {fps:.2f} (frame duration: {frame_duration*1000:.2f}ms)")
 
+        # Median-smooth Δz across frames before recomputing yaw, suppressing
+        # MediaPipe z-noise without producing the plateau artifacts that the
+        # old hold-last-value strategy did.
+        self.smooth_yaw(angle_data)
+
         heatmap_data = self.build_heatmap(angle_data, frame_duration)
         print(f"Built heatmap with {heatmap_data['shape']['n_yaw_bins']}x{heatmap_data['shape']['n_pitch_bins']} bins")
 
@@ -588,6 +588,9 @@ class EyeContactAnalysisService:
 
         staring_events = self.detect_staring_events(angle_data, frame_duration, analysis_data['fps'])
         print(f"Detected {len(staring_events)} staring events")
+
+        back_facing_events = self.detect_back_facing_events(angle_data, frame_duration, analysis_data['fps'])
+        print(f"Detected {len(back_facing_events)} back-facing events")
 
         statistics = self.calculate_statistics(angle_data, looking_away_events, frame_duration)
 
@@ -605,16 +608,17 @@ class EyeContactAnalysisService:
             'statistics': statistics,
             'looking_away_events': looking_away_events,
             'staring_events': staring_events,
+            'back_facing_events': back_facing_events,
             'audience_zone_thresholds': {
                 'yaw_min': self.config['audience_yaw_min'],
                 'yaw_max': self.config['audience_yaw_max'],
                 'pitch_min': self.config['audience_pitch_min'],
-                'pitch_max': self.config['audience_pitch_max']
+                'pitch_max': self.config['audience_pitch_max'],
             },
             'staring_thresholds': {
                 'angle_threshold': self.config['staring_angle_threshold'],
-                'min_frames': self.config['min_staring_time']
+                'min_frames': self.config['min_staring_time'],
             },
             'segmentation': segmentation,
-            'message': 'Eye contact analysis completed successfully.'
+            'message': 'Eye contact analysis completed successfully.',
         }

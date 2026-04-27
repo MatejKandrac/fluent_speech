@@ -245,9 +245,7 @@ class VolumeAnalysisService:
             # Call segmentation service
             segmentation = self.call_segmentation(dbfs, sr, hop_length, recording_id, silence_floor)
 
-            # TODO: Save volume data to database (implement later)
-
-            return {
+            result = {
                 'success': True,
                 'recording_id': recording_id,
                 'volume_frames': len(rms),
@@ -264,6 +262,15 @@ class VolumeAnalysisService:
                 'too_loud_count': len(segments['too_loud']),
                 'segmentation': segmentation,
             }
+
+            import json
+            from pathlib import Path
+            result_path = Path(settings.BASE_DIR) / 'debug' / str(recording_id) / 'volume.json'
+            result_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(result_path, 'w') as f:
+                json.dump(result, f)
+
+            return result
 
         except Exception as e:
             import traceback

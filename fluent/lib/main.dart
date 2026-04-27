@@ -18,10 +18,10 @@ Future<void> _assignTestRecording() async {
   try {
     final db = DatabaseHelper();
     final records = await db.getAllVideoRecords();
-    final match = records.where((r) => r.name == 'Hip2' && r.remoteId == -1).firstOrNull;
+    final match = records.where((r) => r.name == 'Hands calibration' && r.remoteId == 90).firstOrNull;
     if (match != null) {
-      await db.updateVideoRecord(match.copyWith(remoteId: 49, filename: 'Hip2.mp4'));
-      print('[DEBUG] Assigned remoteId=49 to "Hip2"');
+      await db.updateVideoRecord(match.copyWith(remoteId: 90));
+      print('[DEBUG] Assigned remoteId=90 to "Hands calibration"');
     }
   } catch (e) {
     print('[DEBUG] _assignTestRecording failed: $e');

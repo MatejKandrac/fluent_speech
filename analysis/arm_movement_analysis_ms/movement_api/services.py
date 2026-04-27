@@ -155,93 +155,103 @@ class ArmMovementAnalysisService:
 
     def visualize_wrist_kinematics(self, kinematics_data: List[Dict[str, Any]],
                                    recording_id: int,
-                                   output_dir: Optional[str] = None) -> str:
-        """Generate visualization graphs for wrist velocity and acceleration."""
+                                   output_dir: Optional[str] = None,
+                                   anomalies: Optional[Dict[str, Any]] = None,
+                                   thresholds: Optional[Dict[str, float]] = None) -> str:
+        from matplotlib.patches import Patch
+
         if output_dir is None:
             output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
         else:
             output_dir = Path(output_dir)
-
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Extract data for plotting
         timestamps = []
         left_velocities = []
         right_velocities = []
-        left_accelerations = []
-        right_accelerations = []
 
         for frame in kinematics_data:
-            timestamp = frame.get('timestamp', '')
-            timestamps.append(timestamp)
+            timestamps.append(frame.get('timestamp', 0))
+            left_velocities.append(frame['left_wrist']['velocity'] if frame.get('left_wrist') else None)
+            right_velocities.append(frame['right_wrist']['velocity'] if frame.get('right_wrist') else None)
 
-            if frame.get('left_wrist'):
-                left_velocities.append(frame['left_wrist']['velocity'])
-                left_accelerations.append(frame['left_wrist']['acceleration'])
-            else:
-                left_velocities.append(None)
-                left_accelerations.append(None)
+        # Rolling average (0.5 s window at 30 fps)
+        win = 15
+        def _rolling(data, w):
+            out = []
+            half = w // 2
+            for i in range(len(data)):
+                vals = [v for v in data[max(0, i - half):i + half + 1] if v is not None]
+                out.append(sum(vals) / len(vals) if vals else None)
+            return out
 
-            if frame.get('right_wrist'):
-                right_velocities.append(frame['right_wrist']['velocity'])
-                right_accelerations.append(frame['right_wrist']['acceleration'])
-            else:
-                right_velocities.append(None)
-                right_accelerations.append(None)
+        left_smooth = _rolling(left_velocities, win)
+        right_smooth = _rolling(right_velocities, win)
 
-        frame_indices = list(range(len(timestamps)))
-
-        # Create figure with 2 subplots
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
-        fig.suptitle(f'Wrist Movement Analysis - Recording {recording_id}',
+        fig.suptitle(f'Wrist Movement Analysis – Recording {recording_id}',
                      fontsize=16, fontweight='bold')
 
-        # Velocity subplot
-        ax1.plot(frame_indices, left_velocities, label='Left Wrist',
-                color='blue', linewidth=1.5, alpha=0.7)
-        ax1.plot(frame_indices, right_velocities, label='Right Wrist',
-                color='red', linewidth=1.5, alpha=0.7)
-        ax1.set_xlabel('Frame Index', fontsize=12)
+        def _shade(ax):
+            if not anomalies:
+                return
+            for p in anomalies.get('no_movement_periods', []):
+                ax.axvspan(p['start_timestamp'], p['end_timestamp'], alpha=0.15, color='gray', zorder=0)
+            for p in anomalies.get('excessive_movement_periods', []):
+                ax.axvspan(p['start_timestamp'], p['end_timestamp'], alpha=0.20, color='tomato', zorder=0)
+
+        def _threshold_lines(ax):
+            if not thresholds:
+                return
+            ax.axhline(y=thresholds['no_movement'], color='dimgray', linestyle='--', linewidth=1.2,
+                       label=f"No-movement thr. ({thresholds['no_movement']:.3f})")
+            ax.axhline(y=thresholds['excessive'], color='darkorange', linestyle='--', linewidth=1.2,
+                       label=f"Excessive thr. ({thresholds['excessive']:.3f})")
+
+        def _legend_with_patches(ax):
+            handles, labels = ax.get_legend_handles_labels()
+            if anomalies:
+                handles += [Patch(facecolor='gray', alpha=0.4), Patch(facecolor='tomato', alpha=0.4)]
+                labels += ['No-movement period', 'Excessive movement period']
+            ax.legend(handles=handles, labels=labels, loc='upper right', fontsize=9)
+
+        # — Subplot 1: raw velocity —
+        ax1.plot(timestamps, left_velocities, color='steelblue', linewidth=1, alpha=0.45, label='Left wrist')
+        ax1.plot(timestamps, right_velocities, color='tomato', linewidth=1, alpha=0.45, label='Right wrist')
+        _shade(ax1)
+        _threshold_lines(ax1)
+        ax1.set_xlabel('Time (s)', fontsize=12)
         ax1.set_ylabel('Velocity (normalized units/frame)', fontsize=12)
-        ax1.set_title('Wrist Velocity Over Time', fontsize=13, fontweight='bold')
-        ax1.legend(loc='upper right', fontsize=10)
+        ax1.set_title('Wrist Velocity', fontsize=13, fontweight='bold')
         ax1.grid(True, alpha=0.3)
-        ax1.axhline(y=0, color='gray', linestyle='--', linewidth=0.8, alpha=0.5)
 
-        # Acceleration subplot
-        ax2.plot(frame_indices, left_accelerations, label='Left Wrist',
-                color='blue', linewidth=1.5, alpha=0.7)
-        ax2.plot(frame_indices, right_accelerations, label='Right Wrist',
-                color='red', linewidth=1.5, alpha=0.7)
-        ax2.set_xlabel('Frame Index', fontsize=12)
-        ax2.set_ylabel('Acceleration (change in velocity)', fontsize=12)
-        ax2.set_title('Wrist Acceleration Over Time', fontsize=13, fontweight='bold')
-        ax2.legend(loc='upper right', fontsize=10)
+        left_vals = [v for v in left_velocities if v is not None]
+        right_vals = [v for v in right_velocities if v is not None]
+        if left_vals:
+            ax1.text(0.02, 0.98,
+                     f'Left  avg: {sum(left_vals)/len(left_vals):.4f}\nLeft  max: {max(left_vals):.4f}',
+                     transform=ax1.transAxes, fontsize=9, va='top',
+                     bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.5))
+        if right_vals:
+            ax1.text(0.98, 0.98,
+                     f'Right avg: {sum(right_vals)/len(right_vals):.4f}\nRight max: {max(right_vals):.4f}',
+                     transform=ax1.transAxes, fontsize=9, va='top', ha='right',
+                     bbox=dict(boxstyle='round', facecolor='lightcoral', alpha=0.5))
+        _legend_with_patches(ax1)
+
+        # — Subplot 2: rolling average trend —
+        ax2.plot(timestamps, left_smooth, color='steelblue', linewidth=2, label='Left wrist (smoothed)')
+        ax2.plot(timestamps, right_smooth, color='tomato', linewidth=2, label='Right wrist (smoothed)')
+        _shade(ax2)
+        _threshold_lines(ax2)
+        ax2.set_xlabel('Time (s)', fontsize=12)
+        ax2.set_ylabel('Velocity (rolling avg, normalized)', fontsize=12)
+        ax2.set_title(f'Movement Trend  (rolling average, window = {win} frames)',
+                      fontsize=13, fontweight='bold')
         ax2.grid(True, alpha=0.3)
-        ax2.axhline(y=0, color='gray', linestyle='--', linewidth=0.8, alpha=0.5)
-
-        # Add statistics
-        if left_velocities and any(v is not None for v in left_velocities):
-            left_vel_values = [v for v in left_velocities if v is not None]
-            avg_left_vel = sum(left_vel_values) / len(left_vel_values) if left_vel_values else 0
-            max_left_vel = max(left_vel_values) if left_vel_values else 0
-
-            ax1.text(0.02, 0.98, f'Left Avg: {avg_left_vel:.4f}\nLeft Max: {max_left_vel:.4f}',
-                    transform=ax1.transAxes, fontsize=9, verticalalignment='top',
-                    bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.5))
-
-        if right_velocities and any(v is not None for v in right_velocities):
-            right_vel_values = [v for v in right_velocities if v is not None]
-            avg_right_vel = sum(right_vel_values) / len(right_vel_values) if right_vel_values else 0
-            max_right_vel = max(right_vel_values) if right_vel_values else 0
-
-            ax1.text(0.98, 0.98, f'Right Avg: {avg_right_vel:.4f}\nRight Max: {max_right_vel:.4f}',
-                    transform=ax1.transAxes, fontsize=9, verticalalignment='top',
-                    horizontalalignment='right',
-                    bbox=dict(boxstyle='round', facecolor='lightcoral', alpha=0.5))
+        _legend_with_patches(ax2)
 
         plt.tight_layout()
-
         output_path = output_dir / f'wrist_kinematics_recording_{recording_id}.png'
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         plt.close()
@@ -273,20 +283,45 @@ class ArmMovementAnalysisService:
         simultaneously for min_consecutive_frames.  A single active hand breaks
         the streak.
 
-        Excessive movement: per-hand — any frame above threshold starts an
-        event (min_excessive_frames is typically 1).  Nearby events from the
-        same hand are then merged so that a single back-and-forth swing
-        produces one event rather than several isolated spikes.
+        Excessive movement: per-hand, applied on a rolling-average signal so
+        that single-frame spikes are ignored.  Nearby events from the same hand
+        are merged to consolidate a back-and-forth swing into one period.
         """
         no_movement_threshold = self.config['no_movement_velocity_threshold']
-        excessive_movement_threshold = self.config['excessive_movement_velocity_threshold']
+        z_score_k = self.config['excessive_z_score_k']
+        win = self.config['excessive_rolling_window']
         min_frames = self.config['min_consecutive_frames']
-        min_excessive_frames = self.config['min_excessive_frames']
         merge_gap_s = self.config['excessive_merge_gap_s']
+
+        # Per-wrist rolling average (same window used in visualization)
+        left_raw = [f['left_wrist']['velocity'] if f.get('left_wrist') else None for f in kinematics_data]
+        right_raw = [f['right_wrist']['velocity'] if f.get('right_wrist') else None for f in kinematics_data]
+
+        def _rolling(data, w):
+            half = w // 2
+            out = []
+            for i in range(len(data)):
+                vals = [v for v in data[max(0, i - half):i + half + 1] if v is not None]
+                out.append(sum(vals) / len(vals) if vals else None)
+            return out
+
+        left_smooth = _rolling(left_raw, win)
+        right_smooth = _rolling(right_raw, win)
+
+        # Z-score threshold computed from the smoothed distribution
+        all_smooth = [v for v in left_smooth + right_smooth if v is not None]
+        if all_smooth:
+            vel_mean = sum(all_smooth) / len(all_smooth)
+            vel_std = math.sqrt(sum((v - vel_mean) ** 2 for v in all_smooth) / len(all_smooth))
+            excessive_movement_threshold = vel_mean + z_score_k * vel_std
+        else:
+            vel_mean, vel_std = 0.0, 0.0
+            excessive_movement_threshold = 0.15
 
         print(f"Detecting movement anomalies with thresholds:")
         print(f"  No movement: all visible wrists velocity < {no_movement_threshold}, min_frames={min_frames}")
-        print(f"  Excessive movement: velocity > {excessive_movement_threshold}, min_frames={min_excessive_frames}, merge_gap={merge_gap_s}s")
+        print(f"  Excessive (rolling window={win}, z-score): mean={vel_mean:.4f} + {z_score_k}*std({vel_std:.4f}) "
+              f"= {excessive_movement_threshold:.4f}, merge_gap={merge_gap_s}s")
 
         no_movement_periods = []
         raw_left_excessive = []
@@ -296,13 +331,15 @@ class ArmMovementAnalysisService:
         left_excessive_streak = []
         right_excessive_streak = []
 
-        for frame in kinematics_data:
+        for i, frame in enumerate(kinematics_data):
             timestamp = frame.get('timestamp')
-            left_vel = frame['left_wrist']['velocity'] if frame.get('left_wrist') else None
-            right_vel = frame['right_wrist']['velocity'] if frame.get('right_wrist') else None
+            left_vel_raw = frame['left_wrist']['velocity'] if frame.get('left_wrist') else None
+            right_vel_raw = frame['right_wrist']['velocity'] if frame.get('right_wrist') else None
+            left_vel_s = left_smooth[i]
+            right_vel_s = right_smooth[i]
 
-            # ── Bilateral no-movement ──────────────────────────────────────────
-            active_vels = [v for v in [left_vel, right_vel] if v is not None]
+            # ── Bilateral no-movement (raw — sensitive to any motion) ──────────
+            active_vels = [v for v in [left_vel_raw, right_vel_raw] if v is not None]
             both_still = bool(active_vels) and max(active_vels) < no_movement_threshold
 
             if both_still:
@@ -316,12 +353,12 @@ class ArmMovementAnalysisService:
                     })
                 no_movement_streak = []
 
-            # ── Per-hand excessive movement ────────────────────────────────────
-            if left_vel is not None:
-                if left_vel > excessive_movement_threshold:
+            # ── Per-hand excessive movement (smoothed — stable, no min-frames needed) ──
+            if left_vel_s is not None:
+                if left_vel_s > excessive_movement_threshold:
                     left_excessive_streak.append(timestamp)
                 else:
-                    if len(left_excessive_streak) >= min_excessive_frames:
+                    if left_excessive_streak:
                         raw_left_excessive.append({
                             'wrist': 'left',
                             'start_timestamp': left_excessive_streak[0],
@@ -330,11 +367,11 @@ class ArmMovementAnalysisService:
                         })
                     left_excessive_streak = []
 
-            if right_vel is not None:
-                if right_vel > excessive_movement_threshold:
+            if right_vel_s is not None:
+                if right_vel_s > excessive_movement_threshold:
                     right_excessive_streak.append(timestamp)
                 else:
-                    if len(right_excessive_streak) >= min_excessive_frames:
+                    if right_excessive_streak:
                         raw_right_excessive.append({
                             'wrist': 'right',
                             'start_timestamp': right_excessive_streak[0],
@@ -350,14 +387,14 @@ class ArmMovementAnalysisService:
                 'end_timestamp': no_movement_streak[-1],
                 'duration_frames': len(no_movement_streak)
             })
-        if len(left_excessive_streak) >= min_excessive_frames:
+        if left_excessive_streak:
             raw_left_excessive.append({
                 'wrist': 'left',
                 'start_timestamp': left_excessive_streak[0],
                 'end_timestamp': left_excessive_streak[-1],
                 'duration_frames': len(left_excessive_streak)
             })
-        if len(right_excessive_streak) >= min_excessive_frames:
+        if right_excessive_streak:
             raw_right_excessive.append({
                 'wrist': 'right',
                 'start_timestamp': right_excessive_streak[0],
@@ -381,8 +418,11 @@ class ArmMovementAnalysisService:
             'thresholds_used': {
                 'no_movement_velocity_threshold': no_movement_threshold,
                 'excessive_movement_velocity_threshold': excessive_movement_threshold,
+                'excessive_z_score_k': z_score_k,
+                'excessive_rolling_window': win,
+                'velocity_mean': vel_mean,
+                'velocity_std': vel_std,
                 'min_consecutive_frames': min_frames,
-                'min_excessive_frames': min_excessive_frames,
                 'excessive_merge_gap_s': merge_gap_s,
             }
         }
@@ -434,10 +474,8 @@ class ArmMovementAnalysisService:
 
         fps = analysis_data.get('fps') or 30.0
         self.config['min_consecutive_frames'] = max(1, round(self.config['min_consecutive_duration_ms'] * fps / 1000))
-        self.config['min_excessive_frames'] = max(1, round(self.config['excessive_min_consecutive_duration_ms'] * fps / 1000)) if self.config['excessive_min_consecutive_duration_ms'] > 0 else 1
         self.config['excessive_merge_gap_s'] = self.config['excessive_merge_gap_ms'] / 1000.0
         print(f"Using fps={fps}: min_consecutive_frames={self.config['min_consecutive_frames']}, "
-              f"min_excessive_frames={self.config['min_excessive_frames']}, "
               f"excessive_merge_gap={self.config['excessive_merge_gap_s']}s")
 
         total_frames = len(analysis_data.get('data', []))
@@ -479,11 +517,17 @@ class ArmMovementAnalysisService:
         kinematics_data = self.calculate_wrist_kinematics(normalized_frames)
         print(f"Calculated kinematics for {len(kinematics_data)} frames")
 
-        # Step 4: Generate visualization
-        visualization_path = self.visualize_wrist_kinematics(kinematics_data, recording_id)
-
-        # Step 5: Detect anomalies
+        # Step 4: Detect anomalies (must run before visualization to get computed thresholds)
         anomalies = self.detect_movement_anomalies(kinematics_data)
+
+        # Step 5: Generate visualization with thresholds and anomaly regions
+        viz_thresholds = {
+            'no_movement': anomalies['thresholds_used']['no_movement_velocity_threshold'],
+            'excessive': anomalies['thresholds_used']['excessive_movement_velocity_threshold'],
+        }
+        visualization_path = self.visualize_wrist_kinematics(
+            kinematics_data, recording_id, anomalies=anomalies, thresholds=viz_thresholds
+        )
 
         # Step 6: Segmentation via segmentation_ms
         pelt_segmentation = self.call_segmentation(kinematics_data, fps, recording_id)

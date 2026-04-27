@@ -325,9 +325,7 @@ class PitchAnalysisService:
             duration_per_frame = hop_length / sr
             segmentation = self.call_segmentation(pitch_filtered, duration_per_frame, recording_id)
 
-            # TODO: Save pitch data to database (implement later)
-
-            return {
+            result = {
                 'success': True,
                 'recording_id': recording_id,
                 'pitch_frames': len(pitch_filtered),
@@ -340,6 +338,14 @@ class PitchAnalysisService:
                 'monotonous_segments_count': len(monotonous_segments),
                 'segmentation': segmentation,
             }
+
+            import json
+            result_path = Path(settings.BASE_DIR) / 'debug' / str(recording_id) / 'pitch.json'
+            result_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(result_path, 'w') as f:
+                json.dump(result, f)
+
+            return result
 
         except Exception as e:
             import traceback

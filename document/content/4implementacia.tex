@@ -20,8 +20,8 @@ MediaPipe Pose poskytuje nasledujúce kľúčové body relevantné pre moju anal
 
 Každý landmark obsahuje:
 \begin{itemize}
-    \item \textbf{x, y, z súradnice} - normalizované pozície v 3D priestore
-    \item \textbf{visibility} - confidence score (0-1) indikujúci viditeľnosť bodu
+    \item \textbf{x, y, z súradnice} --- normalizované pozície v 3D priestore
+    \item \textbf{visibility} --- confidence score (0--1) indikujúci viditeľnosť bodu
 \end{itemize}
 
 Pre vizualizáciu zároveň táto služba generuje obrázky s kostrou, ktoré si môžem po spracovaní pozrieť.
@@ -40,7 +40,7 @@ Táto mikroslužba ponúka úpravu niekoľkých parametrov, a to konkrétne:
     \item \textbf{debug}: Ak je zapnutý, generujú sa pomocné obrázky s extrahovanými landmarks
     \item \textbf{min\_detection\_confidence}: Predstavuje minimálnu mieru viditeľnosti pózy na to, aby vedel model úspešne detekovať landmarks
     \item \textbf{min\_tracking\_confidence}: Predstavuje minimálnu mieru viditeľnosti pózy pre pokračovanie sledovania medzi frame-mi
-    \item \textbf{model\_complexity}: Komplexita modelu od 0 do 3, ktorá určuje, ako bude model presný. Vyššie čisla znamenajú presnejší model, ale pomalšie spracovanie
+    \item \textbf{model\_complexity}: Komplexita modelu od 0 do 3, ktorá určuje, ako bude model presný. Vyššie čísla znamenajú presnejší model, ale pomalšie spracovanie
     \item \textbf{frame\_interval}: Predstavuje číslo v sekundách, koľko krát za sekundu spracuje model obrázok videa
     \item \textbf{max\_video\_duration}: Maximálna dĺžka videa v sekundách
 \end{itemize}
@@ -75,7 +75,7 @@ Extrakcia landmarks prebieha v nasledujúcich krokoch:
 
 Za predspracovanie zvuku je zodpovedná mikroslužba \textbf{Audio Processing}.
 Audio stopa je extrahovaná z nahratého videa pomocou nástroja \textbf{ffmpeg} ihneď po odoslaní videa.
-Na rozdiel od spracovania videa sa ale do databázy nezapisujú žiadne údaje.
+Na rozdiel od spracovania videa sa do databázy nezapisujú žiadne surové dáta.
 Namiesto toho sa výsledný audio súbor vo formáte WAV uloží a bude používaný inými mikroslužbami.
 Pri zapnutej možnosti debugovania sa generuje aj súbor s vizualizáciou amplitúdy po normalizácii a po zmene vzorkovacej rýchlosti.
 
@@ -88,17 +88,19 @@ Pri zapnutej možnosti debugovania sa generuje aj súbor s vizualizáciou amplit
 
 \subsection{Normalizácia}
 
-Audio signál je normalizovaný na škálu od -1 do 1. Týmto zabezpečím, aby boli dáta v rovnakej škále nezávisle od nahrávaného zariadenia.
-Toto je dôležité najmä pre budúce rozšírenia systému, kde by sa mohli audio dáta využiť pre trénovanie modelov strojového učenia.
+Audio signál je normalizovaný na škálu od -1 do 1 pomocou RMS normalizácie. Týmto zabezpečím, aby boli dáta v rovnakej škále nezávisle od nahrávaného zariadenia.
+Toto je dôležité najmä pre analýzu hlasitosti, kde potrebujem porovnávať relatívne úrovne energie naprieč rôznymi nahrávkami.
 
 \subsection{Vzorkovacia rýchlosť}
 
 Vzorkovacia rýchlosť (sample rate) reprezentuje počet meraných vzoriek za sekundu. Rôzne nahrávače zariadenia môžu mať rozdielnu vzorkovaciu frekvenciu (44.1 kHz, 48 kHz, atď.).
 
-Pre zabezpečenie konzistencie analýzy vykonávam resampling všetkých audio súborov na frekvenciu \textbf{16 kHz}. Túto hodnotu som zvolil na základe priemyselných štandardov pre speech processing.
-Pre flexibilitu riešenia som sa ale rozhodol tento parameter zmeniť na nastaviteľný pomocou premenných prostredia pri spúštaní mikroslužby.
+Pre zabezpečenie konzistencie analýzy vykonávam resampling všetkých audio súborov na frekvenciu \textbf{16 kHz}. Túto hodnotu som zvolil na základe priemyselných štandardov pre speech processing --- ľudský hlas sa pohybuje pod 8 kHz, takže 16 kHz je podľa Nyquistovho teorému postačujúce.
+Pre flexibilitu riešenia som sa ale rozhodol tento parameter zmeniť na nastaviteľný pomocou premenných prostredia.
 
-Dôvod normalizácie vzorkovacej rýchlosti je ten, že moje algoritmy pracujú s počtom frame-ov. Napríklad ak detekujem monotónnosť ako výška hlasu sa nezmenila na 10 za sebou idúcich frame-och, rozdielna vzorkovacia rýchlosť by znamenala rozdielny časový úsek.
+\subsection{Redukcia šumu}
+
+Mikroslužba obsahuje implementáciu redukcie šumu pomocou knižnice \textbf{noisereduce}. Metóda spektrálneho gatingu odhaduje profil šumu z prvých 0.5 sekundy nahrávky (predpokladá sa, že prezentujúci ešte nehovorí) a tento profil následne potlačí v celom signáli. Výsledný čistejší signál zlepšuje presnosť transkripcie aj analýzy hlasu.
 
 \subsection{Bitová hĺbka}
 
@@ -107,7 +109,7 @@ Bitová hĺbka definuje presnosť merania amplitúdy zvukového signálu. Použ�
 \subsection{Pitch (výška tónu)}
 
 Pitch reprezentuje základnú frekvenciu hlasu (F0)\cite{pitchRange}.
-Analýzu využívania výšky hlasu spracúva už mikroslužba \textbf{Pitch Analysis}.
+Analýzu využívania výšky hlasu spracúva mikroslužba \textbf{Pitch Analysis}.
 Pre extrakciu pitch využívam knižnicu librosa a \textbf{YIN algoritmus}, ktorý je robustný voči šumu a poskytuje presné výsledky pre ľudský hlas:
 
 \begin{verbatim}
@@ -135,8 +137,8 @@ Pre každé okno dĺžky 30 frame-ov počítam:
     \item \textbf{Rozsah}: $range_{pitch} = max(pitch) - min(pitch)$
 \end{itemize}
 
-Ak $\sigma_{pitch} < 10$ Hz alebo $range_{pitch} < 20$ Hz, segment je označený ako monotónny.
-Hodnoty boli určené empiricky na základe testovania a budú upravené po rozsiahlych testoch.
+Ak $\sigma_{pitch} < 6{,}5$ Hz alebo $range_{pitch} < 20$ Hz, segment je označený ako monotónny.
+Krátke monotónne segmenty (pod 1,5 sekundy) sú filtrované, susedné segmenty oddelené mezerou do 3 sekúnd sú zlučované.
 
 \subsection{Hlasitosť (RMS energia)}
 
@@ -147,10 +149,8 @@ Pre detekciu hlasitosti používam \textbf{RMS (Root Mean Square) energiu}, ktor
 rms = librosa.feature.rms(y=audio_data, frame_length=2048, hop_length=512)
 \end{verbatim}
 
-Tento údaj ale nestačí. Ak by som sa sústredil iba na RMS a určil by som hranicu, kedy sa rozprávanie považuje za tiché, bolo by moje riešenie závislé na pozíciu mikrofónu, pretože čím bliŽsie by bol mikrofón, tým hlasnejšie by bolo počuť prezentujúceho.
-V aktuálnom stave táto služba zatiaľ získava iba decibely z RMS no pre lepšie riešenie využijem normalizované dáta na dB škálu, takzvané dBFS.
+Aby analýza nebola závislá na vzdialenosti mikrofónu od prezentujúceho, prevádzam RMS energiu na jednotku \textbf{dBFS} (decibely voči plnej škále), kde 0 dBFS predstavuje maximálnu možnú amplitúdu. Tichý segment je definovaný ako dBFS pod dynamicky vypočítanou úrovňou ticha (\textit{silence floor}), ktorá sa odvodí z percentilu 5 \% najnižších hodnôt v nahrávke.
 
-Aktuálna implementácia zobrazuje získanú RMS energiu vo forme jednoduchého grafu.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{assets/images/implementation/volume.png}
@@ -158,26 +158,31 @@ Aktuálna implementácia zobrazuje získanú RMS energiu vo forme jednoduchého 
     \label{fig:volume}
 \end{figure}
 
-\section{Detekcia výplňových slov}
+\section{Transkripcia reči}
 
-Filler Words Analysis mikroslužba využíva OpenAI Whisper pre speech-to-text transkripciu a následne detekuje výplňové slová v texte.
+Transkripcia reči je vyčlenená do samostatnej mikroslužby \textbf{Transcript Processing}, ktorá spracúva audio súbor a ukladá slová s časovými značkami do databázy. Táto separácia umožňuje nezávislé spúšťanie transkripcie a jej opakované využitie viacerými analytickými službami.
 
-\subsection{Whisper transkript}
+\subsection{Whisper model}
 
-Pre transkripciu používam najpresnejší Whisper model. Na základe testov som sa preň rozhodol, pretože čas získavania transkriptu nemusí byť rýchly
-a zároveň ho potrebujem mať čo najpresnejší.
+Pre transkripciu využívam model \textbf{OpenAI Whisper}\cite{whisper}. Whisper automaticky detekuje jazyk (slovenčina, angličtina) a poskytuje word-level timestamps, čo je nevyhnutné pre presnú lokalizáciu výplňových slov v čase. Konkrétna veľkosť modelu je konfigurovateľná --- predvolená hodnota je \texttt{medium}, ktorá poskytuje dobrý pomer medzi rýchlosťou a presnosťou transkripcie.
 
 \begin{verbatim}
-model = whisper.load_model(self.config['whisper_model']) # whisper_model=large-v3
+model = whisper.load_model(self.config['whisper_model'])
 result = model.transcribe(audio_path, word_timestamps=True)
 \end{verbatim}
 
-Whisper poskytuje:
+\subsection{Ukladanie do databázy}
+
+Každé transkribované slovo je uložené do tabuľky \texttt{word} s nasledujúcimi atribútmi:
 \begin{itemize}
-    \item \textbf{text} - celý transkribovaný text
-    \item \textbf{segments} - segmenty s časovými značkami
-    \item \textbf{language} - detekovaný jazyk (sk/en)
+    \item \textbf{word} --- transkribovaný text slova
+    \item \textbf{start\_time, end\_time} --- časové ohraničenie v sekundách
+    \item \textbf{probability} --- confidence score Whisper modelu (0--1)
 \end{itemize}
+
+\section{Detekcia výplňových slov}
+
+Filler Words Analysis mikroslužba načítava slová z databázy (uložené transkripciou) a identifikuje výplňové slová pomocou regulárnych výrazov.
 
 Pre detekciu používam preddefinovaný zoznam výplňových slov pre slovenčinu a angličtinu:
 
@@ -195,8 +200,8 @@ matches = re.finditer(pattern, text.lower())
 Pre každú nahrávku počítam:
 \begin{itemize}
     \item \textbf{Celkový počet} výplňových slov
-    \item \textbf{Fillers per minute} - normalizovaná metrika
-    \item \textbf{Most common filler} - najčastejšie použité slovo
+    \item \textbf{Fillers per minute} --- normalizovaná metrika nezávislá od dĺžky prezentácie
+    \item \textbf{Most common filler} --- najčastejšie použité slovo
 \end{itemize}
 
 \section{Detekcia očného kontaktu}
@@ -239,40 +244,39 @@ pitch = -nose_offset_y * 150
 
 Dobrý očný kontakt s publikom definujem ako pohľad v rámci audience zone:
 \begin{itemize}
-    \item \textbf{Yaw}: -30° až +30° (pohľad dopredu s miernym otáčaním)
-    \item \textbf{Pitch}: -15° až +15° (mierny pohľad hore/dole)
+    \item \textbf{Yaw}: $-60°$ až $+60°$ (pohľad dopredu s miernym otáčaním do strán)
+    \item \textbf{Pitch}: $-15°$ až $+15°$ (mierny pohľad hore/dole)
 \end{itemize}
-Tieto hodnoty sú konfigurovateľné, a získal som ich na základe vlastných testov prezentácií.
+Tieto hodnoty sú konfigurovateľné a boli nastavené na základe testovania s reálnymi nahrávkami prezentácií.
 
-Looking away event nastáva, keď prezentujúci pozerá mimo audience zone počas minimálne X po sebe idúcich frame-ov.
-Počet týchto frame-ov je konfigurovateľný.
+Looking away event nastáva, keď prezentujúci pozerá mimo audience zone počas minimálne 1000 ms.
 Pre každý event zaznamenávam:
 
 \begin{itemize}
-    \item \textbf{start\_timestamp, end\_timestamp} - časový úsek
-    \item \textbf{duration\_seconds} - trvanie v sekundách
-    \item \textbf{avg\_yaw, avg\_pitch} - priemerné uhly (kam sa pozerá)
+    \item \textbf{start\_timestamp, end\_timestamp} --- časový úsek
+    \item \textbf{duration\_seconds} --- trvanie v sekundách
+    \item \textbf{avg\_yaw, avg\_pitch} --- priemerné uhly (kam sa pozerá)
 \end{itemize}
 
 \subsection{Detekcia otočenia chrbtom}
 Pri detekovaní, či je používateľ otočený chrbtom som narazil na problém s klasickým výpočtom yaw uhlu.
-Ako som spomenul vyššie, yaw je počítaný vzdialenostami medzi ušami a očami. Ak je používateľ otočený chrbtom,
-MediaPipe automaticky vypočita pozície očí, ktoré ak neberiem do úvahy z súradnicu pôsobia totožne, akokeby som sa pozeral priamo do kamery.
+Ako som spomenul vyššie, yaw je počítaný vzdialenosťami medzi ušami a očami. Ak je používateľ otočený chrbtom,
+MediaPipe automaticky vypočíta pozície očí, ktoré ak neberiem do úvahy zo súradníc pôsobia totožne, akoby som sa pozeral priamo do kamery.
 
 Preto som sa rozhodol vziať stred ramien a z pozíciu nosa a sledoval som ich rozdiel. Po niekoľkých testoch sa mi podarilo
 implementovať to, že ak je nos za stredom ramien, je používateľ otočený chrbtom.
-To je možné vidieť v obrázku 4.5 v poslednom grafe obrázka.
+To je možné vidieť v obrázku \ref{fig:eyeContact} v poslednom grafe obrázka.
 
 \section{Detekcia pohybov rúk}
 
-Arm Movement Analysis mikroslužba detekuje nedostatočnú gestikuláciu.
+Arm Movement Analysis mikroslužba detekuje nedostatočnú gestikuláciu a nadmernú nervóznu pohyblivosť rúk.
 
 \subsection{Výpočet akcelerácie zápästí}
 
 Pre kvantifikáciu pohybu rúk počítam akceleráciu zápästí pomocou druhej derivácie pozície:
 
 \begin{enumerate}
-    \item \textbf{Pozícia}: $(x_t, y_t, z_t)$ - súradnice zápästia v čase $t$
+    \item \textbf{Pozícia}: $(x_t, y_t, z_t)$ --- súradnice zápästia v čase $t$
     \item \textbf{Rýchlosť}: $v_t = \frac{(x_t - x_{t-1})^2 + (y_t - y_{t-1})^2 + (z_t - z_{t-1})^2}{dt}$
     \item \textbf{Akcelerácia}: $a_t = \frac{v_t - v_{t-1}}{dt}$
 \end{enumerate}
@@ -282,10 +286,13 @@ Pre kvantifikáciu pohybu rúk počítam akceleráciu zápästí pomocou druhej 
 Nedostatočnú gestikuláciu detekujem pomocou sliding window analýzy:
 
 \begin{enumerate}
-    \item Rozdelím časový rad akcelerácie na okná veľkosti 30 frame-ov (~ 2 sekundy pri 15 FPS)
+    \item Rozdelím časový rad akcelerácie na okná
     \item Pre každé okno počítam priemernú akceleráciu
-    \item Ak priemerná akcelerácia klesne pod threshold (empiricky nastavený na 0.01), označím toto okno ako nedostatočný pohyb.
+    \item Ak priemerná akcelerácia klesne pod threshold 0.2 (empiricky nastavený), označím toto okno ako nedostatočný pohyb
+    \item Consecutive periody kratšie ako 1000 ms sú ignorované, dlhé periody do 2000 ms sú zlučované
 \end{enumerate}
+
+Symetricky je detekovaný aj opačný prípad --- nadmerná gestikulácia s príliš rýchlymi pohybmi (threshold 0.30), ktorá môže pôsobiť nervózne.
 
 \section{Detekcia pohybu bokov (tancovanie)}
 
@@ -306,8 +313,8 @@ Kývavý pohyb detekujem pomocou analýzy zmien v X-osi (horizontálny pohyb):
 
 \begin{enumerate}
     \item Počítam akceleráciu hip\_center\_x
-    \item Detetujem lokálne maximá a minimá (zmeny smeru pohybu)
-    \item Ak sa smer pohybu zmení viackrát za pár frame-ov a jeho amplitúda je dostatočne vysoká (aby sa drobné pohyby neregistrovali), označím segment ako kývanie
+    \item Detetujem lokálne maximá a minimá (zmeny smeru pohybu) v posuvnom okne
+    \item Ak sa smer pohybu zmení minimálne 3-krát a jeho amplitúda prekročí konfigurovateľný prah, označím segment ako kývanie
 \end{enumerate}
 
 Pre príklad som si pripravil video, kde som na začiatku videa úmyselne kýval bokmi.
@@ -320,19 +327,145 @@ Vizualizácia výsledku tejto mikroslužby vyzerá nasledovne.
     \label{fig:hipMovement}
 \end{figure}
 
+\section{Segmentácia časových radov}
+
+Segmentácia je implementovaná ako samostatná mikroslužba \textbf{Segmentation}, ktorú volajú všetky analytické mikroslužby. Centralizácia segmentačnej logiky umožňuje konzistentné nastavenia a jednoduchú konfiguráciu citlivosti.
+
+\subsection{Algoritmus PELT}
+
+Pre detekciu bodov zmien využívam algoritmus \textbf{PELT} (Pruned Exact Linear Time)\cite{peltAlgorithm} implementovaný v knižnici \texttt{ruptures}\cite{ruptures}. PELT je exaktný offline algoritmus, ktorý hľadá body zmien minimalizovaním penalizovanej cenovej funkcie:
+
+\begin{equation}
+    \sum_{i=1}^{K+1} C(y_{t_{i-1}:t_i}) + \beta K
+\end{equation}
+
+kde $C$ je cenová funkcia, $K$ je počet bodov zmien a $\beta$ je penalizačný parameter kontrolujúci granularitu segmentácie.
+
+Mikroslužba podporuje tri cenovej funkcie, z ktorých si volajúca mikroslužba môže vybrať podľa charakteru analyzovaného signálu:
+\begin{itemize}
+    \item \textbf{mean} (\texttt{l2}) --- detekuje zmeny v priemere (vhodné pre pitch, hlasitosť)
+    \item \textbf{std} (\texttt{normal}) --- detekuje zmeny vo variancii (vhodné pre kolísavosť signálu)
+    \item \textbf{trend} (\texttt{linear}) --- detekuje zmeny v smere trendu (vhodné pre dlhodobé trendy)
+\end{itemize}
+
+\subsection{Parameter citlivosti}
+
+Penalizačný parameter $\beta$ je odvodzovaný z konfigurovateľného parametra \textbf{citlivosti} (0--1) pomocou logaritmickej škály:
+
+\begin{equation}
+    \beta = e^{(1 - \text{sensitivity}) \cdot \ln(\beta_{max}/\beta_{min})} \cdot \beta_{min}
+\end{equation}
+
+Logaritmická škála zabezpečuje intuitívne správanie: malá citlivosť (0) produkuje iba výrazné body zmien, vysoká citlivosť (1) odhalí aj jemné zmeny. Každá analytická mikroslužba má vlastnú predvolenú hodnotu citlivosti nastavenú empiricky.
+
+\subsection{Výstup segmentácie}
+
+Pre každý analyzovaný signál mikroslužba vracia:
+\begin{itemize}
+    \item \textbf{change\_points} --- zoznam časových pozícií bodov zmien (v sekundách) pre každú metódu
+    \item \textbf{segments} --- štatistiky každého segmentu: priemer, štandardná odchýlka, minimum, maximum
+    \item \textbf{penalty\_used} --- skutočne použitá penalizácia (pre reproductibilitu)
+\end{itemize}
+
+\section{Orchestrácia analýz}
+
+Mikroslužba \textbf{Analysis Orchestrator} zabezpečuje koordinované spustenie všetkých analytických mikroslužieb a agregáciu výsledkov.
+
+\subsection{Paralelné spracovanie}
+
+Kľúčovou vlastnosťou orchestrátora je paralelné spúšťanie analýz pomocou \texttt{ThreadPoolExecutor}. Keďže jednotlivé analytické mikroslužby sú na sebe nezávislé, môžu bežať súčasne a celkový čas analýzy sa blíži času najpomalšej služby namiesto súčtu všetkých:
+
+\begin{verbatim}
+with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
+    futures = {
+        executor.submit(_call_service, name, url): name
+        for name, url in tasks
+    }
+    for future in as_completed(futures):
+        name, result = future.result()
+        results[name] = result
+\end{verbatim}
+
+\subsection{Selektívna analýza}
+
+Orchestrátor prijíma slovník príznakov, ktorý umožňuje používateľovi zvoliť, ktoré analýzy chce spustiť. Toto je využité v mobilnej aplikácii, kde si používateľ môže vybrať konkrétny aspekt prezentácie na analýzu. Každá analýza je registrovaná v centrálnom registri \texttt{ANALYSIS\_REGISTRY}, čo uľahčuje pridávanie nových analytických služieb.
+
+\subsection{Odolnosť voči chybám}
+
+Ak niektorá analytická mikroslužba zlyhá (timeout, nedostupnosť), orchestrátor pokračuje so zvyšnými analýzami a výsledok označí ako čiastočný. Výsledky úspešných aj neúspešných analýz sú zahrnuté v odpovedi, čo umožňuje mobilnej aplikácii zobraziť dostupné výsledky aj pri výpadku časti systému.
+
+Po dokončení všetkých analýz orchestrátor automaticky volá mikroslužbu \textbf{Performance} na výpočet celkového hodnotenia prezentácie.
+
+\section{Hodnotenie prezentácie}
+
+Mikroslužba \textbf{Performance} agreguje výsledky všetkých analytických mikroslužieb do jednotného hodnotenia prezentácie. Táto mikroslužba implementuje hodnotiaci model, ktorého parametre boli odvodené z výsledkov používateľskej štúdie popísanej v kapitole~\ref{chap:vyskum}.
+
+\subsection{Štruktúra hodnotenia}
+
+Celkové hodnotenie je rozdelené do štyroch dimenzií, pričom každá je hodnotená na škále 0--100:
+
+\begin{itemize}
+    \item \textbf{Hlas (voice)} --- monotónnosť a hlasitosť, váha 37\,\%
+    \item \textbf{Plynulosť (fluency)} --- výplňové slová, váha 27\,\%
+    \item \textbf{Pohyb tela (body)} --- gestikulácia a kývanie bokov, váha 9\,\%
+    \item \textbf{Očný kontakt (eye\_contact)} --- smer pohľadu, váha 27\,\%
+\end{itemize}
+
+Celkové skóre je váženým súčtom dimenzionálnych skóre. Váhy boli odvodené z normalizovaných beta koeficientov viacnásobnej lineárnej regresie (n~=~52). V pôvodnom modeli v1 boli váhy rovnomerne rozdelené na základe predpokladov; model v2 tieto váhy nahradil empiricky overenými hodnotami.
+
+\subsection{Výpočet dimenzionálnych skóre}
+
+Každá dimenzia začína na 100 bodoch a sú od nej odpočítavané penalizácie za zistené problémy.
+
+\textbf{Hlas} penalizuje dve zložky:
+\begin{itemize}
+    \item Monotónnosť: percentuálny podiel hlasom vypovedaných frame-ov v monotónnych segmentoch (0--70\,\% mapuje na 0--50 bodov penalizácie)
+    \item Hlasitosť: percentuálny podiel frame-ov s príliš tichým alebo príliš hlasným prejavom (0--50\,\% mapuje na 0--50 bodov penalizácie)
+\end{itemize}
+
+\textbf{Plynulosť} penalizuje na základe frekvencie výplňových slov:
+\begin{itemize}
+    \item 0--2 výplňové slová/min: bez penalizácie
+    \item 2--5 výplňových slov/min: lineárna penalizácia 0--40 bodov
+    \item 5+ výplňových slov/min: penalizácia 40--100 bodov
+\end{itemize}
+
+Navyše bol v modeli v3 pridaný \textbf{distribučný trest} na základe nálezu z výskumu (H2.1): rovnomerne rozložené výplňové slová sú vnímané horšie ako sústredené. Koeficient variácie (CV = $\sigma/\mu$) hustoty výplňových slov naprieč 6 časovými oknami meria mieru rovnomernosti --- nízke CV vedie k penalizácii až 20 bodov.
+
+\subsection{Odporúčania}
+
+Pre každý identifikovaný problém systém generuje textové odporúčanie v slovenčine. Odporúčania sú doplnené o \textbf{temporálnu lokalizáciu} --- algoritmus analyzuje, či problém nastával prevažne na začiatku, v strednej časti alebo na konci prezentácie (prah 55\,\% celkového trvania problému v danej tretine), a toto doplní do textu odporúčania.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Skóre} & \textbf{Hodnotenie} \\
+\hline
+\specialrule{1.2pt}{0pt}{0pt}
+90--100 & Výborné \\ \hline
+75--89 & Dobré \\ \hline
+60--74 & Priemer \\ \hline
+40--59 & Potrebuje zlepšenie \\ \hline
+0--39 & Slabé \\ \hline
+\end{tabular}
+\caption{Stupnica hodnotenia prezentácie}
+\label{tab:scoreLabels}
+\end{table}
+
 \section{Mobilná aplikácia}
 Kľúčovým prvkom mobilnej aplikácie je natočenie a orezanie videa.
 Používateľské rozhranie je teda v tomto stave jednoduché, kde po vybratí možnosti nového videa sa otvorí obrazovka s kamerou.
-Kamera priebežne ukazuje používateľovi, ako by vyzerala extrakcia landmarkov pre jeho aktuálnu polohu. Tým vie pre samotným spustetním videa zistiť, či by detekcia fungovala.
+Kamera priebežne ukazuje používateľovi, ako by vyzerala extrakcia landmarkov pre jeho aktuálnu polohu. Tým vie pred samotným spustením videa zistiť, či by detekcia fungovala.
 Po stlačení tlačidla na nahrávanie sa spustí trojsekundový časovač a následne sa spustí video.
 Po skončení nahrávania videa má používateľ možnosť video orezať a tým sa zbaviť časti videa, kedy išiel kameru vypnúť.
-Systém následne umožní používateľovi nahrávku pomenovať a odoslať na server. Neskôr bude pridaná možnosť iba video uložiť.
+Systém následne umožní používateľovi nahrávku pomenovať a odoslať na server.
 Používateľské rozhranie vyzerá pre tento proces nasledovne:
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{assets/images/implementation/app.png}
-    \caption{Vizualoizácia pohybu bokov}
+    \caption{Obrazovky mobilnej aplikácie}
     \label{fig:appFlow}
 \end{figure}
 
@@ -351,18 +484,12 @@ Po dlhšom rozhodovaní som sa teda rozhodol presunúť logiku extrakcie landmar
 
 \subsection{Presnosť whisper}
 
-Pri testovaní whisper modelu som narazil na problém, že jednoduchý model nebol schopný správne detekovať slová.
-Rozhodol som sa preto teda použiť veľký model large-v3, ktorý je omnoho presnejší. V budúcnosti chcem extrakciu transkriptu
-presunúť na osobitnú mikroslužbu, aby momentálne dlhý čas extrakcie nebol pre používateľa nepríjemný.
-Problém ktorý zatiaľ pretrváva je, že výplňové slová ako uhm alebo hmm tento model nedetekuje. Je nutné teda upravovať
-hyperparametre modelu kým to nebude fungovať, poprípade nájsť iný model.
+Pri testovaní Whisper modelu som narazil na problém, že základný model \texttt{base} nebol schopný správne detekovať slová v slovenčine. Rozhodol som sa preto použiť väčší model, ktorý je omnoho presnejší. Zároveň som naladil hyperparametre transkripcie --- znížil som prahové hodnoty pre detekciu ticha a threshold pravdepodobnosti, čím Whisper teraz lepšie detekuje krátke výplňové zvuky ako \textit{ehm} alebo \textit{hmm}. Transkripcia bola vyčlenená do samostatnej mikroslužby, čím sa dlhý čas spracovania nepremietne do čakania pri spúšťaní samotnej analýzy.
 
 \subsection{Hlasitosť je závislá na mikrofóne}
-Z hľadiska analýzy hlasitosti je problematická jednoduchá analýza hlasitosti iba pomocou hranice, pretože je závislá
-na vzdialenosti mikrofónu od prezentujúceho. Je preto nutné upraviť spôsob získavania hlasitosti pomocou RMS na lepší ukazovateľ.
 
-Týmto ukazovateľom môže byť bBFS, alebo LUFS, ktorý zjemní tento problém.
-Oba tieto ukazovatele by použili referenčný level a fungovali by relatívne pre video, čím by sa problém čiastočne vyriešil.
+Z hľadiska analýzy hlasitosti je problematická jednoduchá analýza iba pomocou absolútnej hranice, pretože je závislá
+na vzdialenosti mikrofónu od prezentujúceho. Tento problém bol vyriešený prechodom na jednotku \textbf{dBFS} v kombinácii s dynamicky vypočítanou úrovňou ticha (\textit{silence floor}). Silence floor je odvodená z distribúcie hodnôt v danej nahrávke, čím sa analýza stáva relatívnou voči konkrétnej nahrávke a nezávislou od pozície mikrofónu.
 
 \subsection{Ukončovanie videa}
 Pri ukončovaní videa som narazil na problém, že používateľ musel prísť ku kamere a vypnúť aktuálne nahrávanie videa.
@@ -370,50 +497,32 @@ Tento segment videa bol taktiež spracovávaný a to spôsobovalo veľké odchý
 
 Rozhodol som sa pre to implementovať orezávanie videa na konci nahrávania, kde používateľ tento segment orezal.
 
-\section{Stav riešenia a ďalšia práca}
-
-\subsection{Implementované funkčné požiadavky}
+\section{Stav riešenia}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{|l|c|p{6cm}|}
+\begin{tabular}{|l|c|p{5.5cm}|}
 \hline
-\textbf{Požiadavka} & \textbf{Stav dokončenia} & \textbf{Poznámka} \\
+\textbf{Požiadavka} & \textbf{Stav} & \textbf{Poznámka} \\
 \hline
-Detekcia očného kontaktu & 90\% & Plne funkčné, stačí doladiť \\
+Detekcia očného kontaktu & 85\,\% & Funkčné, limitácia pri pohľade do poznámok pod kamerou \\
 \hline
-Detekcia pohybu bokov & 90\% & Plne funkčné, stačí doladiť \\
+Detekcia pohybu bokov & 90\,\% & Plne funkčné \\
 \hline
-Detekcia pohybov rúk & 90\% & Plne funkčné, stačí doladiť \\
+Detekcia pohybov rúk & 90\,\% & Plne funkčné \\
 \hline
-Detekcia monotónnosti & 50\% & Zatiaľ málo otestované, extrakcia funkčná \\
+Detekcia monotónnosti & 85\,\% & Funkčné, hodnoty prahu nastavené empiricky \\
 \hline
-Detekcia hlasitosti & 50\% & Zatiaľ málo otestované, extrakcia funkčná \\
+Detekcia hlasitosti & 85\,\% & Funkčné s dBFS normalizáciou \\
 \hline
-Detekcia výplňových slov & 50\% & Zatiaľ málo otestované, extrakcia funkčná \\
+Detekcia výplňových slov & 85\,\% & Funkčné, závisí od presnosti transkripcie \\
 \hline
-Detekcia kritických bodov & 20\% & Zatiaľ jednoduchá sliding window analýza \\
+Detekcia kritických bodov & 85\,\% & PELT algoritmus implementovaný vo všetkých službách \\
+\hline
+Generovanie hodnotenia & 90\,\% & Plne funkčné, model v3 s empirickými váhami \\
+\hline
+Orchestrácia analýz & 90\,\% & Paralelné spracovanie s odolnosťou voči chybám \\
 \hline
 \end{tabular}
 \caption{Prehľad implementovaných funkčných požiadaviek}
 \end{table}
-
-\subsection{Zhodnotenie voči pôvodným cieľom}
-
-\textbf{Čo sa podarilo}:
-\begin{itemize}
-    \item Úspešná implementácia všetkých core mikroslužieb
-    \item Funkčná extrakcia landmarks pomocou MediaPipe
-    \item Základná detekcia výplňových slov pomocou Whisper
-    \item Škálovateľná mikroslužbová architektúra
-\end{itemize}
-
-\textbf{Čo zostáva na implementáciu}:
-\begin{itemize}
-    \item Mediator Service pre orchestráciu
-    \item Notifikovanie používateľa o dokončení spracovania videa alebo zvuku
-    \item Vizualizácia výsledkov v mobilnej aplikácii (Flutter UI)
-    \item Pokročilá detekcia kritických bodov zmien (change point detection)
-    \item Oprava parametra hlasitosti
-    \item Úprava Whisper aby správne detekoval výplňové slová
-\end{itemize}

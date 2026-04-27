@@ -17,16 +17,16 @@ Content-Type: video/mp4
 GET http://localhost:8000/api/v1/processing/status/13
 
 ### Analyze video
-POST http://localhost:8000/api/v1/analysis/analyze?recording-id=54
+POST http://localhost:8000/api/v1/analysis/analyze?recording-id=90
 Content-Type: application/json
 
 {
   "arm_movement": true,
-  "eye_contact": true,
-  "pitch": true,
-  "volume": true,
-  "hip": true,
-  "filler_words": true
+  "eye_contact": false,
+  "pitch": false,
+  "volume": false,
+  "hip": false,
+  "filler_words": false
 }
 ### Video Processing - Extract pose landmarks from video
 POST http://localhost:8001/api/v1/video/1/analyze/

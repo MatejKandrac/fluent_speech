@@ -49,8 +49,8 @@ REST_FRAMEWORK = {
 SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
 
 EYE_CONTACT_ANALYSIS_CONFIG = {
-    'yaw_min': float(os.getenv('YAW_MIN', '-60')),  # degrees
-    'yaw_max': float(os.getenv('YAW_MAX', '60')),
+    'yaw_min': float(os.getenv('YAW_MIN', '-90')),  # degrees
+    'yaw_max': float(os.getenv('YAW_MAX', '90')),
     'yaw_bin_size': float(os.getenv('YAW_BIN_SIZE', '5')),
 
     'pitch_min': float(os.getenv('PITCH_MIN', '-30')),
@@ -67,17 +67,16 @@ EYE_CONTACT_ANALYSIS_CONFIG = {
     'staring_angle_threshold': float(os.getenv('STARING_ANGLE_THRESHOLD', '3')),  # degrees
     'min_staring_time': int(os.getenv('MIN_STARING_MS', '2000')),  # ~2 seconds at 15fps
 
-    # Yaw calculation weights (must sum to 1.0)
-    'yaw_weight_ear_ratio': float(os.getenv('YAW_WEIGHT_EAR_RATIO', '0.5')),
-    'yaw_weight_nose_face': float(os.getenv('YAW_WEIGHT_NOSE_FACE', '0.2')),
-    'yaw_weight_nose_shoulder': float(os.getenv('YAW_WEIGHT_NOSE_SHOULDER', '0.3')),
+    # Median-filter window (in frames) applied to ear Δz before recomputing yaw.
+    # Larger smooths more MP z-noise but blurs fast head turns. 1 disables smoothing.
+    'yaw_smoothing_window': int(os.getenv('YAW_SMOOTHING_WINDOW', '5')),
 
     # Back facing
     'back_facing_threshold': float(os.getenv('BACK_FACING_THRESHOLD', '-0.1')),
+    'min_back_facing_duration': int(os.getenv('MIN_BACK_FACING_DURATION', '300')),
 
     'pitch_scale': float(os.getenv('PITCH_SCALE', '1.0')),  # unused by current formula, kept for config compat
     'pitch_bias': float(os.getenv('PITCH_BIAS', '20')),
-    'pitch_debug_offset': float(os.getenv('PITCH_DEBUG_OFFSET', '0')),
 
     'eye_segmentation_sensitivity': float(os.getenv('EYE_SEGMENTATION_SENSITIVITY', '0.5')),
 }

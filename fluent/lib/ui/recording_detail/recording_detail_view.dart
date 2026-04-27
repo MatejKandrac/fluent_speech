@@ -67,7 +67,7 @@ class _RecordingDetailViewState extends ConsumerState<RecordingDetailView> {
     setState(() => _statusLoading = true);
     try {
       final client = ref.read(videoApiClientProvider);
-      final status = await client.getProcessingStatus(recordingId: widget.record.remoteId);
+      final status = await client.getProcessingStatus(recordingId: _record.remoteId);
       if (mounted) {
         setState(() {
           _videoReady = status.videoProcessingFinished;

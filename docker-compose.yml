@@ -222,6 +222,9 @@ services:
       - .env
     volumes:
       - transcript-debug:/app/debug_output
+    depends_on:
+      timescaledb:
+        condition: service_healthy
     networks:
       - fluent-network
     restart: unless-stopped
