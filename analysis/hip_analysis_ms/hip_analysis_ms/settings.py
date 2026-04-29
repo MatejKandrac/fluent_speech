@@ -60,8 +60,8 @@ REST_FRAMEWORK = {
 SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
 
 HIP_ANALYSIS_CONFIG = {
-    'min_hip_direction_changes': float(os.getenv('MIN_HIP_DIRECTION_CHANGES', 4)),
-    'min_hip_amplitude_change': float(os.getenv('MIN_HIP_AMPLITUDE_CHANGE', 0.02)),
+    'min_hip_direction_changes': int(os.getenv('MIN_HIP_DIRECTION_CHANGES', 3)),
+    'min_hip_amplitude_change': float(os.getenv('MIN_HIP_AMPLITUDE_CHANGE', '0.015')),
     'hip_window_duration': float(os.getenv('HIP_WINDOW_DURATION_MS', 3000)),
     'hip_segmentation_bin_size': float(os.getenv('HIP_SEGMENTATION_BIN_SIZE', '10.0')),
     'hip_segmentation_sensitivity': float(os.getenv('HIP_SEGMENTATION_SENSITIVITY', '0.5')),

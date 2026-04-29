@@ -153,48 +153,40 @@ class HipAnalysisService:
         self,
         metrics: Dict[str, Any],
         recording_id: str,
+        fps: float,
         swaying_segments: List[Dict[str, Any]] = None,
         lateral_axis: str = 'Y',
     ) -> Optional[str]:
         try:
-            debug_dir = Path(settings.BASE_DIR) / 'debug' / recording_id
+            debug_dir = Path(settings.BASE_DIR) / 'debug_output' / recording_id
             debug_dir.mkdir(parents=True, exist_ok=True)
 
-            # Convert timestamps to frame indices for plotting
-            frame_indices = list(range(len(metrics['timestamps'])))
-            fps = 10.0  # Frames per second
+            n = len(metrics['timestamps'])
+            time_axis = [i / fps for i in range(n)]
 
-            # Create figure with single plot
             fig, ax = plt.subplots(figsize=(16, 6))
             fig.suptitle(f'Hip Movement Analysis - Recording {recording_id}', fontsize=16)
 
             lateral_data = metrics[f'hip_center_{lateral_axis.lower()}']
-            ax.plot(frame_indices, lateral_data, linewidth=1.5, color='blue', label=f'Hip Center {lateral_axis}')
-            ax.set_xlabel('Frame Index', fontsize=12)
+            ax.plot(time_axis, lateral_data, linewidth=1.5, color='blue', label=f'Hip Center {lateral_axis}')
+            ax.set_xlabel('Time (s)', fontsize=12)
             ax.set_ylabel(f'{lateral_axis} Position (normalized)', fontsize=12)
             ax.set_title(f'Hip Center - Lateral Movement (Side to Side) [{lateral_axis} axis]', fontsize=14)
             ax.grid(True, alpha=0.3)
 
-            # Highlight swaying segments
             if swaying_segments:
                 for segment in swaying_segments:
-                    start_frame = int(segment['start_timestamp'] * fps)
-                    end_frame = int(segment['end_timestamp'] * fps)
-
-                    # Add shaded region for swaying segment
                     ax.axvspan(
-                        start_frame,
-                        end_frame,
+                        segment['start_timestamp'],
+                        segment['end_timestamp'],
                         color='red',
                         alpha=0.2,
                         label='Swaying' if segment == swaying_segments[0] else ''
                     )
-
-                    # Add text annotation with number of direction changes
-                    mid_frame = (start_frame + end_frame) / 2
+                    mid_t = (segment['start_timestamp'] + segment['end_timestamp']) / 2
                     y_pos = ax.get_ylim()[1] * 0.95
                     ax.text(
-                        mid_frame,
+                        mid_t,
                         y_pos,
                         f"{segment['direction_changes']} changes",
                         ha='center',
@@ -203,7 +195,6 @@ class HipAnalysisService:
                         bbox=dict(boxstyle='round,pad=0.3', facecolor='red', alpha=0.3)
                     )
 
-            # Remove duplicate labels in legend
             handles, labels = ax.get_legend_handles_labels()
             by_label = dict(zip(labels, handles))
             ax.legend(by_label.values(), by_label.keys(), loc='upper right')
@@ -337,7 +328,7 @@ class HipAnalysisService:
             print(f"[DEBUG] Detected {len(swaying_segments)} swaying segments")
 
             # Save debug plots with swaying segments highlighted
-            self.save_hip_movement_plots(metrics, str(recording_id), swaying_segments, lateral_axis)
+            self.save_hip_movement_plots(metrics, str(recording_id), fps, swaying_segments, lateral_axis)
 
             segmentation = self.call_segmentation(
                 direction_changes, fps, len(hip_sway_y), recording_id

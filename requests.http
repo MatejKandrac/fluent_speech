@@ -17,14 +17,14 @@ Content-Type: video/mp4
 GET http://localhost:8000/api/v1/processing/status/13
 
 ### Analyze video
-POST http://localhost:8000/api/v1/analysis/analyze?recording-id=90
+POST http://localhost:8000/api/v1/analysis/analyze?recording-id=98
 Content-Type: application/json
 
 {
-  "arm_movement": true,
+  "arm_movement": false,
   "eye_contact": false,
   "pitch": false,
-  "volume": false,
+  "volume": true,
   "hip": false,
   "filler_words": false
 }

@@ -34,23 +34,25 @@ class FillerWordsAnalysisService:
         for segment in transcript['segments']:
             # If we have word-level data, use it for precise timestamps
             if 'words' in segment and segment['words']:
+                min_prob = self.config['min_word_probability']
                 for word_data in segment['words']:
+                    probability = word_data.get('probability', 1.0)
+                    if probability < min_prob:
+                        continue
+
                     word_text = word_data['word'].lower().strip().rstrip('.,')
 
-                    # Check if this word is a filler word
                     for filler in all_fillers:
-                        # Use word boundaries to avoid partial matches
                         pattern = r'\b' + re.escape(filler) + r'\b'
                         if re.search(pattern, word_text):
                             is_slovak = filler in self.slovak_fillers
-
                             filler_occurrences.append({
                                 'word': filler,
                                 'language': 'slovak' if is_slovak else 'english',
                                 'start_time': word_data.get('start_time', word_data.get('start', 0)),
                                 'end_time': word_data.get('end_time', word_data.get('end', 0)),
                                 'segment_text': segment.get('text', ''),
-                                'probability': word_data.get('probability', 1.0)
+                                'probability': probability
                             })
             else:
                 # Fallback: use segment-level detection (less precise)
@@ -404,7 +406,7 @@ class FillerWordsAnalysisService:
         recording_id: int,
     ):
         try:
-            processed_wav = Path(settings.VIDEO_STORAGE_PATH) / (Path(recording_filename).stem + '_processed.wav')
+            processed_wav = Path(settings.VIDEO_STORAGE_PATH) / (Path(recording_filename).stem + '.wav')
             if not processed_wav.exists():
                 print(f"Processed WAV not found at {processed_wav}, skipping uhh clip export")
                 return

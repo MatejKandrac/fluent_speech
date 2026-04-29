@@ -48,7 +48,16 @@ VIDEO_STORAGE_PATH = os.getenv('VIDEO_STORAGE_PATH', 'D:/VideoData')
 
 # Audio Extraction Configuration
 AUDIO_EXTRACTION_CONFIG = {
-    'sample_rate': int(os.getenv('AUDIO_SAMPLE_RATE', '16000')),  # Audio sample rate in Hz
+    'sample_rate': int(os.getenv('AUDIO_SAMPLE_RATE', '16000')),
+}
+
+# Noise Reduction Configuration
+# prop_decrease controls aggressiveness: 1.0 = full removal, 0.5 = 50% attenuation.
+# Stationary mode estimates a fixed noise profile from the whole signal — can misidentify
+# monotone speech as noise. Reduce prop_decrease or disable if pitch detection suffers.
+NOISE_REDUCTION_CONFIG = {
+    'enabled': os.getenv('NOISE_REDUCTION_ENABLED', 'True') == 'True',
+    'prop_decrease': float(os.getenv('NOISE_REDUCTION_PROP_DECREASE', '0.5')),
 }
 
 # Transcript Processing Service Configuration

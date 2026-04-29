@@ -52,17 +52,18 @@ PITCH_ANALYSIS_SERVICE_URL = os.getenv('PITCH_ANALYSIS_SERVICE_URL', 'http://loc
 SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
 
 FILLER_WORDS_CONFIG = {
-    'slovak_fillers': ['ehm', 'ehh', 'emm', 'hm', 'hmm', 'teda', 'jako', 'takže', 'vlastne', 'viete', 'no', 'tak'],
+    'slovak_fillers': ['ehm', 'ehh', 'emm', 'hm', 'hmm', 'teda', 'akože', 'takže', 'vlastne', 'viete', 'no', 'tak', 'proste', 'čiže', 'inak', 'vieš', 'skrátka'],
     'english_fillers': ['uh', 'um', 'hmm', 'like', 'you know', 'so', 'actually', 'basically', 'literally', 'well'],
 
     # Analysis thresholds
-    'high_filler_threshold_per_minute': float(os.getenv('HIGH_FILLER_THRESHOLD', '5')),  # fillers per minute
-    'min_speech_duration': float(os.getenv('MIN_SPEECH_DURATION', '10')),  # minimum seconds for analysis
+    'high_filler_threshold_per_minute': float(os.getenv('HIGH_FILLER_THRESHOLD', '5')),
+    'min_speech_duration': float(os.getenv('MIN_SPEECH_DURATION', '10')),
+    'min_word_probability': float(os.getenv('FILLER_MIN_WORD_PROBABILITY', '0.7')),
 
     # Uhh detection via pitch cross-referencing
-    'uhh_pitch_std_threshold': float(os.getenv('UHH_PITCH_STD_THRESHOLD', '15.0')),  # max Hz std for stable pitch
-    'uhh_min_gap_duration_ms': float(os.getenv('UHH_MIN_GAP_DURATION_MS', '200')),  # min gap length to consider
-    'uhh_min_voiced_duration_ms': float(os.getenv('UHH_MIN_VOICED_DURATION_MS', '200')),  # min voiced ms within gap
+    'uhh_pitch_std_threshold': float(os.getenv('UHH_PITCH_STD_THRESHOLD', '15.0')),
+    'uhh_min_gap_duration_ms': float(os.getenv('UHH_MIN_GAP_DURATION_MS', '200')),
+    'uhh_min_voiced_duration_ms': float(os.getenv('UHH_MIN_VOICED_DURATION_MS', '200')),
     'segmentation_bin_size': float(os.getenv('FILLER_SEGMENTATION_BIN_SIZE', '10.0')),  # seconds per bin
     'segmentation_sensitivity': float(os.getenv('FILLER_SEGMENTATION_SENSITIVITY', '0.5')),
 }

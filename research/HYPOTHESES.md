@@ -109,6 +109,8 @@ Párový t-test na per-respondent koreláciách (Fisherova z-transformácia): t=
 
 **Dôvod:** Hlas je pre poslucháča bezprostredný a emocionálny jav — monotónna reč unavuje priamo a vedome. Pohyb tela (β=0.250) a najmä telesný neverbálny pohyb sú subtílnejšie a respondenti ich vnímajú menej vedome pri celkovom hodnotení, čo "stiahne" priemer kombinovanej skupiny pod úroveň plynulosti.
 
+**Metodologické obmedzenie — halo efekt:** Respondenti hodnotili každé video vo všetkých dimenziách súčasne. Keď bolo video manipulované v jednej dimenzii (napr. V4 = monotónny hlas), klesali aj hodnotenia ostatných dimenzií, ktoré neboli manipulované (V4 fluency = 5.67 vs baseline 8.18). Beta koeficienty z regresie teda odrážajú aj tento halo efekt, nielen izolovaný vplyv každej dimenzie — interpretovať ich ako čisté váhy treba s rezervou.
+
 ### H1.1b — Čiastočne podporená
 
 Regresné beta koeficienty (OLS): voice=0.843, eye=0.586, fluency=0.574, body=0.250. Mixed-effects model dáva podobnú hierarchiu (voice=0.927, eye=0.624, fluency=0.498, body=0.230). Skutočná hierarchia je teda **hlas > očný kontakt > plynulosť > pohyb tela** — opak predpokladaného smeru pre vizuálne vs hlasové.
@@ -216,11 +218,11 @@ Dimenzia `voice` má najväčší efekt (η²g=0.402) — potvrdzuje dominanciu 
 
 | Model | ρ | p | Zmena |
 |---|---|---|---|
-| v1 | 0.754 | 0.084 | — |
-| v2 | 0.928 | 0.008 | +0.174 |
-| v3 | 0.928 | 0.008 | 0.000 |
+| v1 | 0.771 | 0.072 | — |
+| v2 | 0.943 | 0.005 | +0.171 |
+| v3 | 0.943 | 0.005 | 0.000 |
 
-*Poznámka: notebook má v sekcii porovnania modelov stále **napevno zadané** (hardcoded) ľudské priemery z n=47 (pozri `research.ipynb`, bunka so `human = {...}`). Vyššie uvedené ρ sú teda počítané proti starej vzorke. S novými priemermi z n=52 sa rozsudok nemení (V4 a V5 prestali byť presne zhodné, V5=4.44 > V4=4.40), poradie videí ostáva rovnaké, ρ by sa zmenilo iba minimálne (cca 0.93–0.94 pre v2/v3).*
+*Hodnoty sú počítané z n=52 ľudských priemerov (validation.ipynb). Sekcia porovnania modelov v research.ipynb používa staré priemery z n=47 — opraviť pred odovzdaním.*
 
 ### Kľúčové posuny medzi modelmi
 
@@ -232,9 +234,64 @@ Dimenzia `voice` má najväčší efekt (η²g=0.402) — potvrdzuje dominanciu 
 
 ### Systémové pozorvania
 
-- **Rank korelácia skočila v2 (+0.174)** — zmena váh na základe beta koeficientov z výskumu mala najväčší dopad. Poradie videí zodpovedá ľudskému vnímaniu výrazne presnejšie.
+- **Rank korelácia skočila v2 (+0.171)** — zmena váh na základe beta koeficientov z výskumu mala najväčší dopad. Poradie videí zodpovedá ľudskému vnímaniu výrazne presnejšie.
 - **Model v3 nezmenil ρ** — poradie bolo v2 už správne (V5 < V6). Distribučná penalizácia zväčšila gap medzi V5 a V6 (celkovo 4.3 → 5.9 bodov, fluency 16.2 → 22.4 bodov), ale neposunula poradie.
 - **V5 fluency výrazne kleslo** (39.3 → 29.5) — distribučný trest 9.8 bodu za CV≈0.5 (fillers rozložené rovnomerne cez 6 okien).
 - **V6 fluency mierne kleslo** (55.5 → 51.9) — distribučný trest 3.6 bodu za CV≈0.8 (fillers sústredené v strednej časti).
 - **Systematické nadhodnocovanie** — všetky systémové skóre sú o ~25–30 bodov vyššie ako ľudské hodnotenia (napr. V4: model=74.3 vs ľudia=44.0/100). Kalibrácia rozsahov dimenzií je otvorená budúca práca.
 - **V3 (pohyb bokov) nadhodnotené** — zníženie váhy `body` (0.25→0.09) spôsobilo nárast total skóre na 93.1, zatiaľ čo ľudia ho hodnotili na 66.5/100. Vedľajší efekt zmeny váh.
+
+---
+
+## RQ3 — Validácia hodnotiaceho systému voči ľudskému vnímaniu
+
+**Výskumná otázka:**
+Zodpovedá poradie videí podľa systémového skóre poradiu podľa ľudského hodnotenia? A zlepšujú empiricky odvodené váhy a distribučná penalizácia túto zhodu?
+
+Analýza: `validation.ipynb`. Vstup: systémové skóre modelov v1–v3 (prevzaté z výstupov systému) a ľudské priemery z n=52 respondentov.
+
+---
+
+### H3.1 — Empiricky odvodené váhy (Model v2) zvyšujú zhodu systémového poradia s ľudským hodnotením oproti intuitívnym váham (Model v1)
+
+*Spearmanová korelácia poradia videí podľa systémového skóre a ľudského priemeru bude vyššia pre model v2 ako pre model v1.*
+
+- **Nulová hypotéza:** ρ(v2) ≤ ρ(v1).
+- **Meranie:** Spearmanová rank korelácia (n=6 videí). Doplnkovo LOO-CV stabilita váh a bootstrap CI rozdielu Δρ.
+
+#### Výsledky — H3.1 Potvrdená
+
+| Model | ρ | p |
+|---|---|---|
+| v1 | 0.771 | 0.072 |
+| v2 | 0.943 | 0.005 |
+| v3 | 0.943 | 0.005 |
+
+Prechod v1 → v2 zvýšil ρ o +0.171. Model v2 je štatisticky signifikantný (p=0.005), model v1 nie (p=0.072). H3.1 je potvrdená.
+
+**LOO-CV (out-of-sample):** Váhy odvodené z 5 videí zoraďujú 6. video s ρ=0.829 (p=0.042), MAE=0.426 — naznačuje, že regresiou odvodené váhy generalizujú aj mimo trénovacej vzorky.
+
+**Obmedzenie:** n=6 videí je veľmi malá vzorka pre rank koreláciu. Bootstrap CI pre Δρ vychádza [0.000, 1.000] — pri n=6 je distribúcia diskrétna a CI neinformuje. Výsledok interpretovať deskriptívne, nie konfirmačne.
+
+---
+
+### H3.2 — Distribučná penalizácia (Model v3) presnejšie kopíruje ľudský rozdiel medzi V5 a V6 na dimenzii plynulosť
+
+*Absolútna chyba |Δ_sys − Δ_human| na dimenzii fluency bude nižšia pre model v3 ako pre modely v1 a v2.*
+
+- **Nulová hypotéza:** |Δ_sys(v3) − Δ_human| ≥ |Δ_sys(v1) − Δ_human|.
+- **Meranie:** Porovnanie absolútnych chýb medzi systémovým a ľudským rozdielom V5−V6 na dimenzii fluency.
+
+#### Výsledky — H3.2 Zamietnutá, neočakávaný nález
+
+Ľudský Δ (V5 − V6) na dimenzii fluency: **−1.635** (párový t-test: t=−5.864, p<0.0001).
+
+| Model | sys_Δ | \|sys_Δ − human_Δ\| |
+|---|---|---|
+| v1 | −1.620 | **0.015** |
+| v2 | −1.620 | **0.015** |
+| v3 | −2.240 | 0.605 |
+
+Modely v1 a v2 sú výrazne bližšie k ľudskému Δ ako model v3. Distribučná penalizácia v3 rozdiel *presriahla* — systém penalizuje rovnomerne rozložené výplňové slová výraznejšie, ako ľudia vnímajú rozdiel.
+
+**Interpretácia:** Smer efektu (V5 horšie ako V6) zachytávajú správne všetky tri modely. Model v3 však zveličuje veľkosť rozdielu. Penalizačná funkcia (CV cez 6 okien) je príliš agresívna — vhodné pre budúcu kalibráciu. Distribučná penalizácia zostáva konceptuálne opodstatnená (smer je správny), ale jej parametre si vyžadujú ďalšie doladenie.

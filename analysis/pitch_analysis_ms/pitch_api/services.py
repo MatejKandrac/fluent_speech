@@ -72,9 +72,10 @@ class PitchAnalysisService:
 
         return monotonous_segments
 
-    def save_pitch_plot(self, pitch: np.ndarray, sr: float, recording_id: str) -> Optional[str]:
+    def save_pitch_plot(self, pitch: np.ndarray, sr: float, recording_id: str,
+                        monotonous_segments: list = None) -> Optional[str]:
         try:
-            debug_dir = Path(settings.BASE_DIR) / 'debug' / recording_id
+            debug_dir = Path(settings.BASE_DIR) / 'debug_output' / recording_id
             debug_dir.mkdir(parents=True, exist_ok=True)
 
             # Calculate time based on hop_length (800 samples)
@@ -112,13 +113,21 @@ class PitchAnalysisService:
                         ax.axvspan(start_time, end_time, color='lightgray',
                                   alpha=0.3, label='Unvoiced/Silent' if group is unvoiced_groups[0] else '')
 
+            # Highlight monotonous segments
+            if monotonous_segments:
+                for seg in monotonous_segments:
+                    ax.axvspan(
+                        seg['start_timestamp'], seg['end_timestamp'],
+                        color='gold', alpha=0.35,
+                        label='Monotonous' if seg == monotonous_segments[0] else ''
+                    )
+
             ax.set_xlabel('Time (s)', fontsize=12)
             ax.set_ylabel('Frequency (Hz)', fontsize=12)
             ax.set_title(f'Pitch Analysis - Sample Rate: {sr} Hz', fontsize=14, fontweight='bold')
             ax.grid(True, alpha=0.3)
             ax.set_ylim([50, 350])
 
-            # Remove duplicate labels in legend
             handles, labels = ax.get_legend_handles_labels()
             by_label = dict(zip(labels, handles))
             ax.legend(by_label.values(), by_label.keys(), loc='upper right')
@@ -153,7 +162,7 @@ class PitchAnalysisService:
 
         rms = librosa.feature.rms(y=audio, frame_length=frame_length, hop_length=hop_length)[0]
 
-        energy_threshold = 0.02
+        energy_threshold = self.config['energy_threshold']
         pitch_threshold = 70
         valid_mask = (rms > energy_threshold) & (pitch >= pitch_threshold)
 
@@ -169,9 +178,9 @@ class PitchAnalysisService:
 
         return pitch_filtered, hop_length
 
-    def call_segmentation(self, pitch_filtered: np.ndarray, duration_per_frame: float, recording_id: int) -> Optional[dict]:
+    def call_segmentation(self, pitch_filtered: np.ndarray, duration_per_frame: float,
+                          recording_id: int, window_size: int) -> Optional[dict]:
         try:
-            window_size = self.config['monotonous_window_size']
 
             # Build windowed-std series: one value per window step.
             # Each point represents pitch variability (std) over that window,
@@ -209,7 +218,7 @@ class PitchAnalysisService:
                 return {'success': False, 'error': f'Recording with ID {recording_id} not found'}
 
             video_filename = recording['filename']
-            processed_filename = Path(video_filename).stem + '_processed.wav'
+            processed_filename = Path(video_filename).stem + '.wav'
             processed_path = Path(settings.VIDEO_STORAGE_PATH) / processed_filename
 
             if not processed_path.exists():
@@ -256,7 +265,7 @@ class PitchAnalysisService:
 
             # Construct path to processed audio
             video_filename = recording['filename']
-            processed_filename = Path(video_filename).stem + '_processed.wav'
+            processed_filename = Path(video_filename).stem + '.wav'
             processed_path = Path(settings.VIDEO_STORAGE_PATH) / processed_filename
 
             if not processed_path.exists():
@@ -290,20 +299,20 @@ class PitchAnalysisService:
 
             print(f"Pitch filtered: voiced_frames={len(voiced_pitch)}/{len(pitch_filtered)}, mean={pitch_mean:.2f} Hz")
 
-            # Save debug plot with filtered pitch
-            self.save_pitch_plot(pitch_filtered, sr, str(recording_id))
+            duration_per_frame = hop_length / sr
+            window_frames = max(1, round(self.config['monotonous_window_ms'] / 1000 / duration_per_frame))
+            print(f"[DEBUG] monotonous_window_ms={self.config['monotonous_window_ms']} → {window_frames} frames")
 
-            # Detect monotonous segments using sliding window analysis
+            # Detect monotonous segments (must run before plot so segments can be highlighted)
             monotonous_segments = self.detect_monotonous_segments(
                 pitch_filtered,
                 sr,
                 hop_length,
-                window_size=self.config['monotonous_window_size'],
+                window_size=window_frames,
                 std_threshold=self.config['monotonous_std_threshold'],
                 range_threshold=self.config['monotonous_range_threshold'],
             )
 
-            # Merge segments separated by a small gap, then drop segments that are too short
             merge_gap = self.config['monotonous_merge_gap_ms'] / 1000.0
             min_duration = self.config['monotonous_min_duration_ms'] / 1000.0
 
@@ -318,12 +327,13 @@ class PitchAnalysisService:
                     merged.append(dict(seg))
 
             monotonous_segments = [s for s in merged if s['duration_seconds'] >= min_duration]
-
             print(f"[DEBUG] Detected {len(monotonous_segments)} monotonous segments")
 
+            # Save debug plot with monotonous segments highlighted
+            self.save_pitch_plot(pitch_filtered, sr, str(recording_id), monotonous_segments)
+
             # Call segmentation service on voiced pitch timeseries
-            duration_per_frame = hop_length / sr
-            segmentation = self.call_segmentation(pitch_filtered, duration_per_frame, recording_id)
+            segmentation = self.call_segmentation(pitch_filtered, duration_per_frame, recording_id, window_frames)
 
             result = {
                 'success': True,
@@ -338,12 +348,6 @@ class PitchAnalysisService:
                 'monotonous_segments_count': len(monotonous_segments),
                 'segmentation': segmentation,
             }
-
-            import json
-            result_path = Path(settings.BASE_DIR) / 'debug' / str(recording_id) / 'pitch.json'
-            result_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(result_path, 'w') as f:
-                json.dump(result, f)
 
             return result
 

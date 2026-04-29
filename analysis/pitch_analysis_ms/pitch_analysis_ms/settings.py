@@ -62,8 +62,9 @@ REST_FRAMEWORK = {
 SEGMENTATION_SERVICE_URL = os.getenv('SEGMENTATION_SERVICE_URL', 'http://localhost:8010')
 
 PITCH_ANALYSIS_CONFIG = {
+    'energy_threshold': float(os.getenv('PITCH_ENERGY_THRESHOLD', '0.01')),
     'pitch_grace_period': float(os.getenv('PITCH_GRACE_PERIOD_MS', 100)),
-    'monotonous_window_size': int(os.getenv('MONOTONOUS_WINDOW_SIZE', 30)),
+    'monotonous_window_ms': int(os.getenv('MONOTONOUS_WINDOW_MS', 1500)),
     'monotonous_std_threshold': float(os.getenv('MONOTONOUS_STD_THRESHOLD', 10.0)),
     'monotonous_range_threshold': float(os.getenv('MONOTONOUS_RANGE_THRESHOLD', 20.0)),
     'monotonous_merge_gap_ms': float(os.getenv('MONOTONOUS_MERGE_GAP_MS', 2500)),

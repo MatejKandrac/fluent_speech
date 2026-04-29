@@ -62,9 +62,9 @@ REST_FRAMEWORK = {
 }
 
 VOLUME_ANALYSIS_CONFIG = {
-    'too_soft_dbfs': float(os.getenv('VOLUME_TOO_SOFT_DBFS', -35.0)),   # Below this = speaking too softly
-    'too_loud_dbfs': float(os.getenv('VOLUME_TOO_LOUD_DBFS', -10.0)),   # Above this = speaking too loudly
-    'silence_floor_dbfs': float(os.getenv('VOLUME_SILENCE_FLOOR_DBFS', -60.0)),  # Below this = silence, not flagged
-    'min_segment_duration_ms': float(os.getenv('VOLUME_MIN_SEGMENT_MS', 500.0)),  # Ignore very short violations
-    'segmentation_sensitivity': float(os.getenv('VOLUME_SEGMENTATION_SENSITIVITY', '0.5')),
+    'silence_floor_dbfs': float(os.getenv('VOLUME_SILENCE_FLOOR_DBFS', -60.0)),
+    'soft_margin_db': float(os.getenv('VOLUME_SOFT_MARGIN_DB', 8.0)),
+    'loud_margin_db': float(os.getenv('VOLUME_LOUD_MARGIN_DB', 6.0)),
+    'min_segment_duration_ms': float(os.getenv('VOLUME_MIN_SEGMENT_MS', 500.0)),
+    'segmentation_sensitivity': float(os.getenv('VOLUME_SEGMENTATION_SENSITIVITY', 0.2)),
 }
