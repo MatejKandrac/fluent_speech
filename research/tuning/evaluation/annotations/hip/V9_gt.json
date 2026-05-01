@@ -1,0 +1,12 @@
+{
+  "video_id": "V9",
+  "duration_s": 53.0,
+  "annotator": "Matej",
+  "notes": "118 - testovacie video",
+  "annotations": {
+    "hip_sway": [
+      {"start": 11.0, "end": 20.0},
+      {"start": 39.0, "end": 42.0}
+    ]
+  }
+}

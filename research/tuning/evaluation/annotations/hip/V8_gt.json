@@ -1,0 +1,11 @@
+{
+  "video_id": "V8",
+  "duration_s": 53.0,
+  "annotator": "Matej",
+  "notes": "93 - testovacie video",
+  "annotations": {
+    "hip_sway": [
+      {"start": 22.0, "end": 31.0}
+    ]
+  }
+}

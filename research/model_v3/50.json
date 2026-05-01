@@ -3,8 +3,8 @@
   "recording_id": 50,
   "completed_analyses": [
     "filler_words",
-    "pitch",
     "hip",
+    "pitch",
     "arm_movement",
     "volume",
     "eye_contact"
@@ -17,52 +17,58 @@
       "duration": 50.72,
       "detected_language": "unknown",
       "statistics": {
-        "total_filler_words": 0,
-        "fillers_per_minute": 0,
-        "most_common_filler": null,
+        "total_filler_words": 2,
+        "fillers_per_minute": 2.37,
+        "most_common_filler": {
+          "word": "uhh",
+          "count": 2
+        },
         "slovak_fillers_count": 0,
         "english_fillers_count": 0,
+        "filler_word_distribution": {
+          "uhh": 2
+        },
         "duration": 50.72,
-        "is_high_usage": false
+        "is_high_usage": false,
+        "high_usage_threshold": 5.0
       },
-      "filler_occurrences": [],
-      "total_filler_occurrences": 0,
-      "uhh_occurrences_count": 0,
-      "segmentation": null,
+      "filler_occurrences": [
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 9.54,
+          "end_time": 10.58,
+          "pitch_mean": 116.91,
+          "pitch_std": 7.52,
+          "voiced_duration": 0.15
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 12.44,
+          "end_time": 12.58,
+          "pitch_mean": 144.86,
+          "pitch_std": 0.0,
+          "voiced_duration": 0.15
+        }
+      ],
+      "total_filler_occurrences": 2,
+      "uhh_occurrences_count": 2,
+      "peak_zones": {
+        "distribution": "concentrated",
+        "zones": [
+          {
+            "start": 0.0,
+            "end": 20.0,
+            "rate_per_min": 6.0,
+            "overall_rate_per_min": 2.37,
+            "peak_ratio": 2.54
+          }
+        ],
+        "overall_rate_per_min": 2.37,
+        "threshold_multiplier": 2.0
+      },
       "message": "Filler words analysis completed successfully."
-    },
-    "pitch": {
-      "success": true,
-      "recording_id": 50,
-      "pitch_frames": 1016,
-      "voiced_frames": 125,
-      "pitch_mean": 160.0551090486381,
-      "pitch_min": 113.50242249877479,
-      "pitch_max": 248.95259726804576,
-      "pitch_std": 28.425066942885195,
-      "monotonous_segments": [],
-      "monotonous_segments_count": 0,
-      "segmentation": {
-        "success": true,
-        "change_points": {
-          "std": []
-        },
-        "segments": {
-          "std": [
-            {
-              "start": 40.85,
-              "end": 41.4,
-              "mean": 23.8453,
-              "std": 1.5009,
-              "min": 19.2835,
-              "max": 24.7792,
-              "count": 12
-            }
-          ]
-        },
-        "penalty_used": 144.27,
-        "sensitivity": 0.2
-      }
     },
     "hip": {
       "success": true,
@@ -85,21 +91,8 @@
           "max": 0.13023679278070832
         }
       },
-      "swaying_segments": [
-        {
-          "start_timestamp": 0.7,
-          "end_timestamp": 5.3,
-          "duration_seconds": 4.6,
-          "direction_changes": 3
-        },
-        {
-          "start_timestamp": 18.5,
-          "end_timestamp": 22.7,
-          "duration_seconds": 4.199999999999999,
-          "direction_changes": 3
-        }
-      ],
-      "swaying_segments_count": 2,
+      "swaying_segments": [],
+      "swaying_segments_count": 0,
       "segmentation": {
         "success": true,
         "change_points": {
@@ -110,8 +103,8 @@
             {
               "start": 0.0,
               "end": 45.0,
-              "mean": 1.6,
-              "std": 0.6633,
+              "mean": 1.8,
+              "std": 0.6,
               "min": 1.0,
               "max": 3.0,
               "count": 10
@@ -120,6 +113,98 @@
         },
         "penalty_used": 1.0,
         "sensitivity": 1.0
+      }
+    },
+    "pitch": {
+      "success": true,
+      "recording_id": 50,
+      "pitch_frames": 1016,
+      "voiced_frames": 842,
+      "pitch_mean": 139.28169358852168,
+      "pitch_min": 71.74928515811544,
+      "pitch_max": 290.29884560995936,
+      "pitch_std": 28.484938015909652,
+      "monotonous_segments": [
+        {
+          "start_timestamp": 29.55,
+          "end_timestamp": 31.05,
+          "duration_seconds": 1.5,
+          "std_dev": 2.92,
+          "range": 11.27
+        }
+      ],
+      "monotonous_segments_count": 1,
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "std": [
+            15.55,
+            20.8,
+            26.8,
+            28.55,
+            30.3
+          ]
+        },
+        "segments": {
+          "std": [
+            {
+              "start": 0.75,
+              "end": 15.5,
+              "mean": 25.1308,
+              "std": 6.8075,
+              "min": 7.5203,
+              "max": 41.7873,
+              "count": 270
+            },
+            {
+              "start": 15.55,
+              "end": 20.75,
+              "mean": 14.5931,
+              "std": 3.5011,
+              "min": 5.2628,
+              "max": 22.4821,
+              "count": 105
+            },
+            {
+              "start": 20.8,
+              "end": 26.75,
+              "mean": 30.5488,
+              "std": 11.2627,
+              "min": 13.5124,
+              "max": 53.7333,
+              "count": 105
+            },
+            {
+              "start": 26.8,
+              "end": 28.5,
+              "mean": 12.2989,
+              "std": 0.7705,
+              "min": 9.7007,
+              "max": 13.4304,
+              "count": 35
+            },
+            {
+              "start": 28.55,
+              "end": 30.25,
+              "mean": 8.2753,
+              "std": 0.5844,
+              "min": 5.6634,
+              "max": 9.0427,
+              "count": 35
+            },
+            {
+              "start": 30.3,
+              "end": 50.05,
+              "mean": 21.2653,
+              "std": 6.9925,
+              "min": 2.9169,
+              "max": 36.0381,
+              "count": 356
+            }
+          ]
+        },
+        "penalty_used": 144.27,
+        "sensitivity": 0.2
       }
     },
     "arm_movement": {
@@ -145,48 +230,38 @@
       "anomalies": {
         "no_movement_periods": [
           {
-            "start_timestamp": 44.2,
-            "end_timestamp": 45.5,
-            "duration_frames": 14
+            "start_timestamp": 36.2,
+            "end_timestamp": 40.2,
+            "duration_frames": 41
+          },
+          {
+            "start_timestamp": 46.8,
+            "end_timestamp": 50.7,
+            "duration_frames": 40
           }
         ],
         "excessive_movement_periods": [
           {
             "wrist": "left",
-            "start_timestamp": 14.1,
-            "end_timestamp": 14.3,
-            "duration_frames": 3
-          },
-          {
-            "wrist": "left",
-            "start_timestamp": 18.0,
-            "end_timestamp": 21.4,
+            "start_timestamp": 18.2,
+            "end_timestamp": 19.7,
             "duration_frames": 16
           },
           {
-            "wrist": "left",
-            "start_timestamp": 41.4,
-            "end_timestamp": 41.6,
-            "duration_frames": 3
-          },
-          {
             "wrist": "right",
-            "start_timestamp": 7.9,
-            "end_timestamp": 8.1,
-            "duration_frames": 3
-          },
-          {
-            "wrist": "right",
-            "start_timestamp": 20.9,
-            "end_timestamp": 21.4,
-            "duration_frames": 6
+            "start_timestamp": 20.4,
+            "end_timestamp": 21.6,
+            "duration_frames": 10
           }
         ],
         "thresholds": {
-          "no_movement_velocity_threshold": 0.2,
-          "excessive_movement_velocity_threshold": 0.3,
-          "min_consecutive_frames": 10,
-          "min_excessive_frames": 3,
+          "no_movement_velocity_threshold": 0.18,
+          "excessive_movement_velocity_threshold": 0.3346409824847888,
+          "excessive_z_score_k": 2.5,
+          "excessive_rolling_window": 15,
+          "velocity_mean": 0.1745944154487911,
+          "velocity_std": 0.06401862681439907,
+          "min_consecutive_frames": 40,
           "excessive_merge_gap_s": 2.0
         }
       },
@@ -248,13 +323,13 @@
       "success": true,
       "recording_id": 50,
       "volume_frames": 1016,
-      "volume_mean_rms": 0.016678553074598312,
+      "volume_mean_rms": 0.028685832396149635,
       "volume_min_rms": 0.0,
-      "volume_max_rms": 0.11102419346570969,
-      "volume_std_rms": 0.01889951527118683,
-      "dbfs_mean": -36.9,
+      "volume_max_rms": 0.10237938165664673,
+      "volume_std_rms": 0.01987416297197342,
+      "dbfs_mean": -31.25,
       "dbfs_min": -60.0,
-      "dbfs_max": -19.09,
+      "dbfs_max": -19.8,
       "too_soft_segments": [],
       "too_soft_count": 0,
       "too_loud_segments": [],
@@ -267,13 +342,13 @@
         "segments": {
           "mean": [
             {
-              "start": 1.0,
+              "start": 0.0,
               "end": 49.0,
-              "mean": -30.151,
-              "std": 2.5528,
-              "min": -34.117,
-              "max": -23.116,
-              "count": 44
+              "mean": -28.6941,
+              "std": 2.0639,
+              "min": -33.667,
+              "max": -23.69,
+              "count": 49
             }
           ]
         },
@@ -288,7 +363,6 @@
       "analyzed_frames": 508,
       "heatmap": {
         "yaw_bins": [
-          -75.0,
           -70.0,
           -65.0,
           -60.0,
@@ -317,8 +391,7 @@
           55.0,
           60.0,
           65.0,
-          70.0,
-          75.0
+          70.0
         ],
         "pitch_bins": [
           -30.0,
@@ -364,8 +437,6 @@
             0.0,
             0.0,
             0.0,
-            0.0,
-            0.0,
             0.0
           ],
           [
@@ -379,11 +450,6 @@
             0.0,
             0.0,
             0.0,
-            0.4,
-            0.2,
-            0.1,
-            0.1,
-            0.6000000000000001,
             0.0,
             0.0,
             0.0,
@@ -397,8 +463,11 @@
             0.0,
             0.0,
             0.0,
-            0.1,
-            0.1
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ],
           [
             0.0,
@@ -407,92 +476,176 @@
             0.0,
             0.0,
             0.0,
-            0.0,
             0.5,
+            0.1,
+            0.1,
+            0.0,
+            0.2,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.4,
+            0.4,
+            0.1,
+            0.1,
+            0.1,
+            0.0,
+            0.30000000000000004,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.2,
+            0.5
+          ],
+          [
+            0.0,
+            0.0,
+            0.4,
+            0.4,
+            0.6000000000000001,
+            0.4,
+            1.3,
+            0.5,
+            0.5,
+            0.5,
+            0.6000000000000001,
+            0.30000000000000004,
+            0.0,
+            0.2,
+            0.0,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.1,
+            0.1,
+            0.6000000000000001,
+            0.4,
+            0.1,
+            0.0,
+            0.0,
+            0.1,
+            0.1
+          ],
+          [
+            0.0,
+            0.0,
+            0.2,
+            0.5,
+            0.7000000000000001,
+            0.5,
+            0.7000000000000001,
+            1.0,
+            1.3,
+            3.2,
+            1.3,
+            0.9,
+            0.4,
+            0.30000000000000004,
+            0.2,
+            0.2,
+            0.30000000000000004,
+            0.5,
+            0.4,
+            0.2,
+            0.0,
+            0.7000000000000001,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.30000000000000004,
+            0.5,
+            0.4,
+            1.2000000000000002,
+            0.5,
+            1.3,
+            0.8,
+            0.5,
+            0.7000000000000001,
+            0.5,
+            0.30000000000000004,
+            0.5,
+            0.6000000000000001,
+            1.4000000000000001,
+            0.5,
+            0.30000000000000004,
+            1.0,
+            0.0,
+            0.2,
+            0.0,
+            0.4,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1,
+            0.30000000000000004,
+            0.2,
+            0.2,
+            0.1,
+            0.30000000000000004,
+            0.30000000000000004,
+            0.30000000000000004,
+            0.8,
+            0.7000000000000001,
+            0.8,
+            0.7000000000000001,
+            0.2,
+            0.4,
+            1.0,
+            0.8,
             1.1,
             0.4,
-            0.1,
-            0.1,
-            0.1,
-            0.0,
-            0.30000000000000004,
-            0.1,
             0.0,
             0.0,
             0.0,
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.1,
-            0.1,
-            0.2,
-            0.8,
-            0.9,
-            0.7000000000000001,
-            1.4000000000000001,
-            0.5,
-            0.8,
-            0.9,
-            0.1,
-            0.0,
-            0.0,
-            0.0,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.5,
-            0.2,
-            0.1,
-            0.0,
-            0.5,
-            0.1,
-            0.2
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.1,
-            0.2,
-            0.7000000000000001,
-            0.30000000000000004,
-            0.8,
-            1.6,
-            2.3000000000000003,
-            2.5,
-            1.5,
-            0.9,
-            0.7000000000000001,
-            0.30000000000000004,
-            0.30000000000000004,
-            0.1,
-            0.30000000000000004,
-            0.0,
-            0.2,
-            0.8,
-            0.2,
-            0.0,
-            0.1,
-            0.0,
-            0.1,
             0.0,
             0.0
           ],
@@ -504,181 +657,79 @@
             0.0,
             0.0,
             0.0,
-            0.30000000000000004,
-            0.5,
-            0.5,
-            0.8,
-            0.7000000000000001,
-            1.4000000000000001,
-            0.8,
-            1.0,
-            1.0,
-            0.5,
-            0.7000000000000001,
+            0.0,
+            0.1,
+            0.0,
+            0.1,
+            0.1,
+            0.1,
             0.6000000000000001,
-            1.2000000000000002,
-            0.30000000000000004,
-            0.6000000000000001,
+            0.0,
+            0.2,
             0.1,
             0.1,
             0.1,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.2,
-            0.2,
-            0.4,
-            0.30000000000000004,
-            0.2,
             0.5,
             0.5,
-            1.0,
-            0.8,
-            0.9,
-            1.5,
-            1.0,
-            0.1,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.1,
-            0.2,
-            0.30000000000000004,
-            0.1,
-            0.4,
-            0.2,
-            0.2,
-            0.2,
-            0.4,
-            1.0,
-            0.2,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.1,
             0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.2,
+            0.7000000000000001,
+            0.0,
+            0.0,
+            0.0,
+            0.1,
+            0.1,
+            0.0,
+            0.1,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.2,
             0.0,
             0.0,
             0.0,
             0.0,
             0.1,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.2,
-            0.0,
-            0.0,
             0.1,
-            0.0,
-            0.1,
-            0.1,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
             0.0,
             0.0,
             0.0,
@@ -705,9 +756,7 @@
             0.0,
             0.0,
             0.0,
-            0.0,
-            0.0,
-            0.0,
+            0.1,
             0.0,
             0.0,
             0.0,
@@ -726,80 +775,171 @@
           "pitch": 5.0
         },
         "shape": {
-          "n_yaw_bins": 30,
+          "n_yaw_bins": 28,
           "n_pitch_bins": 12
         }
       },
       "statistics": {
         "total_frames": 508,
         "total_duration": 50.8,
-        "looking_at_audience_frames": 471,
-        "looking_at_audience_duration": 47.1,
-        "looking_at_audience_percentage": 92.72,
-        "looking_away_frames": 37,
-        "looking_away_duration": 3.7,
-        "looking_away_percentage": 7.28,
-        "avg_yaw": 0.2,
-        "avg_pitch": -5.22,
-        "yaw_range": 130.44,
+        "back_facing_frames": 0,
+        "back_facing_duration": 0.0,
+        "looking_at_audience_frames": 384,
+        "looking_at_audience_duration": 38.4,
+        "looking_at_audience_percentage": 75.59,
+        "looking_away_frames": 124,
+        "looking_away_duration": 12.4,
+        "looking_away_percentage": 24.41,
+        "avg_yaw": -10.09,
+        "avg_pitch": 0.36,
+        "yaw_range": 130.04,
         "pitch_range": 43.24,
-        "num_looking_away_events": 3
+        "num_looking_away_events": 14
       },
       "looking_away_events": [
         {
-          "start_timestamp": 4.7,
-          "end_timestamp": 6.2,
+          "start_timestamp": 0.9,
+          "end_timestamp": 1.3,
+          "duration_frames": 5,
+          "duration_seconds": 0.5,
+          "avg_yaw": -43.59431173231856,
+          "avg_pitch": -2.329077895200075
+        },
+        {
+          "start_timestamp": 4.1,
+          "end_timestamp": 6.3,
+          "duration_frames": 23,
+          "duration_seconds": 2.3000000000000003,
+          "avg_yaw": -46.423389610941975,
+          "avg_pitch": -7.895918734364044
+        },
+        {
+          "start_timestamp": 7.7,
+          "end_timestamp": 8.1,
+          "duration_frames": 5,
+          "duration_seconds": 0.5,
+          "avg_yaw": 15.97644561137425,
+          "avg_pitch": 21.87318642536185
+        },
+        {
+          "start_timestamp": 8.6,
+          "end_timestamp": 9.3,
+          "duration_frames": 8,
+          "duration_seconds": 0.8,
+          "avg_yaw": -52.56981123616745,
+          "avg_pitch": -4.244582431514273
+        },
+        {
+          "start_timestamp": 9.8,
+          "end_timestamp": 10.4,
+          "duration_frames": 7,
+          "duration_seconds": 0.7000000000000001,
+          "avg_yaw": -13.524321161536262,
+          "avg_pitch": -16.884479392582303
+        },
+        {
+          "start_timestamp": 17.6,
+          "end_timestamp": 19.1,
           "duration_frames": 16,
           "duration_seconds": 1.6,
-          "avg_yaw": -33.052293107771256,
-          "avg_pitch": -16.720246396073094
+          "avg_yaw": -46.30227280492628,
+          "avg_pitch": -0.1153211053455998
         },
         {
-          "start_timestamp": 9.7,
-          "end_timestamp": 10.7,
+          "start_timestamp": 19.9,
+          "end_timestamp": 20.9,
           "duration_frames": 11,
           "duration_seconds": 1.1,
-          "avg_yaw": -2.6243851804785994,
-          "avg_pitch": -20.753916573127245
+          "avg_yaw": 63.080259901978984,
+          "avg_pitch": -10.136758565899184
         },
         {
-          "start_timestamp": 29.5,
-          "end_timestamp": 30.4,
+          "start_timestamp": 21.3,
+          "end_timestamp": 21.8,
+          "duration_frames": 6,
+          "duration_seconds": 0.6000000000000001,
+          "avg_yaw": -47.32202011158287,
+          "avg_pitch": -3.6791655428234087
+        },
+        {
+          "start_timestamp": 25.6,
+          "end_timestamp": 26.5,
           "duration_frames": 10,
           "duration_seconds": 1.0,
-          "avg_yaw": -18.36627517690134,
-          "avg_pitch": -20.703336511130182
+          "avg_yaw": -51.56272464267236,
+          "avg_pitch": 1.2691041617689713
+        },
+        {
+          "start_timestamp": 29.6,
+          "end_timestamp": 30.2,
+          "duration_frames": 7,
+          "duration_seconds": 0.7000000000000001,
+          "avg_yaw": -35.77042937723862,
+          "avg_pitch": -15.935692950811601
+        },
+        {
+          "start_timestamp": 31.0,
+          "end_timestamp": 31.5,
+          "duration_frames": 6,
+          "duration_seconds": 0.6000000000000001,
+          "avg_yaw": -2.4383743819517614,
+          "avg_pitch": 18.678553125816443
+        },
+        {
+          "start_timestamp": 33.8,
+          "end_timestamp": 34.2,
+          "duration_frames": 5,
+          "duration_seconds": 0.5,
+          "avg_yaw": -5.770301585520388,
+          "avg_pitch": 15.554143038652331
+        },
+        {
+          "start_timestamp": 45.8,
+          "end_timestamp": 46.6,
+          "duration_frames": 9,
+          "duration_seconds": 0.9,
+          "avg_yaw": -51.607077222078146,
+          "avg_pitch": -8.402187113582432
+        },
+        {
+          "start_timestamp": 49.5,
+          "end_timestamp": 50.0,
+          "duration_frames": 6,
+          "duration_seconds": 0.6000000000000001,
+          "avg_yaw": -48.36009776188982,
+          "avg_pitch": -0.045317740368127225
         }
       ],
       "staring_events": [
         {
           "start_timestamp": 9.5,
-          "end_timestamp": 11.6,
-          "duration_frames": 22,
-          "duration_seconds": 2.2,
-          "avg_yaw": -4.670317631747286,
-          "avg_pitch": -15.526271509228126
-        },
-        {
-          "start_timestamp": 14.5,
-          "end_timestamp": 16.8,
-          "duration_frames": 24,
-          "duration_seconds": 2.4000000000000004,
-          "avg_yaw": -13.133003556155728,
-          "avg_pitch": -6.987265383648121
-        },
-        {
-          "start_timestamp": 40.3,
-          "end_timestamp": 42.2,
+          "end_timestamp": 11.4,
           "duration_frames": 20,
           "duration_seconds": 2.0,
-          "avg_yaw": -20.47944732096681,
-          "avg_pitch": -10.790163856518001
+          "avg_yaw": -15.950774959814797,
+          "avg_pitch": -10.733895608866504
+        },
+        {
+          "start_timestamp": 15.0,
+          "end_timestamp": 17.4,
+          "duration_frames": 25,
+          "duration_seconds": 2.5,
+          "avg_yaw": -18.65010319198628,
+          "avg_pitch": -0.41407859533771285
+        },
+        {
+          "start_timestamp": 34.7,
+          "end_timestamp": 36.7,
+          "duration_frames": 21,
+          "duration_seconds": 2.1,
+          "avg_yaw": -28.831223968793182,
+          "avg_pitch": 1.701594521040069
         }
       ],
+      "back_facing_events": [],
       "audience_zone_thresholds": {
-        "yaw_min": -60.0,
-        "yaw_max": 60.0,
+        "yaw_min": -40.0,
+        "yaw_max": 40.0,
         "pitch_min": -15.0,
         "pitch_max": 15.0
       },
@@ -817,8 +957,8 @@
             {
               "start": 0.0,
               "end": 50.0,
-              "mean": 0.1216,
-              "std": 0.2428,
+              "mean": 0.2613,
+              "std": 0.3027,
               "min": 0.0,
               "max": 1.0,
               "count": 51
@@ -834,45 +974,45 @@
   "performance": {
     "success": true,
     "recording_id": 50,
-    "total_score": 93.0,
-    "total_label": "V\u00fdborn\u00e9",
+    "total_score": 89.0,
+    "total_label": "Dobré",
     "dimensions": {
       "voice": {
-        "score": 100.0,
-        "label": "V\u00fdborn\u00e9",
+        "score": 95.9,
+        "label": "Výborné",
         "weight": 0.37,
         "issues": [],
         "issue_locations": {}
       },
       "fluency": {
-        "score": 100.0,
-        "label": "V\u00fdborn\u00e9",
+        "score": 95.1,
+        "label": "Výborné",
         "weight": 0.27,
         "issues": [],
         "issue_locations": {},
-        "filler_per_minute": 0.0
+        "filler_per_minute": 2.37
       },
       "body": {
-        "score": 61.3,
-        "label": "Priemer",
+        "score": 84.7,
+        "label": "Dobré",
         "weight": 0.09,
-        "issues": [
-          "body_hip_sway"
-        ],
-        "issue_locations": {
-          "body_hip_sway": "throughout"
-        }
-      },
-      "eye_contact": {
-        "score": 86.8,
-        "label": "Dobr\u00e9",
-        "weight": 0.27,
         "issues": [],
         "issue_locations": {}
+      },
+      "eye_contact": {
+        "score": 74.8,
+        "label": "Priemer",
+        "weight": 0.27,
+        "issues": [
+          "eye_contact_away"
+        ],
+        "issue_locations": {
+          "eye_contact_away": "throughout"
+        }
       }
     },
     "recommendations": [
-      "Po\u010das prezent\u00e1cie ste sa v\u00fdrazne k\u00fdvali na bokoch. Stabiln\u00fd postoj zvy\u0161uje d\u00f4veryhodnos\u0165 \u2014 sk\u00faste st\u00e1\u0165 pevne na oboch noh\u00e1ch. Vyskytovalo sa to po\u010das celej prezent\u00e1cie."
+      "Príliš často ste sa pozerali mimo publikum. Snažte sa udržiavať očný kontakt s rôznymi časťami publika. Vyskytovalo sa to počas celej prezentácie."
     ]
   }
 }

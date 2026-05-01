@@ -1,0 +1,61 @@
+{
+  "video_id": "V7",
+  "video_file": "V7.mp4",
+  "duration_s": 107,
+  "annotator": "Matej",
+  "notes": "Prejav PS",
+  "annotations": {
+    "eye_contact_away": [
+      {"start": 7.0, "end": 10.5},
+      {"start": 18.0, "end": 19.0},
+      {"start": 36.5, "end": 37.5},
+      {"start": 40.0, "end": 49.0},
+      {"start": 50.0, "end": 61.5},
+      {"start": 71.0, "end": 72.5},
+      {"start": 78.5, "end": 79.0},
+      {"start": 83.5, "end": 86.5},
+      {"start": 87.5, "end": 93.0},
+      {"start": 95.5, "end": 98.0}
+    ],
+    "eye_contact_back": [],
+    "arm_no_gesture": [
+      {"start": 3.0, "end": 29.0},
+      {"start": 31.0, "end": 40.0},
+      {"start": 42.0, "end": 44.0},
+      {"start": 47.5, "end": 52.0},
+      {"start": 61.5, "end": 65.0},
+      {"start": 68.0, "end": 72.0},
+      {"start": 74.0, "end": 80.0},
+      {"start": 90.0, "end": 100},
+      {"start": 102.0, "end": 107.0}
+    ],
+    "arm_excessive": [],
+    "hip_sway": [
+      {"start": 19.0, "end": 26.0},
+      {"start": 30.0, "end": 35.0},
+      {"start": 44.0, "end": 49.0},
+      {"start": 54.0, "end": 60.0},
+      {"start": 72.0, "end": 77.0},
+      {"start": 82.0, "end": 90.0},
+      {"start": 93.0, "end": 98.0},
+      {"start": 102.0, "end": 104.0}
+    ],
+    "filler_words": [
+      {"start": 3.0, "end": 3.5, "word": "uhh"},
+      {"start": 8.5, "end": 9.0, "word": "uhh"},
+      {"start": 10.5, "end": 11, "word": "teda"},
+      {"start": 13.0, "end": 14, "word": "uhh"},
+      {"start": 26.0, "end": 26.0, "word": "uhh"},
+      {"start": 40.0, "end": 40.5, "word": "uhh"},
+      {"start": 42.0, "end": 42.5, "word": "uhh"},
+      {"start": 71.5, "end": 72.0, "word": "uhh"},
+      {"start": 77.0, "end": 77.5, "word": "no"},
+      {"start": 92.0, "end": 93.0, "word": "uhh"},
+      {"start": 96.0, "end": 96.5, "word": "no"},
+      {"start": 38.5, "end": 39.0, "word": "teda"}
+    ],
+    "pitch_monotone": [],
+    "volume_too_quiet": [],
+    "volume_too_loud": []
+  }
+}

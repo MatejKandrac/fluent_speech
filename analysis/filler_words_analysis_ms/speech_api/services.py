@@ -280,62 +280,155 @@ class FillerWordsAnalysisService:
             print(f"Error fetching pitch timeseries: {e}")
             return None, None
 
-    def detect_uhh_sounds(
+    @staticmethod
+    def _compute_flux_timeseries(
+        audio: np.ndarray, sr: int, n_frames: int, hop_length: int = 800, n_fft: int = 1600
+    ) -> np.ndarray:
+        mono = audio.mean(axis=1) if audio.ndim > 1 else audio
+        window = np.hanning(n_fft)
+        flux = np.full(n_frames, np.nan)
+        prev_spec = None
+        for i in range(n_frames):
+            start = i * hop_length
+            end = start + n_fft
+            if end > len(mono):
+                break
+            spec = np.abs(np.fft.rfft(mono[start:end] * window))
+            if prev_spec is not None:
+                flux[i] = float(np.sqrt(np.sum((spec - prev_spec) ** 2)))
+            prev_spec = spec
+        return flux
+
+    @staticmethod
+    def _segment_mean_flux(
+        audio: np.ndarray, sr: int, start_time: float, end_time: float,
+        hop_length: int = 800, n_fft: int = 1600
+    ) -> float:
+        mono = audio.mean(axis=1) if audio.ndim > 1 else audio
+        start_s = int(start_time * sr)
+        end_s = int(end_time * sr)
+        chunk = mono[start_s:end_s]
+        window = np.hanning(n_fft)
+        prev_spec = None
+        flux_vals = []
+        for i in range(0, len(chunk) - n_fft + 1, hop_length):
+            spec = np.abs(np.fft.rfft(chunk[i:i + n_fft] * window))
+            if prev_spec is not None:
+                flux_vals.append(float(np.sqrt(np.sum((spec - prev_spec) ** 2))))
+            prev_spec = spec
+        return float(np.mean(flux_vals)) if flux_vals else float('nan')
+
+    def _log_sliding_window_candidates(
         self,
         words: List[Dict[str, Any]],
         pitch_timeseries: List[Dict[str, Any]],
         duration_per_frame: float,
-    ) -> List[Dict[str, Any]]:
+        audio: Optional[np.ndarray] = None,
+        sr: Optional[int] = None,
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         std_threshold = self.config['uhh_pitch_std_threshold']
-        min_gap_duration = self.config['uhh_min_gap_duration_ms'] / 1000.0
-        min_voiced_duration = self.config['uhh_min_voiced_duration_ms'] / 1000.0
+        flux_max = self.config['uhh_flux_max']
+        min_duration = self.config['uhh_min_voiced_duration_ms'] / 1000.0
+        max_duration = self.config['uhh_max_run_duration_ms'] / 1000.0
+        window_frames = max(2, round(self.config['uhh_window_ms'] / 1000.0 / duration_per_frame))
+        min_voiced_fraction = self.config['uhh_min_voiced_fraction']
 
-        # Find inter-word gaps only (pre-speech silence before first word is excluded)
-        gaps = []
-        if words:
-            for i in range(len(words) - 1):
-                gap_start = words[i]['end_time']
-                gap_end = words[i + 1]['start_time']
-                if gap_end - gap_start >= min_gap_duration:
-                    gaps.append((gap_start, gap_end))
+        pitches = np.array([
+            f['pitch'] if f['pitch'] is not None else np.nan
+            for f in pitch_timeseries
+        ])
+        n = len(pitches)
 
-        uhh_occurrences = []
+        print(f"  [sliding window] {window_frames} frames ({self.config['uhh_window_ms']:.0f}ms), "
+              f"std<{std_threshold}, voiced>={min_voiced_fraction*100:.0f}%")
 
-        for gap_start, gap_end in gaps:
-            # Collect pitch values for frames within this gap
-            voiced_values = [
-                frame['pitch']
-                for frame in pitch_timeseries
-                if gap_start <= frame['time'] < gap_end and frame['pitch'] is not None
-            ]
+        stable = np.zeros(n, dtype=bool)
+        for i in range(n - window_frames + 1):
+            window = pitches[i:i + window_frames]
+            voiced = window[~np.isnan(window)]
+            if len(voiced) >= window_frames * min_voiced_fraction and np.std(voiced) < std_threshold:
+                stable[i] = True
 
-            if not voiced_values:
+        segments = []
+        i = 0
+        while i < n:
+            if stable[i]:
+                seg_start = i
+                seg_end = i + window_frames
+                i += 1
+                while i < n and stable[i]:
+                    seg_end = i + window_frames
+                    i += 1
+                segments.append((seg_start, min(seg_end - 1, n - 1)))
+            else:
+                i += 1
+
+        all_candidates = []
+        accepted = []
+        for start_idx, end_idx in segments:
+            seg_start_time = pitch_timeseries[start_idx]['time']
+            seg_end_time = pitch_timeseries[end_idx]['time'] + duration_per_frame
+            duration = seg_end_time - seg_start_time
+
+            if duration < min_duration or duration > max_duration:
                 continue
 
-            voiced_duration = len(voiced_values) * duration_per_frame
-            if voiced_duration < min_voiced_duration:
+            voiced_values = pitches[start_idx:end_idx + 1]
+            voiced_values = voiced_values[~np.isnan(voiced_values)]
+            if len(voiced_values) == 0:
                 continue
 
             pitch_std = float(np.std(voiced_values))
-            if pitch_std < std_threshold:
-                uhh_occurrences.append({
+            pitch_mean = float(np.mean(voiced_values))
+
+            flux = float('nan')
+            if audio is not None and sr is not None:
+                flux = self._segment_mean_flux(audio, sr, seg_start_time, seg_end_time)
+
+            passes = (
+                pitch_std < std_threshold and
+                (flux_max <= 0 or np.isnan(flux) or flux < flux_max)
+            )
+
+            overlapping_words = [
+                w['word'] for w in words
+                if w['start_time'] < seg_end_time and w['end_time'] > seg_start_time
+            ]
+            overlap_str = ' '.join(overlapping_words) if overlapping_words else '(no whisper words)'
+            flux_str = f' flux={flux:.0f}' if not np.isnan(flux) else ''
+            marker = 'ACCEPT' if passes else 'skip  '
+            print(f"  [{marker}] t={seg_start_time:.2f}s dur={duration*1000:.0f}ms "
+                  f"std={pitch_std:.1f} mean={pitch_mean:.0f}Hz{flux_str} | [{overlap_str}]")
+
+            all_candidates.append({
+                'start_time': seg_start_time,
+                'end_time': seg_end_time,
+                'duration': duration,
+                'pitch_std': pitch_std,
+                'pitch_mean': pitch_mean,
+                'flux': flux,
+            })
+            if passes:
+                accepted.append({
                     'word': 'uhh',
                     'language': 'non-verbal',
-                    'start_time': round(gap_start, 2),
-                    'end_time': round(gap_end, 2),
-                    'pitch_mean': round(float(np.mean(voiced_values)), 2),
+                    'start_time': round(seg_start_time, 2),
+                    'end_time': round(seg_end_time, 2),
+                    'pitch_mean': round(pitch_mean, 2),
                     'pitch_std': round(pitch_std, 2),
-                    'voiced_duration': round(voiced_duration, 2),
+                    'voiced_duration': round(duration, 2),
                 })
 
-        return uhh_occurrences
+        return all_candidates, accepted
 
     def save_pitch_debug_plot(
         self,
         pitch_timeseries: List[Dict[str, Any]],
         words: List[Dict[str, Any]],
-        uhh_occurrences: List[Dict[str, Any]],
+        candidates: List[Dict[str, Any]],
         recording_id: int,
+        audio: Optional[np.ndarray] = None,
+        sr: Optional[int] = None,
     ):
         try:
             output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
@@ -344,57 +437,55 @@ class FillerWordsAnalysisService:
             times = [f['time'] for f in pitch_timeseries]
             pitches = [f['pitch'] if f['pitch'] is not None else np.nan for f in pitch_timeseries]
 
-            fig, ax = plt.subplots(figsize=(18, 5))
+            has_flux = audio is not None and sr is not None
+            flux_vals = None
+            if has_flux:
+                flux_vals = self._compute_flux_timeseries(audio, sr, len(pitch_timeseries))
 
-            # Shade word spans (light blue) so gaps are visually obvious
+            fig, axes = plt.subplots(
+                2 if has_flux else 1, 1,
+                figsize=(18, 9 if has_flux else 5),
+                sharex=True,
+                gridspec_kw={'height_ratios': [2, 1]} if has_flux else {}
+            )
+            ax_pitch = axes[0] if has_flux else axes
+            ax_flux = axes[1] if has_flux else None
+
             for word in words:
-                ax.axvspan(word['start_time'], word['end_time'], color='steelblue', alpha=0.15)
-
-            # Shade detected uhh segments (orange) and annotate with std
-            for uhh in uhh_occurrences:
-                ax.axvspan(uhh['start_time'], uhh['end_time'], color='orange', alpha=0.4, label='uhh')
-                ax.text(
-                    (uhh['start_time'] + uhh['end_time']) / 2,
-                    ax.get_ylim()[1] if ax.get_ylim()[1] > 0 else 300,
-                    f"std={uhh['pitch_std']:.1f}",
-                    ha='center', va='bottom', fontsize=7, color='darkorange'
-                )
-
-            # Plot pitch on top
-            ax.plot(times, pitches, linewidth=1, color='green', label='Pitch (Hz)')
-
-            # Annotate uhh std values (re-do after plot so ylim is known)
-            ymax = ax.get_ylim()[1]
-            for uhh in uhh_occurrences:
-                ax.text(
-                    (uhh['start_time'] + uhh['end_time']) / 2,
-                    ymax * 0.95,
-                    f"std={uhh['pitch_std']:.1f}",
-                    ha='center', va='top', fontsize=7,
-                    color='darkorange',
-                    bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.6)
-                )
-
-            ax.set_xlabel('Time (s)', fontsize=11)
-            ax.set_ylabel('Pitch (Hz)', fontsize=11)
-            ax.set_title(
-                f'Pitch + Uhh Detection — Recording {recording_id}  '
-                f'(blue=word, orange=uhh, threshold std<{self.config["uhh_pitch_std_threshold"]})',
+                ax_pitch.axvspan(word['start_time'], word['end_time'], color='steelblue', alpha=0.15)
+            for c in candidates:
+                ax_pitch.axvspan(c['start_time'], c['end_time'], color='orange', alpha=0.35,
+                                 label='candidate')
+            ax_pitch.plot(times, pitches, linewidth=1, color='green', label='Pitch (Hz)')
+            ax_pitch.set_ylabel('Pitch (Hz)', fontsize=11)
+            ax_pitch.set_title(
+                f'Pitch + Candidates — Recording {recording_id}  '
+                f'(blue=word, orange=candidate, std<{self.config["uhh_pitch_std_threshold"]})',
                 fontsize=12
             )
-            ax.set_ylim([50, 350])
-            ax.grid(True, alpha=0.3)
+            ax_pitch.set_ylim([50, 350])
+            ax_pitch.grid(True, alpha=0.3)
+            handles, labels = ax_pitch.get_legend_handles_labels()
+            ax_pitch.legend(dict(zip(labels, handles)).values(),
+                            dict(zip(labels, handles)).keys(), loc='upper right')
 
-            # Deduplicate legend
-            handles, labels = ax.get_legend_handles_labels()
-            by_label = dict(zip(labels, handles))
-            ax.legend(by_label.values(), by_label.keys(), loc='upper right')
+            if has_flux and ax_flux is not None:
+                flux_times = times[:len(flux_vals)]
+                ax_flux.plot(flux_times, flux_vals, linewidth=0.8, color='purple', label='Spectral flux')
+                for c in candidates:
+                    ax_flux.axvspan(c['start_time'], c['end_time'], color='orange', alpha=0.25)
+                ax_flux.set_xlabel('Time (s)', fontsize=11)
+                ax_flux.set_ylabel('Spectral flux', fontsize=11)
+                ax_flux.grid(True, alpha=0.3)
+                ax_flux.legend(loc='upper right')
+            else:
+                ax_pitch.set_xlabel('Time (s)', fontsize=11)
 
             plt.tight_layout()
             output_path = output_dir / 'pitch_uhh.png'
             plt.savefig(str(output_path), dpi=150, bbox_inches='tight')
             plt.close(fig)
-            print(f"Pitch uhh debug plot saved to: {output_path}")
+            print(f"Pitch debug plot saved to: {output_path}")
 
         except Exception as e:
             print(f"Error saving pitch debug plot: {e}")
@@ -402,17 +493,11 @@ class FillerWordsAnalysisService:
     def save_uhh_audio_clips(
         self,
         uhh_occurrences: List[Dict[str, Any]],
-        recording_filename: str,
         recording_id: int,
+        audio: np.ndarray,
+        sr: int,
     ):
         try:
-            processed_wav = Path(settings.VIDEO_STORAGE_PATH) / (Path(recording_filename).stem + '.wav')
-            if not processed_wav.exists():
-                print(f"Processed WAV not found at {processed_wav}, skipping uhh clip export")
-                return
-
-            audio, sr = sf.read(str(processed_wav))
-
             output_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
             output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -428,39 +513,169 @@ class FillerWordsAnalysisService:
         except Exception as e:
             print(f"Error saving uhh audio clips: {e}")
 
-    def call_segmentation(
+    def find_filler_peak_zones(
         self,
         all_occurrences: List[Dict[str, Any]],
         duration: float,
         recording_id: int,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
+        """Detect one or more time segments with elevated filler word density.
+
+        Uses a bottom-up segmentation approach (one of the four approaches
+        described in the thesis, section 2.4.1): starts with each fixed-size
+        bin as its own segment, then iteratively merges adjacent segments whose
+        mean filler rates are most similar. Merging stops when the cheapest
+        remaining merge would join two segments that differ by more than
+        merge_threshold (= k × overall std of rates). This naturally isolates
+        high-density regions without needing a global penalty parameter.
+
+        Post-filter: segments whose mean rate exceeds the overall rate by
+        peak_zone_threshold_multiplier are returned as filler zones.
+        """
+        if not all_occurrences or duration <= 0:
+            return {'zones': [], 'distribution': 'even'}
+
+        total = len(all_occurrences)
+        overall_rate_per_min = (total / duration) * 60.0
+        threshold_multiplier = self.config.get('peak_zone_threshold_multiplier', 2.0)
+        merge_k = self.config.get('bottom_up_merge_k', 1.0)
+
+        bin_size = self.config.get('segmentation_bin_size', 10.0)
+        n_bins = max(1, int(np.ceil(duration / bin_size)))
+        counts = np.zeros(n_bins)
+
+        for occ in all_occurrences:
+            idx = min(int(occ['start_time'] / bin_size), n_bins - 1)
+            counts[idx] += 1
+
+        rates = counts * (60.0 / bin_size)  # fillers/minute per bin
+
+        print(
+            f"Filler bottom-up segmentation: {n_bins} bins × {bin_size}s, "
+            f"rates/min={[round(v, 1) for v in rates]}, "
+            f"overall={overall_rate_per_min:.1f}/min"
+        )
+
+        if n_bins < 2:
+            return {'zones': [], 'distribution': 'even'}
+
+        overall_std = float(np.std(rates))
+        merge_threshold = merge_k * overall_std
+
+        # Bottom-up segmentation: each entry is [bin_start, bin_end, weighted_mean]
+        # bin_start/end are bin indices (inclusive)
+        segs = [[i, i, float(rates[i])] for i in range(n_bins)]
+
+        while len(segs) > 1:
+            costs = [abs(segs[i][2] - segs[i + 1][2]) for i in range(len(segs) - 1)]
+            min_cost = min(costs)
+            if min_cost > merge_threshold:
+                break
+            i = costs.index(min_cost)
+            lo, hi = segs[i][0], segs[i + 1][1]
+            width_a = segs[i][1] - segs[i][0] + 1
+            width_b = segs[i + 1][1] - segs[i + 1][0] + 1
+            merged_mean = (segs[i][2] * width_a + segs[i + 1][2] * width_b) / (width_a + width_b)
+            segs[i] = [lo, hi, merged_mean]
+            del segs[i + 1]
+
+        print(f"Bottom-up produced {len(segs)} segment(s): "
+              f"{[(round(s[0]*bin_size,1), round(s[1]*bin_size+bin_size,1), round(s[2],1)) for s in segs]}")
+
+        cutoff = overall_rate_per_min * threshold_multiplier
+        zones = []
+        for seg in segs:
+            if seg[2] >= cutoff:
+                start_s = round(seg[0] * bin_size, 2)
+                end_s   = round(min((seg[1] + 1) * bin_size, duration), 2)
+                zones.append({
+                    'start': start_s,
+                    'end': end_s,
+                    'rate_per_min': round(seg[2], 2),
+                    'overall_rate_per_min': round(overall_rate_per_min, 2),
+                    'peak_ratio': round(seg[2] / overall_rate_per_min, 2) if overall_rate_per_min > 0 else None,
+                })
+
+        distribution = 'concentrated' if zones else 'even'
+        print(f"Filler zones: {len(zones)} ({distribution}), cutoff={cutoff:.1f}/min")
+
+        self._save_zone_plot(rates, segs, zones, cutoff, overall_rate_per_min,
+                             bin_size, duration, recording_id)
+
+        return {
+            'distribution': distribution,
+            'zones': zones,
+            'overall_rate_per_min': round(overall_rate_per_min, 2),
+            'threshold_multiplier': threshold_multiplier,
+        }
+
+    def _save_zone_plot(
+        self,
+        rates: np.ndarray,
+        segs: List[List],
+        zones: List[Dict],
+        cutoff: float,
+        overall_rate: float,
+        bin_size: float,
+        duration: float,
+        recording_id: int,
+    ):
         try:
-            bin_size = self.config['segmentation_bin_size']
-            time_labels, filler_counts = self.create_timeline_bins(all_occurrences, duration, bin_size)
+            out_dir = Path(settings.BASE_DIR) / 'debug_output' / str(recording_id)
+            out_dir.mkdir(parents=True, exist_ok=True)
 
-            # Filter out empty bins so PELT isn't dominated by zero-count gaps
-            series = [
-                {'time': round(t, 3), 'value': float(c)}
-                for t, c in zip(time_labels, filler_counts)
-                if c > 0 or t == 0  # keep t=0 as anchor
-            ]
+            n = len(rates)
+            bin_starts = [i * bin_size for i in range(n)]
+            bin_widths = [min(bin_size, duration - s) for s in bin_starts]
 
-            if len(series) < 4:
-                print("Not enough bins for filler word segmentation")
-                return None
+            zone_set = set()
+            for z in zones:
+                for seg in segs:
+                    if round(seg[0] * bin_size, 2) == z['start']:
+                        for b in range(seg[0], seg[1] + 1):
+                            zone_set.add(b)
 
-            url = f"{settings.SEGMENTATION_SERVICE_URL}/api/v1/segment/"
-            response = requests.post(url, json={
-                'series': series,
-                'methods': ['mean'],
-                'sensitivity': self.config['segmentation_sensitivity'],
-                'label': f'filler_{recording_id}',
-            }, timeout=30)
-            response.raise_for_status()
-            return response.json()
+            colors = ['#e74c3c' if i in zone_set else '#95a5a6' for i in range(n)]
+
+            fig, ax = plt.subplots(figsize=(14, 5))
+            bars = ax.bar(bin_starts, rates, width=bin_widths, align='edge',
+                          color=colors, edgecolor='white', linewidth=0.8)
+
+            ax.axhline(overall_rate, color='steelblue', linewidth=1.8,
+                       linestyle='--', label=f'Overall avg ({overall_rate:.1f}/min)')
+            ax.axhline(cutoff, color='#e74c3c', linewidth=1.5,
+                       linestyle=':', label=f'Zone threshold ({cutoff:.1f}/min = {self.config["peak_zone_threshold_multiplier"]:.1f}× avg)')
+
+            for seg in segs[:-1]:
+                boundary = (seg[1] + 1) * bin_size
+                ax.axvline(boundary, color='black', linewidth=1.0, linestyle='-', alpha=0.4)
+
+            for seg in segs:
+                mid = (seg[0] + seg[1] + 1) / 2 * bin_size
+                ax.text(mid, max(rates) * 0.95, f'{seg[2]:.0f}',
+                        ha='center', va='top', fontsize=8, color='#2c3e50',
+                        bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.7))
+
+            ax.set_xlabel('Time (s)', fontsize=11)
+            ax.set_ylabel('Filler words / minute', fontsize=11)
+            ax.set_title(
+                f'Filler Word Density — Recording {recording_id}  '
+                f'(bin={bin_size:.0f}s, merge_k={self.config["bottom_up_merge_k"]}, '
+                f'threshold={self.config["peak_zone_threshold_multiplier"]}×)',
+                fontsize=12
+            )
+            ax.set_xlim(0, duration)
+            ax.set_ylim(0, max(max(rates) * 1.15, cutoff * 1.15, 10))
+            ax.legend(loc='upper right', fontsize=9)
+            ax.grid(True, axis='y', alpha=0.3)
+
+            plt.tight_layout()
+            path = out_dir / 'filler_zones.png'
+            plt.savefig(str(path), dpi=150, bbox_inches='tight')
+            plt.close(fig)
+            print(f"Filler zone plot saved to: {path}")
         except Exception as e:
-            print(f"Segmentation service call failed: {e}")
-            return None
+            print(f"Error saving filler zone plot: {e}")
 
     def analyze_filler_words(self, recording_id: int) -> Dict[str, Any]:
         print(f"Analyzing filler words for recording ID: {recording_id}")
@@ -493,37 +708,40 @@ class FillerWordsAnalysisService:
         filler_occurrences = self.detect_filler_words(transcript)
         print(f"Detected {len(filler_occurrences)} filler word occurrences")
 
-        # Detect uhh sounds via pitch cross-referencing
+        # Log stable-pitch candidates via sliding window (diagnostic only, not added to score)
         words = [w for seg in transcript.get('segments', []) for w in seg.get('words', [])]
         pitch_timeseries, duration_per_frame = self.fetch_pitch_timeseries(recording_id)
-        uhh_occurrences = []
+        audio_data, audio_sr = None, None
+        candidates = []
         if pitch_timeseries is not None:
-            uhh_occurrences = self.detect_uhh_sounds(words, pitch_timeseries, duration_per_frame)
-            print(f"Detected {len(uhh_occurrences)} uhh sounds")
+            try:
+                processed_wav = Path(settings.VIDEO_STORAGE_PATH) / (Path(recording['filename']).stem + '.wav')
+                if processed_wav.exists():
+                    audio_data, audio_sr = sf.read(str(processed_wav))
+            except Exception as e:
+                print(f"Could not load audio for spectral flux: {e}")
+            candidates, uhh_occurrences = self._log_sliding_window_candidates(
+                words, pitch_timeseries, duration_per_frame, audio_data, audio_sr
+            )
+            print(f"Sliding window: {len(candidates)} candidates, {len(uhh_occurrences)} accepted")
         else:
-            print("Pitch timeseries unavailable, skipping uhh detection")
+            print("Pitch timeseries unavailable, skipping sliding window candidates")
 
         all_occurrences = sorted(filler_occurrences + uhh_occurrences, key=lambda x: x['start_time'])
 
-        # Calculate statistics
         statistics = self.calculate_statistics(all_occurrences, duration)
 
-        # Save pitch debug plot + uhh audio clips (always, for tuning uhh detection thresholds)
         if pitch_timeseries is not None:
-            self.save_pitch_debug_plot(pitch_timeseries, words, uhh_occurrences, recording_id)
-            if uhh_occurrences:
-                self.save_uhh_audio_clips(uhh_occurrences, recording['filename'], recording_id)
+            self.save_pitch_debug_plot(pitch_timeseries, words, candidates, recording_id,
+                                       audio_data, audio_sr)
 
-        # Create visualization if in debug mode
+        if uhh_occurrences and audio_data is not None and audio_sr is not None:
+            self.save_uhh_audio_clips(uhh_occurrences, recording_id, audio_data, audio_sr)
+
         if settings.DEBUG:
-            self.visualize_filler_words_timeline(
-                filler_occurrences,
-                duration,
-                recording_id
-            )
+            self.visualize_filler_words_timeline(filler_occurrences, duration, recording_id)
 
-        # Call segmentation on binned filler word counts
-        segmentation = self.call_segmentation(all_occurrences, duration, recording_id)
+        peak_zones = self.find_filler_peak_zones(all_occurrences, duration, recording_id)
 
         return {
             'success': True,
@@ -531,9 +749,10 @@ class FillerWordsAnalysisService:
             'duration': round(duration, 2),
             'detected_language': transcript.get('language', 'unknown'),
             'statistics': statistics,
-            'filler_occurrences': all_occurrences[:50],  # Limit to first 50 for response size
+            'filler_occurrences': all_occurrences[:50],
             'total_filler_occurrences': len(all_occurrences),
+            'uhh_occurrences': uhh_occurrences,
             'uhh_occurrences_count': len(uhh_occurrences),
-            'segmentation': segmentation,
+            'peak_zones': peak_zones,
             'message': 'Filler words analysis completed successfully.'
         }

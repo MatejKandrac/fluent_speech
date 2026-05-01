@@ -1,0 +1,60 @@
+{
+  "success": true,
+  "recording_id": 113,
+  "completed_analyses": [
+    "arm_movement"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "arm_movement": {
+      "success": true,
+      "recording_id": 113,
+      "total_frames": 232,
+      "normalized_frames_count": 232,
+      "visualization_path": "C:\\Users\\matke\\fluent_speech\\analysis\\arm_movement_analysis_ms\\debug_output\\113\\wrist_kinematics_recording_113.png",
+      "statistics": {
+        "left_wrist": {
+          "avg_velocity": 0.02964526593513101,
+          "max_velocity": 0.1887176095686468,
+          "avg_acceleration": 0.029001199553210517,
+          "max_acceleration": 0.1572697387594074
+        },
+        "right_wrist": {
+          "avg_velocity": 0.03748561369297604,
+          "max_velocity": 0.25956185198422715,
+          "avg_acceleration": 0.03934128415166471,
+          "max_acceleration": 0.24812702709927548
+        }
+      },
+      "anomalies": {
+        "no_movement_periods": [
+          {
+            "start_timestamp": 0.0,
+            "end_timestamp": 15.436,
+            "duration_frames": 232
+          }
+        ],
+        "excessive_movement_periods": [],
+        "thresholds": {
+          "no_movement_velocity_threshold": 0.18,
+          "excessive_movement_velocity_threshold": 0.07238026544449302,
+          "excessive_z_score_k": 2.5,
+          "excessive_rolling_window": 10,
+          "velocity_mean": 0.033382710298684705,
+          "velocity_std": 0.015599022058323324,
+          "min_consecutive_frames": 60,
+          "excessive_merge_gap_s": 2.0
+        }
+      },
+      "segmentation": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8010): Max retries exceeded with url: /api/v1/segment/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000022D0595AE70>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+      },
+      "message": "Arm movement analysis completed successfully."
+    }
+  },
+  "performance": {
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8012): Max retries exceeded with url: /api/v1/performance/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002B05B7546B0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+  }
+}

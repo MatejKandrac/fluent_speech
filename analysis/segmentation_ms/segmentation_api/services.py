@@ -152,7 +152,7 @@ class SegmentationService:
             return algo.predict(pen=penalty)
         except Exception as e:
             print(f"PELT failed (model={model}, pen={penalty:.2f}): {e}")
-            return [len(values)]  # single segment — no change points detected
+            return [len(values)]
 
     def _build_segments(
         self,

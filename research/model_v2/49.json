@@ -2,79 +2,15 @@
   "success": true,
   "recording_id": 49,
   "completed_analyses": [
-    "filler_words",
-    "pitch",
     "hip",
     "arm_movement",
-    "volume",
-    "eye_contact"
+    "eye_contact",
+    "filler_words",
+    "pitch",
+    "volume"
   ],
   "failed_analyses": [],
   "results": {
-    "filler_words": {
-      "success": true,
-      "recording_id": 49,
-      "duration": 52.0,
-      "detected_language": "unknown",
-      "statistics": {
-        "total_filler_words": 0,
-        "fillers_per_minute": 0,
-        "most_common_filler": null,
-        "slovak_fillers_count": 0,
-        "english_fillers_count": 0,
-        "duration": 52.0,
-        "is_high_usage": false
-      },
-      "filler_occurrences": [],
-      "total_filler_occurrences": 0,
-      "uhh_occurrences_count": 0,
-      "segmentation": null,
-      "message": "Filler words analysis completed successfully."
-    },
-    "pitch": {
-      "success": true,
-      "recording_id": 49,
-      "pitch_frames": 1067,
-      "voiced_frames": 177,
-      "pitch_mean": 152.82941512815296,
-      "pitch_min": 107.7902302781589,
-      "pitch_max": 220.32682235595996,
-      "pitch_std": 23.71569916596777,
-      "monotonous_segments": [],
-      "monotonous_segments_count": 0,
-      "segmentation": {
-        "success": true,
-        "change_points": {
-          "std": [
-            15.45
-          ]
-        },
-        "segments": {
-          "std": [
-            {
-              "start": 14.7,
-              "end": 15.4,
-              "mean": 19.2625,
-              "std": 0.0,
-              "min": 19.2625,
-              "max": 19.2625,
-              "count": 15
-            },
-            {
-              "start": 15.45,
-              "end": 41.4,
-              "mean": 18.9752,
-              "std": 0.4534,
-              "min": 18.3718,
-              "max": 19.906,
-              "count": 19
-            }
-          ]
-        },
-        "penalty_used": 144.27,
-        "sensitivity": 0.2
-      }
-    },
     "hip": {
       "success": true,
       "recording_id": 49,
@@ -98,9 +34,9 @@
       },
       "swaying_segments": [
         {
-          "start_timestamp": 1.9,
-          "end_timestamp": 52.6473,
-          "duration_seconds": 50.7473,
+          "start_timestamp": 43.16,
+          "end_timestamp": 47.15,
+          "duration_seconds": 4.0,
           "direction_changes": 4
         }
       ],
@@ -115,8 +51,8 @@
             {
               "start": 0.0,
               "end": 50.0,
-              "mean": 2.9091,
-              "std": 0.5143,
+              "mean": 3.0,
+              "std": 0.4264,
               "min": 2.0,
               "max": 4.0,
               "count": 11
@@ -150,66 +86,37 @@
       "anomalies": {
         "no_movement_periods": [
           {
-            "start_timestamp": 0.2,
-            "end_timestamp": 1.099,
-            "duration_frames": 10
+            "start_timestamp": 0.0,
+            "end_timestamp": 17.383,
+            "duration_frames": 175
           },
           {
-            "start_timestamp": 9.191,
-            "end_timestamp": 10.09,
-            "duration_frames": 10
+            "start_timestamp": 19.78,
+            "end_timestamp": 23.676,
+            "duration_frames": 40
           },
           {
-            "start_timestamp": 15.584,
-            "end_timestamp": 16.483,
-            "duration_frames": 10
-          },
-          {
-            "start_timestamp": 29.67,
-            "end_timestamp": 30.769,
-            "duration_frames": 12
-          },
-          {
-            "start_timestamp": 32.168,
-            "end_timestamp": 33.766,
-            "duration_frames": 17
-          },
-          {
-            "start_timestamp": 41.658,
-            "end_timestamp": 42.657,
-            "duration_frames": 11
-          },
-          {
-            "start_timestamp": 51.249,
-            "end_timestamp": 52.447,
-            "duration_frames": 13
+            "start_timestamp": 25.075,
+            "end_timestamp": 36.464,
+            "duration_frames": 115
           }
         ],
         "excessive_movement_periods": [
           {
-            "wrist": "left",
-            "start_timestamp": 47.253,
-            "end_timestamp": 50.05,
-            "duration_frames": 10
-          },
-          {
-            "wrist": "left",
-            "start_timestamp": 52.647,
-            "end_timestamp": 53.247,
-            "duration_frames": 7
-          },
-          {
             "wrist": "right",
-            "start_timestamp": 47.053,
-            "end_timestamp": 53.247,
-            "duration_frames": 24
+            "start_timestamp": 45.754,
+            "end_timestamp": 50.05,
+            "duration_frames": 26
           }
         ],
         "thresholds": {
-          "no_movement_velocity_threshold": 0.2,
-          "excessive_movement_velocity_threshold": 0.3,
-          "min_consecutive_frames": 10,
-          "min_excessive_frames": 3,
+          "no_movement_velocity_threshold": 0.18,
+          "excessive_movement_velocity_threshold": 0.36120801263071134,
+          "excessive_z_score_k": 2.5,
+          "excessive_rolling_window": 15,
+          "velocity_mean": 0.15115000403319973,
+          "velocity_std": 0.08402320343900466,
+          "min_consecutive_frames": 40,
           "excessive_merge_gap_s": 2.0
         }
       },
@@ -257,43 +164,6 @@
       },
       "message": "Arm movement analysis completed successfully."
     },
-    "volume": {
-      "success": true,
-      "recording_id": 49,
-      "volume_frames": 1067,
-      "volume_mean_rms": 0.017683837562799454,
-      "volume_min_rms": 0.0,
-      "volume_max_rms": 0.15398280322551727,
-      "volume_std_rms": 0.020107997581362724,
-      "dbfs_mean": -35.66,
-      "dbfs_min": -60.0,
-      "dbfs_max": -16.25,
-      "too_soft_segments": [],
-      "too_soft_count": 0,
-      "too_loud_segments": [],
-      "too_loud_count": 0,
-      "segmentation": {
-        "success": true,
-        "change_points": {
-          "mean": []
-        },
-        "segments": {
-          "mean": [
-            {
-              "start": 1.0,
-              "end": 51.0,
-              "mean": -29.8844,
-              "std": 2.2749,
-              "min": -34.243,
-              "max": -23.794,
-              "count": 46
-            }
-          ]
-        },
-        "penalty_used": 144.27,
-        "sensitivity": 0.2
-      }
-    },
     "eye_contact": {
       "success": true,
       "recording_id": 49,
@@ -301,7 +171,6 @@
       "analyzed_frames": 534,
       "heatmap": {
         "yaw_bins": [
-          -75.0,
           -70.0,
           -65.0,
           -60.0,
@@ -330,8 +199,7 @@
           55.0,
           60.0,
           65.0,
-          70.0,
-          75.0
+          70.0
         ],
         "pitch_bins": [
           -30.0,
@@ -377,6 +245,34 @@
             0.0,
             0.0,
             0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0,
             0.0,
             0.0
@@ -400,12 +296,10 @@
             0.0,
             0.0,
             0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0999,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
             0.0,
             0.0,
             0.0,
@@ -417,59 +311,55 @@
             0.0,
             0.0,
             0.0,
-            0.0,
-            0.1998,
             0.0999,
             0.0999,
             0.0999,
-            0.0999,
-            0.0,
             0.4995,
             0.0999,
-            0.0999,
-            0.0,
-            0.2997,
             0.2997,
             0.0999,
+            0.4995,
             0.0999,
             0.0,
-            0.0999,
-            0.0999,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0999,
-            0.0,
-            0.0,
-            0.0,
-            0.1998,
-            0.0,
-            0.7992,
-            0.7992,
             0.3996,
+            0.1998,
+            0.1998,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0999,
             0.1998,
-            0.5994,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0999,
+            0.0999,
+            0.0,
+            0.0,
+            0.0,
+            0.4995,
             0.1998,
-            0.0999,
-            0.0999,
+            0.1998,
+            0.1998,
+            0.999,
+            0.2997,
+            0.1998,
+            0.1998,
             0.0,
             0.0999,
             0.0,
+            0.0999,
             0.0,
+            0.0999,
             0.0,
             0.0,
             0.0,
@@ -482,26 +372,54 @@
             0.0,
             0.0,
             0.0,
+            0.0999,
             0.0,
             0.0,
-            0.2997,
-            0.2997,
-            0.1998,
-            0.1998,
-            1.2987,
-            1.998,
-            1.998,
-            2.2977,
-            1.2987,
-            0.1998,
+            1.6983000000000001,
             0.7992,
+            2.0979,
+            2.2977,
+            2.3976,
+            1.998,
+            0.8991,
             0.4995,
+            0.999,
+            2.1978,
             1.7982,
             1.2987,
-            0.7992,
             0.0999,
+            0.4995,
+            0.5994,
             0.0,
             0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1998,
+            0.0999,
+            1.0989,
+            0.6993,
+            0.8991,
+            1.1988,
+            1.0989,
+            0.999,
+            0.5994,
+            0.8991,
+            1.3986,
+            1.8981000000000001,
+            1.2987,
+            0.999,
+            0.0999,
+            0.4995,
+            0.0999,
             0.0,
             0.0,
             0.0,
@@ -517,85 +435,49 @@
             0.0,
             0.0,
             0.0,
-            0.1998,
+            0.0,
             0.0999,
-            0.7992,
-            0.4995,
-            1.2987,
-            1.6983000000000001,
-            2.997,
-            1.6983000000000001,
+            0.0,
+            0.0,
+            0.999,
             1.1988,
             0.7992,
-            0.999,
-            1.6983000000000001,
+            1.1988,
+            0.6993,
             0.8991,
-            0.4995,
-            0.8991,
-            0.2997,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0999,
-            0.999,
-            1.6983000000000001,
-            0.999,
-            1.2987,
-            0.999,
-            0.999,
-            0.8991,
-            0.4995,
-            0.2997,
-            0.2997,
-            0.0999,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.1998,
-            0.4995,
-            0.5994,
-            0.5994,
-            0.3996,
             1.3986,
+            0.0,
+            0.0,
+            0.0999,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0999,
+            0.0,
+            0.0,
+            0.0999,
+            0.0999,
+            0.3996,
             0.7992,
-            0.1998,
+            0.999,
+            0.6993,
+            0.5994,
             0.4995,
+            0.0999,
+            0.0999,
             0.0,
             0.0,
             0.0,
@@ -613,50 +495,16 @@
             0.0,
             0.0,
             0.0,
+            0.0999,
+            0.0999,
+            0.0,
+            0.0999,
+            0.0,
+            0.0999,
             0.0,
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            0.0999,
             0.1998,
-            0.0999,
-            0.0,
-            0.0999,
-            0.0999,
-            0.0999,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0999,
-            0.0,
-            0.0999,
-            0.0999,
-            0.0,
             0.0,
             0.0,
             0.0,
@@ -697,13 +545,9 @@
             0.0,
             0.0,
             0.0,
-            0.0,
-            0.0,
             0.0
           ],
           [
-            0.0,
-            0.0,
             0.0,
             0.0,
             0.0,
@@ -739,55 +583,51 @@
           "pitch": 5.0
         },
         "shape": {
-          "n_yaw_bins": 30,
+          "n_yaw_bins": 28,
           "n_pitch_bins": 12
         }
       },
       "statistics": {
         "total_frames": 534,
         "total_duration": 53.35,
-        "looking_at_audience_frames": 534,
-        "looking_at_audience_duration": 53.35,
-        "looking_at_audience_percentage": 100.0,
-        "looking_away_frames": 0,
-        "looking_away_duration": 0.0,
-        "looking_away_percentage": 0.0,
-        "avg_yaw": 1.63,
-        "avg_pitch": -3.06,
-        "yaw_range": 97.75,
+        "back_facing_frames": 0,
+        "back_facing_duration": 0.0,
+        "looking_at_audience_frames": 526,
+        "looking_at_audience_duration": 52.55,
+        "looking_at_audience_percentage": 98.5,
+        "looking_away_frames": 8,
+        "looking_away_duration": 0.8,
+        "looking_away_percentage": 1.5,
+        "avg_yaw": -2.68,
+        "avg_pitch": 0.82,
+        "yaw_range": 91.5,
         "pitch_range": 36.1,
-        "num_looking_away_events": 0
+        "num_looking_away_events": 1
       },
-      "looking_away_events": [],
-      "staring_events": [
+      "looking_away_events": [
         {
-          "start_timestamp": 6.294,
-          "end_timestamp": 9.99,
-          "duration_frames": 38,
-          "duration_seconds": 3.7962000000000002,
-          "avg_yaw": -9.598230882650626,
-          "avg_pitch": -5.171080859913312
-        },
-        {
-          "start_timestamp": 22.577,
-          "end_timestamp": 24.575,
-          "duration_frames": 21,
-          "duration_seconds": 2.0979,
-          "avg_yaw": -6.222621188535923,
-          "avg_pitch": -2.704580433811588
-        },
-        {
-          "start_timestamp": 39.361,
-          "end_timestamp": 41.459,
-          "duration_frames": 22,
-          "duration_seconds": 2.1978,
-          "avg_yaw": -5.823154973483122,
-          "avg_pitch": -5.1461314212295965
+          "start_timestamp": 18.881,
+          "end_timestamp": 19.58,
+          "duration_frames": 8,
+          "duration_seconds": 0.7992,
+          "avg_yaw": -47.03187402715029,
+          "avg_pitch": -6.846156568235985
         }
       ],
+      "staring_events": [
+        {
+          "start_timestamp": 6.993,
+          "end_timestamp": 10.09,
+          "duration_frames": 32,
+          "duration_seconds": 3.1968,
+          "avg_yaw": -15.745983425422045,
+          "avg_pitch": -1.4147306849280856
+        }
+      ],
+      "back_facing_events": [],
       "audience_zone_thresholds": {
-        "yaw_min": -60.0,
-        "yaw_max": 60.0,
+        "yaw_min": -40.0,
+        "yaw_max": 40.0,
         "pitch_min": -15.0,
         "pitch_max": 15.0
       },
@@ -805,10 +645,10 @@
             {
               "start": 0.0,
               "end": 52.947,
-              "mean": 0.05,
-              "std": 0.1475,
+              "mean": 0.0296,
+              "std": 0.1116,
               "min": 0.0,
-              "max": 0.8,
+              "max": 0.7,
               "count": 54
             }
           ]
@@ -817,50 +657,207 @@
         "sensitivity": 0.5
       },
       "message": "Eye contact analysis completed successfully."
+    },
+    "filler_words": {
+      "success": true,
+      "recording_id": 49,
+      "duration": 52.0,
+      "detected_language": "unknown",
+      "statistics": {
+        "total_filler_words": 3,
+        "fillers_per_minute": 3.46,
+        "most_common_filler": {
+          "word": "uhh",
+          "count": 3
+        },
+        "slovak_fillers_count": 0,
+        "english_fillers_count": 0,
+        "filler_word_distribution": {
+          "uhh": 3
+        },
+        "duration": 52.0,
+        "is_high_usage": false,
+        "high_usage_threshold": 5.0
+      },
+      "filler_occurrences": [
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 23.56,
+          "end_time": 23.72,
+          "pitch_mean": 107.14,
+          "pitch_std": 3.32,
+          "voiced_duration": 0.15
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 30.54,
+          "end_time": 31.12,
+          "pitch_mean": 101.13,
+          "pitch_std": 0.17,
+          "voiced_duration": 0.15
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 48.6,
+          "end_time": 48.76,
+          "pitch_mean": 155.84,
+          "pitch_std": 1.23,
+          "voiced_duration": 0.2
+        }
+      ],
+      "total_filler_occurrences": 3,
+      "uhh_occurrences_count": 3,
+      "peak_zones": {
+        "distribution": "even",
+        "zones": [],
+        "overall_rate_per_min": 3.46,
+        "threshold_multiplier": 2.0
+      },
+      "message": "Filler words analysis completed successfully."
+    },
+    "pitch": {
+      "success": true,
+      "recording_id": 49,
+      "pitch_frames": 1067,
+      "voiced_frames": 893,
+      "pitch_mean": 134.44509455175861,
+      "pitch_min": 71.78917662416099,
+      "pitch_max": 217.799737970535,
+      "pitch_std": 25.403806020133477,
+      "monotonous_segments": [],
+      "monotonous_segments_count": 0,
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "std": [
+            48.5
+          ]
+        },
+        "segments": {
+          "std": [
+            {
+              "start": 1.2,
+              "end": 48.45,
+              "mean": 21.048,
+              "std": 7.559,
+              "min": 4.3298,
+              "max": 42.0027,
+              "count": 930
+            },
+            {
+              "start": 48.5,
+              "end": 52.1,
+              "mean": 11.8103,
+              "std": 3.2527,
+              "min": 4.1508,
+              "max": 16.8719,
+              "count": 73
+            }
+          ]
+        },
+        "penalty_used": 144.27,
+        "sensitivity": 0.2
+      }
+    },
+    "volume": {
+      "success": true,
+      "recording_id": 49,
+      "volume_frames": 1067,
+      "volume_mean_rms": 0.036230508238077164,
+      "volume_min_rms": 0.0,
+      "volume_max_rms": 0.1502583622932434,
+      "volume_std_rms": 0.02578834816813469,
+      "dbfs_mean": -29.37,
+      "dbfs_min": -60.0,
+      "dbfs_max": -16.46,
+      "too_soft_segments": [
+        {
+          "start_timestamp": 36.55,
+          "end_timestamp": 37.7,
+          "duration_seconds": 1.15,
+          "mean_dbfs": -44.46
+        },
+        {
+          "start_timestamp": 42.0,
+          "end_timestamp": 43.1,
+          "duration_seconds": 1.1,
+          "mean_dbfs": -43.88
+        }
+      ],
+      "too_soft_count": 2,
+      "too_loud_segments": [],
+      "too_loud_count": 0,
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "mean": []
+        },
+        "segments": {
+          "mean": [
+            {
+              "start": 1.0,
+              "end": 51.0,
+              "mean": -26.2855,
+              "std": 1.6742,
+              "min": -31.039,
+              "max": -23.158,
+              "count": 49
+            }
+          ]
+        },
+        "penalty_used": 144.27,
+        "sensitivity": 0.2
+      }
     }
   },
   "performance": {
     "success": true,
     "recording_id": 49,
-    "total_score": 93.1,
-    "total_label": "V\u00fdborn\u00e9",
+    "total_score": 86.5,
+    "total_label": "Dobré",
     "dimensions": {
       "voice": {
-        "score": 100.0,
-        "label": "V\u00fdborn\u00e9",
+        "score": 95.3,
+        "label": "Výborné",
         "weight": 0.37,
         "issues": [],
         "issue_locations": {}
       },
       "fluency": {
-        "score": 100.0,
-        "label": "V\u00fdborn\u00e9",
+        "score": 80.5,
+        "label": "Dobré",
         "weight": 0.27,
         "issues": [],
         "issue_locations": {},
-        "filler_per_minute": 0.0
+        "filler_per_minute": 3.46
       },
       "body": {
-        "score": 52.0,
-        "label": "Potrebuje zlep\u0161enie",
+        "score": 42.5,
+        "label": "Potrebuje zlepšenie",
         "weight": 0.09,
         "issues": [
+          "body_no_movement",
           "body_hip_sway"
         ],
         "issue_locations": {
-          "body_hip_sway": "throughout"
+          "body_no_movement": "throughout",
+          "body_hip_sway": "end"
         }
       },
       "eye_contact": {
-        "score": 90.5,
-        "label": "V\u00fdborn\u00e9",
+        "score": 95.2,
+        "label": "Výborné",
         "weight": 0.27,
         "issues": [],
         "issue_locations": {}
       }
     },
     "recommendations": [
-      "Po\u010das prezent\u00e1cie ste sa v\u00fdrazne k\u00fdvali na bokoch. Stabiln\u00fd postoj zvy\u0161uje d\u00f4veryhodnos\u0165 \u2014 sk\u00faste st\u00e1\u0165 pevne na oboch noh\u00e1ch. Vyskytovalo sa to po\u010das celej prezent\u00e1cie."
+      "Vaše ruky boli po dlhú dobu takmer bez pohybu. Prirodzená gestikulácia podporuje prejav a drží pozornosť publika. Vyskytovalo sa to počas celej prezentácie.",
+      "Počas prezentácie ste sa výrazne kývali na bokoch. Stabilný postoj zvyšuje dôveryhodnosť — skúste stáť pevne na oboch nohách. Prejavilo sa to najmä na konci prezentácie."
     ]
   }
 }

@@ -1,17 +1,18 @@
-Takže, ehm, dnes by som vám chcel predstaviť, no, tému umelej inteligencie v každodennom živote. Viete, vlastne, je to oblasť, ktorá sa, jako, veľmi rýchlo rozvíja.
-  Tak, ehm, začneme od základov.
+Dnes by som vám chcel predstaviť, tému umelej inteligencie v každodennom živote. Je to oblasť, ktorá sa, veľmi rýchlo rozvíja.
+  Začneme od základov.
 
-  Umelá inteligencia, teda, je vlastne schopnosť strojov, no, učiť sa z dát. Takže, ako by som to povedal, ehm, je to vlastne simulácia ľudského myslenia. Viete,
-  proste, stroj sa dokáže, jako, adaptovať na nové situácie.
+  Umelá inteligencia, je vlastne schopnosť strojov, učiť sa z dát. Je to vlastne simulácia ľudského myslenia
+  , stroj sa dokáže, adaptovať na nové situácie.
 
-  Inak, well, ak sa pozrieme na, um, praktické využitia, tak, uh, vidíme ich úplne všade. Basically, máme ich v telefónoch, teda, v autách, ehm, dokonca aj v, no, v
-  domácich spotrebičoch. Viete, vlastne je to, jako, revolúcia.
+  Inak ak sa pozrieme na, um, praktické využitia, tak, uh, vidíme ich úplne všade. Akoze v podstate, máme ich v telefónoch, vlastne aj v autách,
+  ehm, dokonca aj v, no, v
+  domácich spotrebičoch. Viete, vlastne je to, proste revolúcia.
 
-  Čiže, tak, skrátka, hlavné oblasti sú, ehm, počítačové videnie, no, spracovanie prirodzeného jazyka a, teda, strojové učenie. Actually, tieto tri oblasti, viete,
-  spolu úzko súvisia. Tak, um, napríklad, well, chatboty využívajú, jako, všetky tri naraz.
+  Čiže, skrátka, hlavné oblasti sú, počítačové videnie, no, spracovanie prirodzeného jazyka a strojové učenie. Tieto tri oblasti,
+  spolu úzko súvisia. Tak, napríklad, chatboty využívajú, všetky tri naraz.
 
-  No, takže, ehm, na záver by som chcel povedať, vlastne, že umelá inteligencia, inak, nie je budúcnosť — je to, teda, prítomnosť. Viete, proste, musíme sa s ňou
-  naučiť, jako, pracovať. Uh, ďakujem.
+  Na záver by som chcel povedať, že umelá inteligencia, nie je budúcnosť — je to prítomnosť. Musíme sa s ňou
+  naučiť, pracovať. Dakujem.
 
 
 

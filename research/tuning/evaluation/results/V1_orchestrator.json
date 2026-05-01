@@ -1,0 +1,1341 @@
+{
+  "success": true,
+  "recording_id": 103,
+  "completed_analyses": [
+    "hip",
+    "arm_movement",
+    "eye_contact",
+    "filler_words",
+    "volume",
+    "pitch"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "hip": {
+      "success": true,
+      "recording_id": 103,
+      "statistics": {
+        "total_frames": 1077,
+        "valid_frames": 1077,
+        "hip_sway": {
+          "x_mean": 0.4741645544186276,
+          "x_std": 0.01385597317040319,
+          "x_range": 0.08101341128349304,
+          "y_mean": 0.9108424323957721,
+          "y_std": 0.012946812395043581,
+          "y_range": 0.11875513195991516
+        },
+        "hip_distance": {
+          "mean": 0.12494958796017304,
+          "std": 0.017144290675331617,
+          "min": 0.10285881815134114,
+          "max": 0.22662608581630403
+        }
+      },
+      "swaying_segments": [
+        {
+          "start_timestamp": 32.6,
+          "end_timestamp": 36.8949619504644,
+          "duration_seconds": 4.294961950464398,
+          "direction_changes": 3
+        }
+      ],
+      "swaying_segments_count": 1,
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "trend": []
+        },
+        "segments": {
+          "trend": [
+            {
+              "start": 0.0,
+              "end": 100.0,
+              "mean": 1.4286,
+              "std": 0.4949,
+              "min": 1.0,
+              "max": 2.0,
+              "count": 14
+            }
+          ]
+        },
+        "penalty_used": 1.0,
+        "sensitivity": 1.0
+      }
+    },
+    "arm_movement": {
+      "success": true,
+      "recording_id": 103,
+      "total_frames": 1077,
+      "normalized_frames_count": 1077,
+      "visualization_path": "C:\\Users\\matke\\fluent_speech\\analysis\\arm_movement_analysis_ms\\debug_output\\103\\wrist_kinematics_recording_103.png",
+      "statistics": {
+        "left_wrist": {
+          "avg_velocity": 0.12672427189162797,
+          "max_velocity": 0.8958623456222364,
+          "avg_acceleration": 0.10756366044034837,
+          "max_acceleration": 0.8077016007244034
+        },
+        "right_wrist": {
+          "avg_velocity": 0.241075095489637,
+          "max_velocity": 2.3602171162618486,
+          "avg_acceleration": 0.21766389140859577,
+          "max_acceleration": 2.252399848930482
+        }
+      },
+      "anomalies": {
+        "no_movement_periods": [
+          {
+            "start_timestamp": 6.899,
+            "end_timestamp": 7.999,
+            "duration_frames": 12
+          },
+          {
+            "start_timestamp": 8.799,
+            "end_timestamp": 9.999,
+            "duration_frames": 13
+          },
+          {
+            "start_timestamp": 51.893,
+            "end_timestamp": 52.793,
+            "duration_frames": 10
+          },
+          {
+            "start_timestamp": 71.29,
+            "end_timestamp": 72.19,
+            "duration_frames": 10
+          },
+          {
+            "start_timestamp": 90.288,
+            "end_timestamp": 91.188,
+            "duration_frames": 10
+          }
+        ],
+        "excessive_movement_periods": [
+          {
+            "wrist": "right",
+            "start_timestamp": 45.594,
+            "end_timestamp": 46.694,
+            "duration_frames": 5
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 56.692,
+            "end_timestamp": 57.892,
+            "duration_frames": 13
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 76.89,
+            "end_timestamp": 77.389,
+            "duration_frames": 6
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 81.389,
+            "end_timestamp": 82.789,
+            "duration_frames": 15
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 96.187,
+            "end_timestamp": 98.387,
+            "duration_frames": 23
+          }
+        ],
+        "thresholds": {
+          "no_movement_velocity_threshold": 0.2,
+          "excessive_movement_velocity_threshold": 0.42281810306848683,
+          "excessive_z_score_k": 2.5,
+          "excessive_rolling_window": 15,
+          "velocity_mean": 0.1839028507931163,
+          "velocity_std": 0.09556610091014821,
+          "min_consecutive_frames": 10,
+          "excessive_merge_gap_s": 2.0
+        }
+      },
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "std": [
+            44.994,
+            49.993
+          ]
+        },
+        "segments": {
+          "std": [
+            {
+              "start": 0.0,
+              "end": 43.994,
+              "mean": 0.2519,
+              "std": 0.0872,
+              "min": 0.0664,
+              "max": 0.4262,
+              "count": 45
+            },
+            {
+              "start": 44.994,
+              "end": 48.993,
+              "mean": 0.3678,
+              "std": 0.0475,
+              "min": 0.2835,
+              "max": 0.4063,
+              "count": 5
+            },
+            {
+              "start": 49.993,
+              "end": 106.985,
+              "mean": 0.2857,
+              "std": 0.1239,
+              "min": 0.0931,
+              "max": 0.6762,
+              "count": 58
+            }
+          ]
+        },
+        "penalty_used": 6.452,
+        "sensitivity": 0.7
+      },
+      "message": "Arm movement analysis completed successfully."
+    },
+    "eye_contact": {
+      "success": true,
+      "recording_id": 103,
+      "total_frames": 1077,
+      "analyzed_frames": 1077,
+      "heatmap": {
+        "yaw_bins": [
+          -70.0,
+          -65.0,
+          -60.0,
+          -55.0,
+          -50.0,
+          -45.0,
+          -40.0,
+          -35.0,
+          -30.0,
+          -25.0,
+          -20.0,
+          -15.0,
+          -10.0,
+          -5.0,
+          0.0,
+          5.0,
+          10.0,
+          15.0,
+          20.0,
+          25.0,
+          30.0,
+          35.0,
+          40.0,
+          45.0,
+          50.0,
+          55.0,
+          60.0,
+          65.0,
+          70.0
+        ],
+        "pitch_bins": [
+          -30.0,
+          -25.0,
+          -20.0,
+          -15.0,
+          -10.0,
+          -5.0,
+          0.0,
+          5.0,
+          10.0,
+          15.0,
+          20.0,
+          25.0,
+          30.0
+        ],
+        "duration_matrix": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.199972693498452,
+            0.199972693498452,
+            1.099849814241486,
+            1.199836160990712,
+            3.399535789473684,
+            3.399535789473684,
+            1.4997952012383902,
+            4.899330990712074
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.099986346749226,
+            0.0,
+            0.099986346749226,
+            0.0,
+            1.099849814241486,
+            1.4997952012383902,
+            1.799754241486068,
+            0.9998634674922601,
+            2.5996450154798763,
+            2.399672321981424,
+            5.1992900309597525,
+            3.9994538699690403,
+            1.199836160990712,
+            0.399945386996904
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.299959040247678,
+            0.099986346749226,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.599918080495356,
+            0.0,
+            0.599918080495356,
+            1.599781547987616,
+            0.49993173374613004,
+            0.099986346749226,
+            0.0,
+            0.799890773993808
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.399945386996904,
+            0.0,
+            0.0,
+            0.0,
+            0.099986346749226,
+            0.299959040247678,
+            0.299959040247678,
+            0.099986346749226,
+            0.299959040247678,
+            0.099986346749226,
+            0.099986346749226,
+            0.0,
+            0.49993173374613004
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.199972693498452,
+            0.099986346749226,
+            0.099986346749226,
+            0.0,
+            0.0,
+            0.199972693498452,
+            0.099986346749226,
+            0.299959040247678,
+            0.099986346749226,
+            0.299959040247678,
+            0.099986346749226,
+            0.399945386996904,
+            0.49993173374613004,
+            0.299959040247678,
+            0.599918080495356,
+            0.099986346749226,
+            0.099986346749226,
+            0.0,
+            0.399945386996904,
+            0.199972693498452
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.199972693498452,
+            0.0,
+            0.299959040247678,
+            0.199972693498452,
+            0.0,
+            0.0,
+            0.0,
+            0.099986346749226,
+            0.099986346749226,
+            0.49993173374613004,
+            0.299959040247678,
+            0.299959040247678,
+            0.49993173374613004,
+            0.199972693498452,
+            0.399945386996904,
+            1.2998225077399381,
+            0.199972693498452,
+            0.299959040247678,
+            0.49993173374613004,
+            0.199972693498452,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.099986346749226,
+            0.0,
+            0.0,
+            0.099986346749226,
+            0.099986346749226,
+            0.299959040247678,
+            0.199972693498452,
+            0.0,
+            0.0,
+            0.199972693498452,
+            0.199972693498452,
+            0.299959040247678,
+            0.199972693498452,
+            0.599918080495356,
+            0.399945386996904,
+            0.699904427244582,
+            0.699904427244582,
+            1.099849814241486,
+            0.799890773993808,
+            0.0,
+            0.099986346749226,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.199836160990712,
+            0.799890773993808,
+            1.199836160990712,
+            0.099986346749226,
+            0.199972693498452,
+            0.199972693498452,
+            0.49993173374613004,
+            0.799890773993808,
+            0.49993173374613004,
+            0.299959040247678,
+            0.099986346749226,
+            1.099849814241486,
+            0.9998634674922601,
+            0.799890773993808,
+            0.599918080495356,
+            0.399945386996904,
+            0.699904427244582,
+            0.099986346749226,
+            0.099986346749226,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.099986346749226,
+            0.599918080495356,
+            0.299959040247678,
+            0.49993173374613004,
+            0.199972693498452,
+            0.299959040247678,
+            1.2998225077399381,
+            0.799890773993808,
+            1.9997269349845201,
+            0.699904427244582,
+            0.399945386996904,
+            0.699904427244582,
+            0.9998634674922601,
+            1.099849814241486,
+            0.699904427244582,
+            0.0,
+            0.099986346749226,
+            0.399945386996904,
+            0.199972693498452,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.199972693498452,
+            0.099986346749226,
+            0.0,
+            0.199972693498452,
+            1.199836160990712,
+            0.9998634674922601,
+            1.399808854489164,
+            1.199836160990712,
+            1.2998225077399381,
+            0.699904427244582,
+            0.699904427244582,
+            0.899877120743034,
+            0.699904427244582,
+            0.699904427244582,
+            0.299959040247678,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.099986346749226,
+            0.099986346749226,
+            0.199972693498452,
+            0.299959040247678,
+            0.899877120743034,
+            1.599781547987616,
+            0.799890773993808,
+            0.9998634674922601,
+            1.199836160990712,
+            0.49993173374613004,
+            0.9998634674922601,
+            0.49993173374613004,
+            0.49993173374613004,
+            0.699904427244582,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.099986346749226,
+            0.49993173374613004,
+            0.199972693498452,
+            0.099986346749226,
+            0.49993173374613004,
+            0.799890773993808,
+            0.599918080495356,
+            0.199972693498452,
+            0.299959040247678,
+            0.099986346749226,
+            0.599918080495356,
+            0.099986346749226,
+            0.699904427244582,
+            0.899877120743034,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "bin_size": {
+          "yaw": 5.0,
+          "pitch": 5.0
+        },
+        "shape": {
+          "n_yaw_bins": 28,
+          "n_pitch_bins": 12
+        }
+      },
+      "statistics": {
+        "total_frames": 1077,
+        "total_duration": 107.69,
+        "back_facing_frames": 0,
+        "back_facing_duration": 0.0,
+        "looking_at_audience_frames": 377,
+        "looking_at_audience_duration": 37.69,
+        "looking_at_audience_percentage": 35.0,
+        "looking_away_frames": 700,
+        "looking_away_duration": 69.99,
+        "looking_away_percentage": 65.0,
+        "avg_yaw": 30.45,
+        "avg_pitch": -2.63,
+        "yaw_range": 110.9,
+        "pitch_range": 65.61,
+        "num_looking_away_events": 28
+      },
+      "looking_away_events": [
+        {
+          "start_timestamp": 1.4,
+          "end_timestamp": 2.8,
+          "duration_frames": 15,
+          "duration_seconds": 1.4997952012383902,
+          "avg_yaw": 1.4877953060503302,
+          "avg_pitch": 18.99795764696692
+        },
+        {
+          "start_timestamp": 3.999,
+          "end_timestamp": 7.899,
+          "duration_frames": 40,
+          "duration_seconds": 3.9994538699690403,
+          "avg_yaw": 56.93171351767394,
+          "avg_pitch": -9.806355131730028
+        },
+        {
+          "start_timestamp": 8.199,
+          "end_timestamp": 10.699,
+          "duration_frames": 26,
+          "duration_seconds": 2.5996450154798763,
+          "avg_yaw": 45.74762417127718,
+          "avg_pitch": -25.405905853774094
+        },
+        {
+          "start_timestamp": 11.198,
+          "end_timestamp": 12.898,
+          "duration_frames": 18,
+          "duration_seconds": 1.799754241486068,
+          "avg_yaw": 9.902669865394733,
+          "avg_pitch": 19.902440570586162
+        },
+        {
+          "start_timestamp": 13.198,
+          "end_timestamp": 14.398,
+          "duration_frames": 13,
+          "duration_seconds": 1.2998225077399381,
+          "avg_yaw": 35.9059908329152,
+          "avg_pitch": 16.657387148031592
+        },
+        {
+          "start_timestamp": 15.998,
+          "end_timestamp": 17.598,
+          "duration_frames": 17,
+          "duration_seconds": 1.699767894736842,
+          "avg_yaw": 41.23812270873702,
+          "avg_pitch": 14.472246012787421
+        },
+        {
+          "start_timestamp": 21.797,
+          "end_timestamp": 23.097,
+          "duration_frames": 14,
+          "duration_seconds": 1.399808854489164,
+          "avg_yaw": 55.39329510902795,
+          "avg_pitch": 7.964472477349834
+        },
+        {
+          "start_timestamp": 24.097,
+          "end_timestamp": 26.496,
+          "duration_frames": 25,
+          "duration_seconds": 2.49965866873065,
+          "avg_yaw": 27.910612162634884,
+          "avg_pitch": 10.688853885170957
+        },
+        {
+          "start_timestamp": 30.096,
+          "end_timestamp": 31.396,
+          "duration_frames": 14,
+          "duration_seconds": 1.399808854489164,
+          "avg_yaw": 25.193227921593014,
+          "avg_pitch": 15.009281480690147
+        },
+        {
+          "start_timestamp": 33.695,
+          "end_timestamp": 34.595,
+          "duration_frames": 10,
+          "duration_seconds": 0.9998634674922601,
+          "avg_yaw": -17.70815258929047,
+          "avg_pitch": 22.23858001423111
+        },
+        {
+          "start_timestamp": 36.795,
+          "end_timestamp": 38.695,
+          "duration_frames": 20,
+          "duration_seconds": 1.9997269349845201,
+          "avg_yaw": 54.14655110945118,
+          "avg_pitch": -22.808806047843884
+        },
+        {
+          "start_timestamp": 38.995,
+          "end_timestamp": 40.095,
+          "duration_frames": 12,
+          "duration_seconds": 1.199836160990712,
+          "avg_yaw": 35.819812673800264,
+          "avg_pitch": 19.53129113418097
+        },
+        {
+          "start_timestamp": 40.394,
+          "end_timestamp": 49.493,
+          "duration_frames": 92,
+          "duration_seconds": 9.198743900928793,
+          "avg_yaw": 55.00542212275628,
+          "avg_pitch": -25.07270057498393
+        },
+        {
+          "start_timestamp": 49.693,
+          "end_timestamp": 61.492,
+          "duration_frames": 119,
+          "duration_seconds": 11.898375263157895,
+          "avg_yaw": 48.73464525213045,
+          "avg_pitch": -21.139517523563022
+        },
+        {
+          "start_timestamp": 61.692,
+          "end_timestamp": 64.391,
+          "duration_frames": 28,
+          "duration_seconds": 2.799617708978328,
+          "avg_yaw": 2.473716901563299,
+          "avg_pitch": 22.92492604062121
+        },
+        {
+          "start_timestamp": 66.691,
+          "end_timestamp": 67.691,
+          "duration_frames": 11,
+          "duration_seconds": 1.099849814241486,
+          "avg_yaw": 4.102817360519027,
+          "avg_pitch": 22.774565484664006
+        },
+        {
+          "start_timestamp": 71.09,
+          "end_timestamp": 72.19,
+          "duration_frames": 12,
+          "duration_seconds": 1.199836160990712,
+          "avg_yaw": 60.69593754621703,
+          "avg_pitch": -24.267718899759643
+        },
+        {
+          "start_timestamp": 74.79,
+          "end_timestamp": 75.99,
+          "duration_frames": 13,
+          "duration_seconds": 1.2998225077399381,
+          "avg_yaw": 62.867254426862516,
+          "avg_pitch": -8.395474508808316
+        },
+        {
+          "start_timestamp": 76.989,
+          "end_timestamp": 78.189,
+          "duration_frames": 13,
+          "duration_seconds": 1.2998225077399381,
+          "avg_yaw": 34.90758153311446,
+          "avg_pitch": -1.321824668216666
+        },
+        {
+          "start_timestamp": 78.789,
+          "end_timestamp": 79.689,
+          "duration_frames": 10,
+          "duration_seconds": 0.9998634674922601,
+          "avg_yaw": 41.08447475789111,
+          "avg_pitch": -21.3284740818658
+        },
+        {
+          "start_timestamp": 81.289,
+          "end_timestamp": 82.289,
+          "duration_frames": 11,
+          "duration_seconds": 1.099849814241486,
+          "avg_yaw": 50.04892147383876,
+          "avg_pitch": -19.15206656028907
+        },
+        {
+          "start_timestamp": 84.089,
+          "end_timestamp": 86.588,
+          "duration_frames": 26,
+          "duration_seconds": 2.5996450154798763,
+          "avg_yaw": 52.05110599199489,
+          "avg_pitch": -23.062797674393423
+        },
+        {
+          "start_timestamp": 86.988,
+          "end_timestamp": 88.688,
+          "duration_frames": 18,
+          "duration_seconds": 1.799754241486068,
+          "avg_yaw": 35.43304702213672,
+          "avg_pitch": 15.357393315473656
+        },
+        {
+          "start_timestamp": 89.288,
+          "end_timestamp": 93.287,
+          "duration_frames": 41,
+          "duration_seconds": 4.099440216718266,
+          "avg_yaw": 32.681580657705304,
+          "avg_pitch": -21.908500095256567
+        },
+        {
+          "start_timestamp": 93.487,
+          "end_timestamp": 94.987,
+          "duration_frames": 16,
+          "duration_seconds": 1.599781547987616,
+          "avg_yaw": 3.5793638018355436,
+          "avg_pitch": 22.803775856412646
+        },
+        {
+          "start_timestamp": 95.887,
+          "end_timestamp": 98.787,
+          "duration_frames": 30,
+          "duration_seconds": 2.9995904024767803,
+          "avg_yaw": 54.9978901724262,
+          "avg_pitch": -23.33161924324025
+        },
+        {
+          "start_timestamp": 98.986,
+          "end_timestamp": 101.386,
+          "duration_frames": 25,
+          "duration_seconds": 2.49965866873065,
+          "avg_yaw": 2.820059361175404,
+          "avg_pitch": 23.275105496744747
+        },
+        {
+          "start_timestamp": 106.086,
+          "end_timestamp": 107.085,
+          "duration_frames": 11,
+          "duration_seconds": 1.099849814241486,
+          "avg_yaw": 64.63710114337259,
+          "avg_pitch": -8.761513032486413
+        }
+      ],
+      "staring_events": [
+        {
+          "start_timestamp": 7.799,
+          "end_timestamp": 10.699,
+          "duration_frames": 30,
+          "duration_seconds": 2.9995904024767803,
+          "avg_yaw": 45.34982192566074,
+          "avg_pitch": -24.007603801778316
+        },
+        {
+          "start_timestamp": 40.394,
+          "end_timestamp": 43.494,
+          "duration_frames": 32,
+          "duration_seconds": 3.199563095975232,
+          "avg_yaw": 56.275050901708745,
+          "avg_pitch": -24.55803470928717
+        },
+        {
+          "start_timestamp": 45.194,
+          "end_timestamp": 47.294,
+          "duration_frames": 22,
+          "duration_seconds": 2.199699628482972,
+          "avg_yaw": 69.60551471304508,
+          "avg_pitch": -28.435113862786373
+        },
+        {
+          "start_timestamp": 47.394,
+          "end_timestamp": 49.493,
+          "duration_frames": 22,
+          "duration_seconds": 2.199699628482972,
+          "avg_yaw": 51.45125966552499,
+          "avg_pitch": -23.89300650169922
+        },
+        {
+          "start_timestamp": 51.993,
+          "end_timestamp": 53.993,
+          "duration_frames": 21,
+          "duration_seconds": 2.099713281733746,
+          "avg_yaw": 25.557721818724954,
+          "avg_pitch": -22.908112183751296
+        },
+        {
+          "start_timestamp": 57.192,
+          "end_timestamp": 61.492,
+          "duration_frames": 44,
+          "duration_seconds": 4.399399256965944,
+          "avg_yaw": 53.79102083618384,
+          "avg_pitch": -23.57073978755484
+        },
+        {
+          "start_timestamp": 84.288,
+          "end_timestamp": 86.488,
+          "duration_frames": 23,
+          "duration_seconds": 2.2996859752321983,
+          "avg_yaw": 53.92778540303422,
+          "avg_pitch": -23.697842055966827
+        },
+        {
+          "start_timestamp": 89.888,
+          "end_timestamp": 92.587,
+          "duration_frames": 28,
+          "duration_seconds": 2.799617708978328,
+          "avg_yaw": 34.605905038533244,
+          "avg_pitch": -23.361914562753263
+        }
+      ],
+      "back_facing_events": [],
+      "audience_zone_thresholds": {
+        "yaw_min": -40.0,
+        "yaw_max": 40.0,
+        "pitch_min": -15.0,
+        "pitch_max": 15.0
+      },
+      "staring_thresholds": {
+        "angle_threshold": 10.0,
+        "min_frames": 2000
+      },
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "mean": []
+        },
+        "segments": {
+          "mean": [
+            {
+              "start": 0.0,
+              "end": 106.985,
+              "mean": 0.7298,
+              "std": 0.3252,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 108
+            }
+          ]
+        },
+        "penalty_used": 22.361,
+        "sensitivity": 0.5
+      },
+      "message": "Eye contact analysis completed successfully."
+    },
+    "filler_words": {
+      "success": true,
+      "recording_id": 103,
+      "duration": 107.54,
+      "detected_language": "unknown",
+      "statistics": {
+        "total_filler_words": 9,
+        "fillers_per_minute": 5.02,
+        "most_common_filler": {
+          "word": "uhh",
+          "count": 4
+        },
+        "slovak_fillers_count": 5,
+        "english_fillers_count": 0,
+        "filler_word_distribution": {
+          "uhh": 4,
+          "teda": 2,
+          "tak": 2,
+          "no": 1
+        },
+        "duration": 107.54,
+        "is_high_usage": true,
+        "high_usage_threshold": 5.0
+      },
+      "filler_occurrences": [
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 3.0,
+          "end_time": 3.74,
+          "pitch_mean": 100.19,
+          "pitch_std": 1.87,
+          "voiced_duration": 0.75
+        },
+        {
+          "word": "teda",
+          "language": "slovak",
+          "start_time": 10.5,
+          "end_time": 10.74,
+          "segment_text": "teda ochranca verejných práv, verejný ochranca práv včera dorúčil parlamentu",
+          "probability": 0.7906263172626495
+        },
+        {
+          "word": "tak",
+          "language": "slovak",
+          "start_time": 32.02,
+          "end_time": 32.1,
+          "segment_text": "tak sa k lekárovi vôbec nedostanete. To sa týka úplne každého. A nemáme tu žiadne ochránné mechanizmy.",
+          "probability": 0.9839960932731628
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 42.64,
+          "end_time": 43.18,
+          "pitch_mean": 110.46,
+          "pitch_std": 0.54,
+          "voiced_duration": 0.55
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 64.06,
+          "end_time": 64.44,
+          "pitch_mean": 144.73,
+          "pitch_std": 4.33,
+          "voiced_duration": 0.2
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 71.36,
+          "end_time": 72.18,
+          "pitch_mean": 105.51,
+          "pitch_std": 2.55,
+          "voiced_duration": 0.7
+        },
+        {
+          "word": "no",
+          "language": "slovak",
+          "start_time": 77.38,
+          "end_time": 77.56,
+          "segment_text": "vláda zvýšila o 1 % ďalej odvody. No ale keď si nezaplatia poplatok, tak sa k tomu lekárovi",
+          "probability": 0.8870295286178589
+        },
+        {
+          "word": "tak",
+          "language": "slovak",
+          "start_time": 79.24,
+          "end_time": 79.38,
+          "segment_text": "vláda zvýšila o 1 % ďalej odvody. No ale keď si nezaplatia poplatok, tak sa k tomu lekárovi",
+          "probability": 0.9894983768463135
+        },
+        {
+          "word": "teda",
+          "language": "slovak",
+          "start_time": 98.82,
+          "end_time": 99.54,
+          "segment_text": "Napriek tomu, teda súčasná koalícia a minister Šaško",
+          "probability": 0.7890139520168304
+        }
+      ],
+      "total_filler_occurrences": 9,
+      "uhh_occurrences_count": 4,
+      "peak_zones": {
+        "distribution": "concentrated",
+        "zones": [
+          {
+            "start": 70.0,
+            "end": 80.0,
+            "rate_per_min": 18.0,
+            "overall_rate_per_min": 5.02,
+            "peak_ratio": 3.58
+          }
+        ],
+        "overall_rate_per_min": 5.02,
+        "threshold_multiplier": 2.0
+      },
+      "message": "Filler words analysis completed successfully."
+    },
+    "volume": {
+      "success": true,
+      "recording_id": 103,
+      "volume_frames": 2154,
+      "volume_mean_rms": 0.011579359881579876,
+      "volume_min_rms": 0.0,
+      "volume_max_rms": 0.035590097308158875,
+      "volume_std_rms": 0.00704557728022337,
+      "dbfs_mean": -38.43,
+      "dbfs_min": -60.0,
+      "dbfs_max": -28.97,
+      "too_soft_segments": [
+        {
+          "start_timestamp": 5.75,
+          "end_timestamp": 8.3,
+          "duration_seconds": 2.55,
+          "mean_dbfs": -45.76
+        },
+        {
+          "start_timestamp": 10.3,
+          "end_timestamp": 11.45,
+          "duration_seconds": 1.15,
+          "mean_dbfs": -44.1
+        },
+        {
+          "start_timestamp": 25.8,
+          "end_timestamp": 26.6,
+          "duration_seconds": 0.8,
+          "mean_dbfs": -42.57
+        },
+        {
+          "start_timestamp": 27.75,
+          "end_timestamp": 30.15,
+          "duration_seconds": 2.4,
+          "mean_dbfs": -45.39
+        },
+        {
+          "start_timestamp": 49.6,
+          "end_timestamp": 52.15,
+          "duration_seconds": 2.55,
+          "mean_dbfs": -43.16
+        },
+        {
+          "start_timestamp": 63.1,
+          "end_timestamp": 64.6,
+          "duration_seconds": 1.5,
+          "mean_dbfs": -47.28
+        }
+      ],
+      "too_soft_count": 6,
+      "too_loud_segments": [
+        {
+          "start_timestamp": 46.2,
+          "end_timestamp": 47.0,
+          "duration_seconds": 0.8,
+          "mean_dbfs": -32.33
+        }
+      ],
+      "too_loud_count": 1,
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "mean": []
+        },
+        "segments": {
+          "mean": [
+            {
+              "start": 0.0,
+              "end": 107.0,
+              "mean": -37.7755,
+              "std": 2.0251,
+              "min": -46.359,
+              "max": -32.286,
+              "count": 108
+            }
+          ]
+        },
+        "penalty_used": 144.27,
+        "sensitivity": 0.2
+      }
+    },
+    "pitch": {
+      "success": true,
+      "recording_id": 103,
+      "pitch_frames": 2154,
+      "voiced_frames": 1683,
+      "pitch_mean": 136.61822087478498,
+      "pitch_min": 70.38903122630728,
+      "pitch_max": 237.18857597510097,
+      "pitch_std": 31.378753191460824,
+      "monotonous_segments": [
+        {
+          "start_timestamp": 12.3,
+          "end_timestamp": 13.9,
+          "duration_seconds": 1.5999999999999996,
+          "std_dev": 2.25,
+          "range": 7.94
+        }
+      ],
+      "monotonous_segments_count": 1,
+      "segmentation": {
+        "success": true,
+        "change_points": {
+          "std": [
+            3.5,
+            22.15,
+            48.55,
+            73.6,
+            90.6,
+            94.6,
+            101.0
+          ]
+        },
+        "segments": {
+          "std": [
+            {
+              "start": 0.75,
+              "end": 3.45,
+              "mean": 7.7277,
+              "std": 1.645,
+              "min": 3.7308,
+              "max": 9.8316,
+              "count": 55
+            },
+            {
+              "start": 3.5,
+              "end": 22.1,
+              "mean": 21.1104,
+              "std": 8.0788,
+              "min": 2.2491,
+              "max": 38.71,
+              "count": 355
+            },
+            {
+              "start": 22.15,
+              "end": 48.5,
+              "mean": 28.9078,
+              "std": 8.5228,
+              "min": 5.9087,
+              "max": 51.0195,
+              "count": 505
+            },
+            {
+              "start": 48.55,
+              "end": 73.55,
+              "mean": 19.8616,
+              "std": 5.4882,
+              "min": 4.959,
+              "max": 32.5603,
+              "count": 485
+            },
+            {
+              "start": 73.6,
+              "end": 90.55,
+              "mean": 31.1199,
+              "std": 10.6089,
+              "min": 9.1378,
+              "max": 57.5419,
+              "count": 340
+            },
+            {
+              "start": 90.6,
+              "end": 94.55,
+              "mean": 11.4357,
+              "std": 3.3537,
+              "min": 3.1709,
+              "max": 18.2272,
+              "count": 80
+            },
+            {
+              "start": 94.6,
+              "end": 100.95,
+              "mean": 39.7187,
+              "std": 10.7546,
+              "min": 9.5394,
+              "max": 62.9181,
+              "count": 105
+            },
+            {
+              "start": 101.0,
+              "end": 106.95,
+              "mean": 24.2297,
+              "std": 6.3018,
+              "min": 12.8266,
+              "max": 39.2369,
+              "count": 120
+            }
+          ]
+        },
+        "penalty_used": 144.27,
+        "sensitivity": 0.2
+      }
+    }
+  },
+  "performance": {
+    "success": true,
+    "recording_id": 103,
+    "total_score": 40.5,
+    "total_label": "Potrebuje zlepšenie",
+    "dimensions": {
+      "voice": {
+        "score": 7.9,
+        "label": "Slabé",
+        "weight": 0.37,
+        "issues": [
+          "voice_monotone",
+          "voice_volume"
+        ],
+        "issue_locations": {
+          "voice_monotone": "beginning",
+          "voice_volume": "beginning"
+        }
+      },
+      "fluency": {
+        "score": 59.9,
+        "label": "Potrebuje zlepšenie",
+        "weight": 0.27,
+        "issues": [
+          "fluency_filler"
+        ],
+        "issue_locations": {
+          "fluency_filler": "throughout"
+        },
+        "filler_per_minute": 5.02
+      },
+      "body": {
+        "score": 81.3,
+        "label": "Dobré",
+        "weight": 0.09,
+        "issues": [],
+        "issue_locations": {}
+      },
+      "eye_contact": {
+        "score": 52.1,
+        "label": "Potrebuje zlepšenie",
+        "weight": 0.27,
+        "issues": [
+          "eye_contact_away",
+          "eye_contact_staring"
+        ],
+        "issue_locations": {
+          "eye_contact_away": "throughout",
+          "eye_contact_staring": "middle"
+        }
+      }
+    },
+    "recommendations": [
+      "Váš hlas bol monotónny vo veľkej časti prezentácie. Skúste viac varirovať výšku hlasu, najmä pri kľúčových myšlienkach. Prejavilo sa to najmä na začiatku prezentácie.",
+      "Hlasitosť vášho prejavu bola často mimo optimálneho rozsahu (príticho alebo prihlas). Snažte sa udržiavať konzistentnú, zreteľnú hlasitosť. Prejavilo sa to najmä na začiatku prezentácie.",
+      "Používate príliš veľa výplňových slov (ehm, teda, takže...). Namiesto výplňových slov skúste krátku pauzu — pôsobí sebaisto. Vyskytovalo sa to počas celej prezentácie.",
+      "Príliš často ste sa pozerali mimo publikum. Snažte sa udržiavať očný kontakt s rôznymi časťami publika. Vyskytovalo sa to počas celej prezentácie.",
+      "Dlho ste sa fixovali na jedno miesto. Rozdeľujte pohľad rovnomerne po celom publiku. Prejavilo sa to najmä v strednej časti prezentácie."
+    ]
+  }
+}

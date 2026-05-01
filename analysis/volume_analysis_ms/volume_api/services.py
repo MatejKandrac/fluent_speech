@@ -64,6 +64,36 @@ class VolumeAnalysisService:
                 merged.append(dict(seg))
         return [s for s in merged if s['duration_seconds'] >= min_duration]
 
+    def _coverage_filter(
+        self,
+        segments: List[Dict[str, Any]],
+        dbfs: np.ndarray,
+        sr: float,
+        hop_length: int,
+        silence_floor: float,
+        low: Optional[float],
+        high: Optional[float],
+        min_coverage: float,
+    ) -> List[Dict[str, Any]]:
+        """Keep only segments where ≥ min_coverage fraction of frames actually violate threshold."""
+        duration_per_frame = hop_length / sr
+        filtered = []
+        for seg in segments:
+            start_frame = int(round(seg['start_timestamp'] / duration_per_frame))
+            end_frame = int(round(seg['end_timestamp'] / duration_per_frame))
+            window = dbfs[start_frame:end_frame]
+            if len(window) == 0:
+                continue
+            if low is not None:
+                bad = np.sum((window > silence_floor) & (window < low))
+            elif high is not None:
+                bad = np.sum(window > high)
+            else:
+                bad = 0
+            if bad / len(window) >= min_coverage:
+                filtered.append(seg)
+        return filtered
+
     def detect_volume_segments(
         self,
         dbfs: np.ndarray,
@@ -111,10 +141,20 @@ class VolumeAnalysisService:
                         'mean_dbfs': round(float(dbfs[current_start:].mean()), 2),
                     })
 
+        merge_gap = self.config.get('merge_gap_s', 0.5)
+        min_coverage = self.config.get('min_bad_frame_coverage', 0.5)
+
         too_soft_segments = self._merge_segments(
-            too_soft_segments, dbfs, sr, hop_length, merge_gap_s=1.0, min_duration=min_duration)
+            too_soft_segments, dbfs, sr, hop_length, merge_gap_s=merge_gap, min_duration=min_duration)
+        too_soft_segments = self._coverage_filter(
+            too_soft_segments, dbfs, sr, hop_length, silence_floor,
+            low=too_soft, high=None, min_coverage=min_coverage)
+
         too_loud_segments = self._merge_segments(
-            too_loud_segments, dbfs, sr, hop_length, merge_gap_s=0.5, min_duration=min_duration)
+            too_loud_segments, dbfs, sr, hop_length, merge_gap_s=merge_gap, min_duration=min_duration)
+        too_loud_segments = self._coverage_filter(
+            too_loud_segments, dbfs, sr, hop_length, silence_floor,
+            low=None, high=too_loud, min_coverage=min_coverage)
 
         return {'too_soft': too_soft_segments, 'too_loud': too_loud_segments}
 

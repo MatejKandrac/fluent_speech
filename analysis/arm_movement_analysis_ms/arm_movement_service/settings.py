@@ -54,5 +54,6 @@ MOVEMENT_ANALYSIS_CONFIG = {
     'excessive_rolling_window': int(os.getenv('EXCESSIVE_ROLLING_WINDOW', '15')),
     'min_consecutive_duration_ms': int(os.getenv('MIN_CONSECUTIVE_DURATION_MS', '333')),
     'excessive_merge_gap_ms': int(os.getenv('EXCESSIVE_MERGE_GAP_MS', '600')),
+    'excessive_min_duration_ms': int(os.getenv('EXCESSIVE_MIN_DURATION_MS', '1000')),
     'arm_segmentation_sensitivity': float(os.getenv('ARM_SEGMENTATION_SENSITIVITY', '0.5')),
 }

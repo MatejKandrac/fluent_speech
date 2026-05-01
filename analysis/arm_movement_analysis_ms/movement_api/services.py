@@ -292,6 +292,7 @@ class ArmMovementAnalysisService:
         win = self.config['excessive_rolling_window']
         min_frames = self.config['min_consecutive_frames']
         merge_gap_s = self.config['excessive_merge_gap_s']
+        excessive_min_duration_s = self.config.get('excessive_min_duration_ms', 1000) / 1000.0
 
         # Per-wrist rolling average (same window used in visualization)
         left_raw = [f['left_wrist']['velocity'] if f.get('left_wrist') else None for f in kinematics_data]
@@ -338,8 +339,8 @@ class ArmMovementAnalysisService:
             left_vel_s = left_smooth[i]
             right_vel_s = right_smooth[i]
 
-            # ── Bilateral no-movement (raw — sensitive to any motion) ──────────
-            active_vels = [v for v in [left_vel_raw, right_vel_raw] if v is not None]
+            # ── Bilateral no-movement (smoothed — robust to brief micro-spikes) ──
+            active_vels = [v for v in [left_vel_s, right_vel_s] if v is not None]
             both_still = bool(active_vels) and max(active_vels) < no_movement_threshold
 
             if both_still:
@@ -402,10 +403,14 @@ class ArmMovementAnalysisService:
                 'duration_frames': len(right_excessive_streak)
             })
 
-        # Merge nearby events per hand, then combine
+        # Merge nearby events per hand, filter short ones, then combine
+        def _filter_min_duration(events, min_dur_s):
+            return [e for e in events
+                    if e['end_timestamp'] - e['start_timestamp'] >= min_dur_s]
+
         excessive_movement_periods = (
-            self._merge_excessive_events(raw_left_excessive, merge_gap_s) +
-            self._merge_excessive_events(raw_right_excessive, merge_gap_s)
+            _filter_min_duration(self._merge_excessive_events(raw_left_excessive, merge_gap_s), excessive_min_duration_s) +
+            _filter_min_duration(self._merge_excessive_events(raw_right_excessive, merge_gap_s), excessive_min_duration_s)
         )
 
         print(f"Detected {len(no_movement_periods)} no-movement periods")

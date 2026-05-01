@@ -68,6 +68,7 @@ MEDIAPIPE_CONFIG = {
 VIDEO_PROCESSING_CONFIG = {
     'frame_interval': float(os.getenv('FRAME_INTERVAL', '0.2')),  # Process frame every N seconds
     'max_video_duration': 600,  # Maximum video duration in seconds (10 minutes)
+    'video_processing_debug_output': os.getenv('VIDEO_DEBUG_OUTPUT', 'False') == 'True'
 }
 
 AUDIO_ANALYSIS_SERVICE_URL = os.getenv('AUDIO_ANALYSIS_SERVICE_URL', 'http://localhost:8004')

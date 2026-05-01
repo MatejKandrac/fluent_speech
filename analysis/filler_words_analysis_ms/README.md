@@ -1,6 +1,6 @@
 # Filler Words Analysis Service
 
-A microservice that detects filler words and non-verbal fillers (uhh sounds) in speech, computes usage statistics, and identifies where usage rate shifts during the presentation.
+A microservice that detects filler words and non-verbal fillers (uhh sounds) in speech, computes usage statistics, and identifies time zones where filler rate is significantly elevated.
 
 ## What This Service Does
 
@@ -8,7 +8,7 @@ A microservice that detects filler words and non-verbal fillers (uhh sounds) in 
 - Detects Slovak and English filler words using word-boundary regex matching
 - Detects non-verbal uhh/umm sounds by cross-referencing inter-word gaps with pitch stability from the pitch analysis service
 - Computes usage statistics and per-minute rate
-- Sends a binned count time series to the segmentation service to find where filler word rate changes
+- Finds elevated-density time zones using **bottom-up segmentation** of binned filler counts
 - Saves debug visualisations and uhh audio clips
 
 ## How Detection Works
@@ -29,9 +29,20 @@ Inter-word gaps (silence between consecutive words) are inspected using the pitc
 
 This catches sounds like "eeeh" or "umm" that Whisper transcribes as silence gaps.
 
-### Punctuation Stripping
+## Peak Zone Detection (Bottom-Up Segmentation)
 
-Words loaded from the DB have trailing `.` and `,` stripped at match time only — the database values are preserved unchanged.
+Instead of PELT change-point detection (which finds regime shifts), the service uses a **bottom-up segmentation** approach to find time zones where filler density is elevated:
+
+1. Divide the presentation into fixed-size bins (`FILLER_SEGMENTATION_BIN_SIZE` seconds each)
+2. Compute fillers/minute in each bin
+3. **Bottom-up merge:** start with each bin as its own segment; iteratively merge the pair of adjacent segments whose mean rates are most similar; stop when the cheapest remaining merge would join two segments differing by more than `FILLER_BOTTOM_UP_MERGE_K × std(all rates)`
+4. **Post-filter:** segments whose mean rate exceeds `overall_rate × FILLER_PEAK_ZONE_MULTIPLIER` are returned as zones
+
+This correctly handles both cases:
+- **Uniform distribution** → all segment means ≈ overall mean → no zones flagged → `distribution: "even"`
+- **Concentrated usage** → high-density segment(s) isolated → zones returned → `distribution: "concentrated"`
+
+The distribution result feeds directly into `performance_ms` for the fluency score: uniform distribution is penalised more than concentrated (per research finding H2.1).
 
 ## Processing Pipeline
 
@@ -43,8 +54,8 @@ Words loaded from the DB have trailing `.` and `,` stripped at match time only �
 6. Merge all occurrences, compute statistics
 7. Save pitch+uhh debug plot; save uhh WAV clips if any detected
 8. Save cumulative timeline visualisation (in DEBUG mode)
-9. Bin occurrences into `FILLER_SEGMENTATION_BIN_SIZE`-second windows → call segmentation service
-10. Return statistics + occurrences + segmentation result
+9. Run bottom-up zone detection → save zone density plot
+10. Return statistics + occurrences + peak_zones
 
 ## API Endpoints
 
@@ -66,7 +77,6 @@ POST /api/v1/filler-words/{recording_id}/analyze/
   "success": true,
   "recording_id": 8,
   "duration": 31.54,
-  "detected_language": "unknown",
   "statistics": {
     "total_filler_words": 7,
     "fillers_per_minute": 13.32,
@@ -79,57 +89,60 @@ POST /api/v1/filler-words/{recording_id}/analyze/
   "filler_occurrences": [ ... ],
   "total_filler_occurrences": 7,
   "uhh_occurrences_count": 0,
-  "segmentation": {
-    "success": true,
-    "change_points": { "mean": [20.0] },
-    "segments": { "mean": [ ... ] },
-    "penalty_used": 22.361,
-    "sensitivity": 0.5
+  "peak_zones": {
+    "distribution": "concentrated",
+    "zones": [
+      {
+        "start": 10.0,
+        "end": 20.0,
+        "rate_per_min": 24.0,
+        "overall_rate_per_min": 13.3,
+        "peak_ratio": 1.8
+      }
+    ],
+    "overall_rate_per_min": 13.3,
+    "threshold_multiplier": 2.0
   },
   "message": "Filler words analysis completed successfully."
 }
 ```
-
-## Segmentation Integration
-
-Filler word occurrences are binned into `FILLER_SEGMENTATION_BIN_SIZE`-second windows (default 10s). The count per bin is the time series value — no further pre-processing needed since this is already a coarse, noise-free signal. Only the `mean` method is used to find where the usage rate shifts.
-
-Empty bins are excluded from the series (except t=0 as an anchor) to avoid PELT treating zero-count gaps as change points.
-
-**Bin size tuning:** for short recordings (30–60s), 10s bins give 3–6 points, which is the minimum useful range. Lower to 5s (`FILLER_SEGMENTATION_BIN_SIZE=5.0`) for finer granularity.
-
-## Debug Output
-
-`debug_output/{recording_id}/`:
-- `pitch_uhh.png` — pitch over time with word spans (blue) and detected uhh gaps (orange)
-- `uhh_1_{start}s.wav`, `uhh_2_{start}s.wav`, ... — audio clips of each detected uhh (always saved when detections exist)
-- `filler_words_timeline_{recording_id}.png` — cumulative step chart of filler word count over time (DEBUG mode only)
-
-`segmentation_ms/debug_output/filler_{recording_id}/segmentation.png` — PELT segmentation of the binned count series.
 
 ## Configuration
 
 ```bash
 # Detection thresholds
 HIGH_FILLER_THRESHOLD=5              # Fillers/minute above which is_high_usage=true
-MIN_SPEECH_DURATION=10               # Minimum recording length for analysis (s)
+MIN_SPEECH_DURATION=8                # Minimum recording length for analysis (s)
+FILLER_MIN_WORD_PROBABILITY=0.5      # Whisper word confidence threshold
 
 # Uhh detection
-UHH_PITCH_STD_THRESHOLD=15.0        # Max pitch std (Hz) for a gap to be classified as uhh
-UHH_MIN_GAP_DURATION_MS=400         # Minimum gap length to consider
+UHH_PITCH_STD_THRESHOLD=5.0         # Max pitch std (Hz) for a gap to be classified as uhh
+UHH_MIN_GAP_DURATION_MS=200         # Minimum gap length to consider
 UHH_MIN_VOICED_DURATION_MS=200      # Minimum voiced content within gap
 
-# Segmentation
-SEGMENTATION_SERVICE_URL=http://localhost:8010
-FILLER_SEGMENTATION_BIN_SIZE=10.0   # Seconds per bin
-FILLER_SEGMENTATION_SENSITIVITY=0.5 # 0=fewer segments, 1=more granular
+# Bottom-up zone detection
+FILLER_SEGMENTATION_BIN_SIZE=10.0   # Seconds per bin (smaller = finer, min ~5s)
+FILLER_BOTTOM_UP_MERGE_K=1.0        # Merge stops when cost > k × std(rates)
+                                     #   lower (0.5) = more segments, stricter zones
+                                     #   higher (2.0) = fewer, broader segments
+FILLER_PEAK_ZONE_MULTIPLIER=2.0     # A segment is a zone if rate > multiplier × overall
+                                     #   2.0 = strict (few false positives)
+                                     #   1.5 = more sensitive
 ```
+
+## Debug Output
+
+`debug_output/{recording_id}/`:
+- `pitch_uhh.png` — pitch over time with word spans (blue) and detected uhh gaps (orange)
+- `uhh_1_{start}s.wav`, `uhh_2_{start}s.wav`, ... — audio clips of each detected uhh
+- `filler_words_timeline_{recording_id}.png` — cumulative step chart (DEBUG mode only)
+- `filler_zones.png` — bar chart of fillers/minute per bin, with segment boundaries, overall average, zone threshold, and zones highlighted in red
 
 ## Dependencies
 
 - **matplotlib** — debug visualisations
 - **numpy** — binning and statistics
 - **soundfile** — saving uhh audio clips
-- **requests** — calls pitch_analysis_ms and segmentation_ms
+- **requests** — calls pitch_analysis_ms
 - **Django / DRF** — web framework
 - **psycopg2** — PostgreSQL

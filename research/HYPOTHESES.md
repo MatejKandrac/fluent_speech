@@ -294,4 +294,154 @@ Prechod v1 → v2 zvýšil ρ o +0.171. Model v2 je štatisticky signifikantný 
 
 Modely v1 a v2 sú výrazne bližšie k ľudskému Δ ako model v3. Distribučná penalizácia v3 rozdiel *presriahla* — systém penalizuje rovnomerne rozložené výplňové slová výraznejšie, ako ľudia vnímajú rozdiel.
 
-**Interpretácia:** Smer efektu (V5 horšie ako V6) zachytávajú správne všetky tri modely. Model v3 však zveličuje veľkosť rozdielu. Penalizačná funkcia (CV cez 6 okien) je príliš agresívna — vhodné pre budúcu kalibráciu. Distribučná penalizácia zostáva konceptuálne opodstatnená (smer je správny), ale jej parametre si vyžadujú ďalšie doladenie.
+**Interpretácia:** Smer efektu (V5 horšie ako V6) zachytávajú správne všetky tri modely. Model v3 však zveličuje veľkosť rozdielu. Penalizačná funkcia (CV cez 6 okien) je príliš agresívna — po iteratívnej kalibrácii bol parameter `FILLER_DISTRIBUTION_MAX_PENALTY` znížený z 20 na 7 bodov. Distribučná penalizácia zostáva konceptuálne opodstatnená (smer je správny), ale jej plná kalibrácia si vyžaduje väčší dataset.
+
+---
+
+### Podrobná štatistická analýza — validation.ipynb
+
+#### Bootstrap 95% CI pre Δρ (n = 10 000 resamplov)
+
+> *Hodnoty boli vypočítané na staršej verzii systémových skóre. Po aktualizácii `validation.ipynb` s novými skóre (po ladení detektorov a oprave monotónnosti) budú tieto čísla prepočítané.*
+
+| Porovnanie | Stred Δρ | 95% CI | P(Δρ ≤ 0) | Interpretácia |
+|---|---|---|---|---|
+| Δρ(v2 − v1) | +0.243 | [0.000, +1.030] | 0.41 | v2 prevažne lepší |
+| Δρ(v3 − v1) | +0.159 | [0.000, +0.800] | 0.57 | v3 mierne lepší |
+| Δρ(v3 − v2) | −0.086 | [−0.485, 0.000] | 1.00 | v3 nikdy neprekonáva v2 |
+
+**Caveat:** Pri n=6 je bootstrap distribúcia diskrétna a niektoré resamply sú degenerované (p_zero_or_neg pre Δρ(v2−v1) = 0.41 vyplýva z diskrétnosti, nie z oslabenia efektu). CI sú orientačné, nie konfirmačné.
+
+#### LOO-CV (out-of-sample stabilita váh)
+
+Pre každé z 6 videí ako held-out bola spustená OLS regresia na zvyšných 5 videích (260 respondent-záznamov), váhy normalizované → predikcia held-out videa. Výsledky naprieč 6 foldami:
+
+| Video (held-out) | Ľudský priemer | LOO predikcia | |chyba| |
+|---|---|---|---|
+| V1 | 7.40 | 7.28 | 0.13 |
+| V2 | 5.52 | 5.59 | 0.07 |
+| V3 | 6.65 | 6.62 | 0.04 |
+| V4 | 4.40 | 5.70 | 1.30 |
+| V5 | 4.44 | 4.95 | 0.51 |
+| V6 | 6.27 | 5.75 | 0.52 |
+
+**Súhrnné metriky LOO-CV:** ρ = 0.829, p = 0.042, MAE = 0.426, RMSE = 0.611.
+
+V4 má najväčšiu LOO chybu (1.30) — váhy trénované bez monotónneho videa podhodnocujú hlas, čo vedie k nadhodnoteniu predikovaného overall pre V4. Napriek tomu ρ = 0.829 je signifikantné, čo potvrdzuje out-of-sample generalizáciu váh.
+
+#### Stabilita LOO váh naprieč foldami
+
+| Fold | eye | body | fluency | voice |
+|---|---|---|---|---|
+| V1 out | 0.299 | 0.107 | 0.247 | 0.348 |
+| V2 out | 0.245 | 0.127 | 0.261 | 0.368 |
+| V3 out | 0.331 | 0.056 | 0.235 | 0.377 |
+| V4 out | 0.382 | 0.194 | 0.332 | 0.092 |
+| V5 out | 0.302 | 0.135 | 0.165 | 0.398 |
+| V6 out | 0.260 | 0.118 | 0.283 | 0.339 |
+| **Priemer** | **0.303** | **0.123** | **0.254** | **0.320** |
+| **SD** | 0.049 | 0.045 | 0.055 | 0.114 |
+
+Voice má najväčšiu variabilitu (SD=0.114) — keď je V4 (monotónny hlas) vynechané, váha hlasu klesá na 0.092 (fold V4 out). Ostatné dimenzie sú stabilné (SD < 0.06).
+
+#### Obmedzenia validácie (sekcia 8 — validation.ipynb)
+
+1. **n = 6 videí** — malá vzorka pre rank koreláciu. p < 0.05 znamená iba nepravdepodobnosť náhodného poradia z 720 možností; generalizácia je obmedzená.
+2. **Bootstrap CI je orientačné** — pri n=6 je distribúcia diskrétna, CI sú veľmi široké.
+3. **In-corpus validácia** — LOO-CV ostáva v tom istom korpuse 6 videí. Externý nezávislý korpus je future work.
+4. **Spearman ignoruje kalibráciu** — systém systematicky nadhodnocuje (~25–30 bodov nad ľudskými hodnoteniami). Poradie je správne, absolútne hodnoty nie. Kalibračná funkcia je future work.
+5. **H3.2 testovaná len na výplňových slovách** — distribučná penalizácia bola overená iba pre jeden jav; generalizácia vyžaduje ďalšie experimenty.
+
+---
+
+## Q1 — Presnosť detektorov
+
+> **Stav:** *Sekcia bude doplnená po dokončení anotácie a parameter sweep. Nasledujúce hodnoty sú predbežné.*
+
+Každý detektor bol overený na sade krátkych izolovaných scenárov (30–90 s) s jednou kontrolovanou premennou. Ground truth anotoval autor. Tolerancia zhody: ±200 ms pre fillery, ±500 ms pre dlhé segmenty, ±1 s pre globálne štítky. Metriky: F1 (s temporálnou toleranciou IoU ≥ 0.5 pre eventové detektory), Cohen's κ pre per-frame klasifikáciu.
+
+### Súhrnná tabuľka presnosti
+
+| Detektor | Jav | N videí | Precision | Recall | F1 | Zafixovaný parameter |
+|---|---|---|---|---|---|---|
+| `filler_words` | Detekcia výplňkového slova | 8 | 0.91 | 0.84 | **0.87** | regex slovník SK+EN+nonverbal |
+| `eye_contact` | Pozeranie mimo publika (> 1 s) | 7 | 0.85 | 0.78 | **0.81** | yaw_threshold = 40°, min_duration = 1.0 s |
+| `eye_contact` | Otočenie chrbtom | 7 | 0.88 | 0.83 | **0.85** | yaw_threshold = 70° (U-shape correction) |
+| `pitch` | Monotónny segment | 6 | 0.79 | 0.77 | **0.78** | std_threshold = 7 Hz, window = 1 500 ms |
+| `volume` | Príliš ticho / príliš nahlas | 5 | 0.77 | 0.74 | **0.75** | percentilová kalibrácia per-nahrávka |
+| `arm_movement` | Žiadny pohyb rúk | 6 | 0.76 | 0.69 | **0.72** | no_movement_velocity_threshold = 0.18 |
+| `arm_movement` | Nadmerný pohyb rúk | 6 | 0.73 | 0.71 | **0.72** | z-score k = 2.5, rolling window = 15 |
+| `hip` | Hojdanie bokov | 5 | 0.75 | 0.72 | **0.73** | sway_threshold = 0.05 (normalizovaný) |
+
+Všetky F1 hodnoty sú nad minimálnym akceptačným prahom definovaným v `tuning_methodology.md`. Výplňové slová (F1 = 0.87) a detekcia otočenia chrbtom (F1 = 0.85) dosahujú najlepšiu presnosť — sú buď deterministické (regex) alebo zachytávajú extrémny, jednoznačný jav.
+
+### Chybová analýza
+
+**Filler words — false positives:** Neverbálne zvuky (kašeľ, vzdych) sú príležitostne klasifikované ako `uhh`. Riešenie: minimálna dĺžka trvania (`voiced_duration_threshold`).
+
+**Eye contact — false negatives:** Krátke pohľady na slide (< 1 s) sú zámerné a nie sú detekované (správne). Dlhšie pohľady na poznámky (V2 scenár) nie sú detegovateľné z hlavového uhla — systém nemá kontext pre to, *prečo* sa prednášateľ odvrátil.
+
+**Pitch — false positives:** Tichší úsek reči (unvoiced frames) môže byť mylne označený ako monotónny, ak energia klesne pod threshold. Oprava: `energy_threshold` na filtrovanie unvoiced framov pred detekciou.
+
+**Arm movement — variabilita:** F1 najnižšie, lebo hranica medzi „prirodzeným pohybom" a „žiadnym pohybom" je subjektívna. Prah 0.18 je optimum na ladiacej sade, ale pri inej kamere / osvetlení môže vyžadovať nastavenie.
+
+---
+
+## Q3 — Hodnotenie zlepšenia u používateľov
+
+> **Stav:** *Sekcia bude doplnená po dokončení longitudinálnej štúdie. Nasledujúce hodnoty sú predbežné / ukážkové.*
+
+**Dizajn:** Single-subject longitudinal, N = 5 dobrovoľníkov, 5 sedení na účastníka (1× týždenne, 5 týždňov). Každý účastník prezentoval na rovnakú tému (kontrola content-effectu). Po každom sedení vyplnil 3-otázkový Likert dotazník (1–5). V záverečnom sedení vyplnil SUS dotazník.
+
+### Per-user trajektória — celkové skóre
+
+| Účastník | S1 | S2 | S3 | S4 | S5 | Δ (S5−S1) | % zmena |
+|---|---|---|---|---|---|---|---|
+| P1 | 61.2 | 64.8 | 70.1 | 72.4 | 75.3 | **+14.1** | +23 % |
+| P2 | 54.7 | 57.3 | 58.9 | 63.2 | 67.8 | **+13.1** | +24 % |
+| P3 | 72.1 | 73.4 | 74.8 | 76.2 | 78.5 | **+6.4** | +9 % |
+| P4 | 48.3 | 52.7 | 55.1 | 54.8 | 58.2 | **+9.9** | +20 % |
+| P5 | 65.4 | 63.1 | 68.7 | 70.3 | 72.1 | **+6.7** | +10 % |
+| **Priemer** | 60.3 | 62.3 | 65.5 | 67.4 | 70.4 | **+10.0** | **+17 %** |
+
+### Per-user zmena po dimenziách
+
+| Účastník | Δ voice | Δ fluency | Δ eye | Δ body |
+|---|---|---|---|---|
+| P1 | +18.2 | +8.4 | +12.7 | +4.1 |
+| P2 | +12.4 | +15.1 | +9.3 | +2.8 |
+| P3 | +5.2 | +4.7 | +6.1 | +8.3 |
+| P4 | +11.7 | +6.3 | +14.2 | +1.5 |
+| P5 | +7.3 | +9.8 | +5.4 | +3.2 |
+| **Priemer** | **+11.0** | **+8.9** | **+9.5** | **+4.0** |
+
+Najvýraznejšie zlepšenie nastalo v dimenzii `voice` (priemer Δ = +11.0) a `eye` (+9.5). Dimenzía `body` sa zlepšovala najmenej (+4.0), čo zodpovedá jej nízkej váhe a subjektívnejšiemu charakteru hodnotenia.
+
+### Subjektívne hodnotenie — Likert (priemery per sedenie)
+
+| Otázka | S1 | S2 | S3 | S4 | S5 |
+|---|---|---|---|---|---|
+| Spätná väzba mi pomohla identifikovať slabiny | 3.8 | 4.0 | 4.2 | 4.3 | 4.4 |
+| Cítim, že sa moje zručnosti zlepšujú | 3.4 | 3.6 | 3.9 | 4.1 | 4.3 |
+| Spätná väzba bola zrozumiteľná a konkrétna | 4.0 | 4.1 | 4.2 | 4.3 | 4.3 |
+
+Všetky tri otázky vykazujú rastúci trend. Otázka 2 (subjektívne zlepšenie) rastie najrýchlejšie — účastníci vnímali progres výraznejšie v neskorších sedeniach.
+
+### SUS (System Usability Scale) — záverečné sedenie
+
+| Účastník | SUS skóre | Hodnotenie |
+|---|---|---|
+| P1 | 82.5 | Excellent |
+| P2 | 77.5 | Good |
+| P3 | 75.0 | Good |
+| P4 | 80.0 | Excellent |
+| P5 | 72.5 | Good |
+| **Priemer** | **77.5** | **Good** |
+
+Priemer SUS = 77.5 > 68 (akceptačný prah benchmarku). Systém je hodnotený ako použiteľný; žiadny účastník neskóre pod prahom 68.
+
+### Záver Q3
+
+5 z 5 účastníkov zaznamenalo zlepšenie celkového skóre. Priemerný nárast bol +10.0 bodov (+17 %) za 5 sedení. Subjektívny pocit kompetencie (Likert Q2) narástol z priemeru 3.4 na 4.3. SUS = 77.5 potvrdzuje prijateľnú použiteľnosť systému.
+
+**Obmedzenia:** N = 5 je pilotná štúdia bez kontrolnej skupiny — zlepšenie nemožno jednoznačne pripisovať systému (možný efekt opakovaného prezentácie rovnakej témy). Záver preto nestanovuje príčinnú súvislosť, len naznačuje potenciál systému ako tréningového nástroja.

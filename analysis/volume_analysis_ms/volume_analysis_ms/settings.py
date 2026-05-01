@@ -66,5 +66,7 @@ VOLUME_ANALYSIS_CONFIG = {
     'soft_margin_db': float(os.getenv('VOLUME_SOFT_MARGIN_DB', 8.0)),
     'loud_margin_db': float(os.getenv('VOLUME_LOUD_MARGIN_DB', 6.0)),
     'min_segment_duration_ms': float(os.getenv('VOLUME_MIN_SEGMENT_MS', 500.0)),
+    'merge_gap_s': float(os.getenv('VOLUME_MERGE_GAP_S', 0.5)),
+    'min_bad_frame_coverage': float(os.getenv('VOLUME_MIN_BAD_FRAME_COVERAGE', 0.5)),
     'segmentation_sensitivity': float(os.getenv('VOLUME_SEGMENTATION_SENSITIVITY', 0.2)),
 }

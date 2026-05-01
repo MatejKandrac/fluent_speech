@@ -1,0 +1,14 @@
+{
+  "video_id": "V1",
+  "duration_s": 65.0,
+  "annotator": "Matej",
+  "notes": "dotaznik video",
+  "annotations": {
+    "arm_no_gesture": [
+      {"start": 0.0, "end": 44.0}
+    ],
+    "arm_excessive": [
+      {"start": 46.0, "end": 50.0}
+    ]
+  }
+}

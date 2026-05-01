@@ -60,6 +60,5 @@ CREATE INDEX idx_word_time ON word (recording_id, start_time);
 
 COMMENT ON TABLE recording IS 'Stores video file metadata';
 COMMENT ON TABLE frame_data IS 'Stores timestamp information for each analyzed frame (1:many with recording)';
-COMMENT ON TABLE audio_features IS 'Stores audio analysis data (pitch, volume) independently from video frames (1:many with recording)';
 COMMENT ON TABLE landmark IS 'Stores individual landmark coordinates (1:many with frame_data)';
 COMMENT ON TABLE word IS 'Stores transcribed words with timestamps and confidence scores from Whisper (1:many with recording)';

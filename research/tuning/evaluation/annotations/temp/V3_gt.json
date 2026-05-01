@@ -1,0 +1,21 @@
+{
+  "video_id": "V3",
+  "video_file": "V1.mp4",
+  "duration_s": 51,
+  "annotator": "Matej",
+  "notes": "Hip sway dotaznik",
+  "annotations": {
+    "eye_contact_away": [
+    ],
+    "eye_contact_back": [],
+    "arm_no_gesture": [],
+    "arm_excessive": [],
+    "hip_sway": [
+      {"start": 0.0, "end": 51.0}
+    ],
+    "filler_words": [],
+    "pitch_monotone": [],
+    "volume_too_quiet": [],
+    "volume_too_loud": []
+  }
+}

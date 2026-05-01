@@ -1,0 +1,78 @@
+{
+  "success": true,
+  "recording_id": 112,
+  "completed_analyses": [
+    "arm_movement"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "arm_movement": {
+      "success": true,
+      "recording_id": 112,
+      "total_frames": 493,
+      "normalized_frames_count": 493,
+      "visualization_path": "C:\\Users\\matke\\fluent_speech\\analysis\\arm_movement_analysis_ms\\debug_output\\112\\wrist_kinematics_recording_112.png",
+      "statistics": {
+        "left_wrist": {
+          "avg_velocity": 0.17649061750864453,
+          "max_velocity": 5.075556695552316,
+          "avg_acceleration": 0.13110057349876458,
+          "max_acceleration": 4.051164156322655
+        },
+        "right_wrist": {
+          "avg_velocity": 0.16909938754594386,
+          "max_velocity": 6.120522740635945,
+          "avg_acceleration": 0.13109912606940805,
+          "max_acceleration": 5.70330154187687
+        }
+      },
+      "anomalies": {
+        "no_movement_periods": [
+          {
+            "start_timestamp": 8.071,
+            "end_timestamp": 13.54,
+            "duration_frames": 83
+          },
+          {
+            "start_timestamp": 23.479,
+            "end_timestamp": 32.683,
+            "duration_frames": 139
+          }
+        ],
+        "excessive_movement_periods": [
+          {
+            "wrist": "left",
+            "start_timestamp": 20.744,
+            "end_timestamp": 22.345,
+            "duration_frames": 25
+          },
+          {
+            "wrist": "right",
+            "start_timestamp": 20.744,
+            "end_timestamp": 22.278,
+            "duration_frames": 22
+          }
+        ],
+        "thresholds": {
+          "no_movement_velocity_threshold": 0.18,
+          "excessive_movement_velocity_threshold": 0.6923709651040584,
+          "excessive_z_score_k": 2.5,
+          "excessive_rolling_window": 10,
+          "velocity_mean": 0.17275097196979705,
+          "velocity_std": 0.20784799725370454,
+          "min_consecutive_frames": 60,
+          "excessive_merge_gap_s": 2.0
+        }
+      },
+      "segmentation": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8010): Max retries exceeded with url: /api/v1/segment/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000022D07B4BE60>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+      },
+      "message": "Arm movement analysis completed successfully."
+    }
+  },
+  "performance": {
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8012): Max retries exceeded with url: /api/v1/performance/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002B05B7551C0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+  }
+}

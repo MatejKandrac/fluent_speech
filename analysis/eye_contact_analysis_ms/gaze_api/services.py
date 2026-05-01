@@ -580,6 +580,21 @@ class EyeContactAnalysisService:
         # old hold-last-value strategy did.
         self.smooth_yaw(angle_data)
 
+        # Per-video pitch normalization: subtract the median pitch so that the
+        # person's typical gaze direction maps to 0°.  The raw pitch is biased
+        # downward by a variable amount on every video because MediaPipe places
+        # the nose below the ears in 2-D image coordinates even when looking
+        # straight ahead, and the offset depends on camera height, distance, and
+        # individual anatomy.  Yaw does not need this — atan2 of the ear depth
+        # vector is already zero-centred by construction.
+        valid_pitches = [f['pitch'] for f in angle_data if f['pitch'] is not None]
+        if valid_pitches:
+            median_pitch = sorted(valid_pitches)[len(valid_pitches) // 2]
+            print(f"Pitch median offset: {median_pitch:.2f}° → subtracting from all frames")
+            for frame in angle_data:
+                if frame['pitch'] is not None:
+                    frame['pitch'] = max(-90.0, min(90.0, frame['pitch'] - median_pitch))
+
         heatmap_data = self.build_heatmap(angle_data, frame_duration)
         print(f"Built heatmap with {heatmap_data['shape']['n_yaw_bins']}x{heatmap_data['shape']['n_pitch_bins']} bins")
 

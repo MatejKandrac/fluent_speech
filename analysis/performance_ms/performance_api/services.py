@@ -140,35 +140,39 @@ def _score_voice(
     total_duration: float,
 ) -> Dict[str, Any]:
     """
-    Penalties:
-      - monotone_pct  : % voiced frames in monotone segments  → 0 % → 0 pen, ≥ 70 % → 50 pen
-      - volume_pct    : % total frames with bad volume         → 0 % → 0 pen, ≥ 50 % → 50 pen
+    Penalties (voice = 100 pts total):
+      - monotone_pct  : % voiced frames in monotone segments  → 0 % → 0 pen, ≥ 70 % → 80 pen  (80 %)
+      - volume_pct    : % total frames with bad volume         → 0 % → 0 pen, ≥ 50 % → 20 pen  (20 %)
+
+    Volume is intentionally capped at 20 pts because adaptive threshold calibration
+    is microphone-dependent and produces more false positives than pitch detection.
     """
     penalty = 0.0
     issues: List[str] = []
     issue_locations: Dict[str, Optional[str]] = {}
 
-    # --- pitch monotony ---
+    # --- pitch monotony (80 % of voice score) ---
     if pitch:
         voiced_frames = pitch.get('voiced_frames', 0)
         monotone_segments = pitch.get('monotonous_segments', [])
 
         if voiced_frames > 0 and monotone_segments:
-            duration_per_frame = pitch.get('duration_per_frame')
-            if duration_per_frame and duration_per_frame > 0:
-                monotone_frames = sum(
-                    s.get('duration_seconds', 0) / duration_per_frame
-                    for s in monotone_segments
-                )
-            else:
-                total_duration_seg = sum(s.get('duration_seconds', 0) for s in monotone_segments)
-                monotone_frames = (total_duration_seg / max(total_duration_seg, 1)) * voiced_frames
+            monotone_duration_sec = sum(s.get('duration_seconds', 0) for s in monotone_segments)
 
-            monotone_pct = min(monotone_frames / voiced_frames, 1.0) * 100.0
+            duration_per_frame = pitch.get('duration_per_frame')
+            pitch_frames = pitch.get('pitch_frames', 0)
+            if duration_per_frame and duration_per_frame > 0:
+                voiced_duration_sec = voiced_frames * duration_per_frame
+            elif pitch_frames > 0 and total_duration > 0:
+                voiced_duration_sec = (voiced_frames / pitch_frames) * total_duration
+            else:
+                voiced_duration_sec = max(total_duration, monotone_duration_sec)
+
+            monotone_pct = min(monotone_duration_sec / max(voiced_duration_sec, 1.0), 1.0) * 100.0
         else:
             monotone_pct = 0.0
 
-        monotone_penalty = _clamp(monotone_pct / 70.0 * 50.0, 0.0, 50.0)
+        monotone_penalty = _clamp(monotone_pct / 70.0 * 80.0, 0.0, 80.0)
         penalty += monotone_penalty
         if monotone_penalty >= 20:
             issues.append('voice_monotone')
@@ -176,7 +180,7 @@ def _score_voice(
                 monotone_segments, total_duration
             )
 
-    # --- volume ---
+    # --- volume (20 % of voice score) ---
     if volume:
         total_frames = volume.get('volume_frames', 1)
         bad_segments = (
@@ -185,9 +189,9 @@ def _score_voice(
         )
         bad_frames = sum(s.get('duration_seconds', 0) for s in bad_segments)
         volume_pct = min(bad_frames / max(total_frames * 0.018, 1.0), 1.0) * 100.0
-        volume_penalty = _clamp(volume_pct / 50.0 * 50.0, 0.0, 50.0)
+        volume_penalty = _clamp(volume_pct / 50.0 * 20.0, 0.0, 20.0)
         penalty += volume_penalty
-        if volume_penalty >= 20:
+        if volume_penalty >= 10:
             issues.append('voice_volume')
             issue_locations['voice_volume'] = _locate_events(
                 bad_segments, total_duration
@@ -202,51 +206,29 @@ def _score_voice(
 # ---------------------------------------------------------------------------
 
 def _filler_distribution_penalty(
-    occurrences: list,
-    duration: float,
-    n_bins: int,
+    peak_zones: Optional[Dict],
     max_penalty: float,
-    cv_threshold: float,
 ) -> float:
+    """Additional penalty for uniformly distributed filler words (H2.1 finding).
+
+    Uses the bottom-up segmentation result from filler_words_ms directly:
+      - distribution == 'even'         → fillers spread uniformly → full penalty
+      - distribution == 'concentrated' → fillers clustered        → no penalty
+
+    Per H2.1: uniformly distributed fillers are perceived worse than concentrated
+    ones, because they cause continuous disruption rather than a single episode.
     """
-    Additional penalty for uniformly distributed filler words (H2.1 finding).
-
-    Divides the presentation into n_bins equal time windows and counts fillers
-    per window. Coefficient of Variation (CV = std/mean) measures concentration:
-      - low CV (uniform spread)    → cv_threshold penalty
-      - high CV (one dense block)  → 0 penalty
-
-    Only applied when occurrences >= 3 (too few fillers → distribution irrelevant).
-    """
-    if len(occurrences) < 3 or duration <= 0 or n_bins < 2:
+    if not peak_zones:
         return 0.0
-
-    bin_size = duration / n_bins
-    counts = [0] * n_bins
-    for occ in occurrences:
-        t = float(occ.get('start_time', 0))
-        idx = min(int(t / bin_size), n_bins - 1)
-        counts[idx] += 1
-
-    mean_count = sum(counts) / n_bins
-    if mean_count == 0:
-        return 0.0
-
-    variance = sum((c - mean_count) ** 2 for c in counts) / n_bins
-    cv = (variance ** 0.5) / mean_count
-
-    # cv >= cv_threshold → concentrated → no extra penalty
-    # cv = 0 → perfectly uniform → full max_penalty
-    penalty = max(0.0, (1.0 - min(cv, cv_threshold) / cv_threshold) * max_penalty)
-    return round(penalty, 2)
+    if peak_zones.get('distribution') == 'even':
+        return float(max_penalty)
+    return 0.0
 
 
 def _score_fluency(
     filler: Optional[Dict],
     total_duration: float,
-    distribution_bins: int = 6,
-    distribution_max_penalty: float = 20.0,
-    distribution_cv_threshold: float = 1.0,
+    distribution_max_penalty: float = 7.0,
 ) -> Dict[str, Any]:
     """
     Filler words per minute (base penalty):
@@ -255,8 +237,10 @@ def _score_fluency(
       5+   → linear 40–100 penalty (capped at 100)
 
     Distribution penalty (model v3, additive):
-      Uniform spread across the presentation adds up to distribution_max_penalty.
-      Based on H2.1: evenly distributed fillers are perceived worse than concentrated.
+      Uniform spread adds up to distribution_max_penalty.
+      Based on H2.1: evenly distributed fillers are perceived worse than
+      concentrated ones. Uses the bottom-up segmentation result from
+      filler_words_ms (peak_zones.distribution) directly.
       Applied only when fpm > 2 (meaningful filler usage).
     """
     issues: List[str] = []
@@ -280,17 +264,14 @@ def _score_fluency(
     else:
         penalty = 40.0 + min((fpm - 5.0) / 10.0 * 60.0, 60.0)
 
-    # Distribution penalty — only when fpm exceeds threshold (meaningful usage)
-    occurrences = filler.get('filler_occurrences', [])
     if fpm > 2.0:
         penalty += _filler_distribution_penalty(
-            occurrences, duration_sec,
-            n_bins=distribution_bins,
+            filler.get('peak_zones'),
             max_penalty=distribution_max_penalty,
-            cv_threshold=distribution_cv_threshold,
         )
 
     penalty = _clamp(penalty, 0.0, 100.0)
+    occurrences = filler.get('filler_occurrences', [])
     if penalty >= 20:
         issues.append('fluency_filler')
         issue_locations['fluency_filler'] = _locate_events(
@@ -458,10 +439,9 @@ def _load_weights() -> dict:
 def _load_fluency_distribution_config() -> dict:
     from django.conf import settings
     return {
-        'distribution_bins':         settings.FILLER_DISTRIBUTION_BINS,
-        'distribution_max_penalty':  settings.FILLER_DISTRIBUTION_MAX_PENALTY,
-        'distribution_cv_threshold': settings.FILLER_DISTRIBUTION_CV_THRESHOLD,
+        'distribution_max_penalty': settings.FILLER_DISTRIBUTION_MAX_PENALTY,
     }
+
 
 SCORE_LABELS = [
     (90, 'Výborné'),

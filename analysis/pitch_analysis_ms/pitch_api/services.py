@@ -340,6 +340,7 @@ class PitchAnalysisService:
                 'recording_id': recording_id,
                 'pitch_frames': len(pitch_filtered),
                 'voiced_frames': len(voiced_pitch),
+                'duration_per_frame': duration_per_frame,
                 'pitch_mean': pitch_mean,
                 'pitch_min': pitch_min,
                 'pitch_max': pitch_max,

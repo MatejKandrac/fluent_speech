@@ -70,6 +70,7 @@ class VideoProcessingService:
 
         self.frame_interval = settings.VIDEO_PROCESSING_CONFIG['frame_interval']
         self.max_duration = settings.VIDEO_PROCESSING_CONFIG['max_video_duration']
+        self.save_debug_images = settings.VIDEO_PROCESSING_CONFIG['video_processing_debug_output']
 
     def get_video_path(self, video_id: int) -> Optional[str]:
         try:
@@ -215,13 +216,10 @@ class VideoProcessingService:
                             'landmarks': landmarks
                         })
 
-                        if settings.DEBUG:
+                        if self.save_debug_images:
                             self.save_visualization(frame, str(video_id), processed_count)
 
                         processed_count += 1
-
-                        if processed_count % 10 == 0:
-                            print(f"Processed {processed_count} frames...")
 
                 frame_count += 1
 

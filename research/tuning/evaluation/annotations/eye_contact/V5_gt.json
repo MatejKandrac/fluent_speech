@@ -1,0 +1,17 @@
+{
+  "video_id": "V5",
+  "duration_s": 65.0,
+  "annotator": "Matej",
+  "notes": "116, pozrenie dookola a dozadu",
+  "annotations": {
+    "eye_contact_away": [
+      {"start": 1.5, "end": 3},
+      {"start": 3.5, "end": 5.0},
+      {"start": 6.5, "end": 8.0},
+      {"start": 9.0, "end": 12.0}
+    ],
+    "eye_contact_back": [
+      {"start": 14.0, "end": 16.0}
+    ]
+  }
+}

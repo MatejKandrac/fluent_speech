@@ -1,0 +1,15 @@
+{
+  "video_id": "V2",
+  "duration_s": 65.0,
+  "annotator": "Matej",
+  "notes": "id 112, normalne, ziadne, excessive, normalne",
+  "annotations": {
+    "arm_no_gesture": [
+      {"start": 8.0, "end": 13.0},
+      {"start": 23.0, "end": 29.0}
+    ],
+    "arm_excessive": [
+      {"start": 20.0, "end": 23.0}
+    ]
+  }
+}

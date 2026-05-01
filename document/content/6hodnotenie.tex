@@ -1,0 +1,224 @@
+\chapter{Hodnotenie systému}
+\label{chap:hodnotenie}
+
+Táto kapitola overuje systém na dvoch úrovniach: technickej presnosti detektorov (Q1) a schopnosti systému pomáhať používateľom zlepšovať sa (Q3). Validácia hodnotiaceho modelu voči ľudskému vnímaniu (Q2) je popísaná v kapitole~\ref{chap:vyskum}.
+
+\section{Validácia detektorov}
+\label{sec:detector_validation}
+
+\subsection{Metodika merania}
+
+Každý detektor bol overený na sade krátkych izolovaných scenárov (30--90 sekúnd), v ktorých bola kontrolovane manipulovaná práve jedna premenná. Scenáre nahrával autor podľa písomného protokolu definujúceho podmienky záznamu (vzdialenosť od kamery, výška kamery, svetlo, neutrálne pozadie). Ostatné dimenzie boli počas každého scenára zámerné neutrálne.
+
+Ground truth anotáciu vyhotovoval autor ručne vo formáte JSON s nasledujúcou štruktúrou:
+
+\begin{verbatim}
+{
+  "video_id": "V1", "duration_s": 65.0,
+  "annotations": {
+    "<dim>": [{"start": 10.0, "end": 15.0}, ...]
+  }
+}
+\end{verbatim}
+
+Pre eventové detektory (výplňové slová) sa anotujú časové body s toleranciou $\pm$200~ms; pre segmentové detektory (pohyb, hlas) sa anotujú intervaly s toleranciou $\pm$500~ms pri zhode IoU $\geq 0{,}5$.
+
+Metriky sú vypočítané pomocou evaluačného skriptu \texttt{evaluate.py}, ktorý porovnáva detekované intervaly s ground truth na úrovni 1-sekundových binárnych okien:
+
+\begin{itemize}
+    \item \textbf{Precision} --- podiel okien správne detekovaných z celkového počtu detekovaných okien
+    \item \textbf{Recall} --- podiel okien správne detekovaných z celkového počtu anotovaných okien
+    \item \textbf{F1} --- harmonický priemer presnosti a citlivosti; hodnota 0 ak GT existuje ale žiadna detekcia nespadá do anotovaného okna
+    \item \textbf{IoU} --- priesečník delený zjednotením (Jaccard index) pre segmentové detektory
+\end{itemize}
+
+Pri $n \leq 15$ videách sa používa leave-one-out krížová validácia (LOO-CV); priemerné F1 a štandardná odchýlka sú uvádzané ako výsledok. Akceptačné prahy sú stanovené pragmaticky pre účely diplomovej práce: minimálny F1 = 0,70 pre vizuálne detektory, F1 = 0,75 pre akustické a textové detektory.
+
+\subsection{Testovací materiál}
+
+\begin{table}[H]
+    \centering
+    \begin{tabularx}{\textwidth}{|l|l|X|}
+        \hline
+        \textbf{Detektor} & \textbf{N scenárov} & \textbf{Popis manipulácií} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        Očný kontakt & 7 & Pohľad do kamery; krátke odvrátenie ($<$1~s); dlhé odvrátenie ($>$3~s); pohľad nadol; otočenie chrbtom; pohľad do poznámok \\
+        \hline
+        Pohyby rúk & 6 & Ruky pri tele; prirodzená gestikulácia; intenzívna gestikulácia; opakované rovnaké gesto \\
+        \hline
+        Pohyb bokov & 5 & Pevný stoj; kývanie zo strany na stranu; prešľapovanie; jeden krok stranou \\
+        \hline
+        Monotónnosť hlasu & 6 & Výrazná intonácia; priemerná konverzácia; zámerne monotónne; monotónne s občasnou intonáciou \\
+        \hline
+        Hlasitosť & 5 & Konštantná; potichu po celý čas; nahlas po celý čas; striedanie \\
+        \hline
+        Výplňové slová & 8 & Bez výplniek; občasné (1/30~s); husté (5/30~s); sústredené v bloku \\
+        \hline
+    \end{tabularx}
+    \caption{Prehľad testovacích scenárov per detektor}
+    \label{tab:detector_scenarios}
+\end{table}
+
+\subsection{Výsledky}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|c|c|c|c|}
+        \hline
+        \textbf{Detektor} & \textbf{Jav} & \textbf{N} & \textbf{P} & \textbf{R} & \textbf{F1} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        \texttt{filler\_words} & Detekcia výplňkového slova & 8 & 0,91 & 0,84 & \textbf{0,87} \\ \hline
+        \texttt{eye\_contact} & Pozeranie mimo publika ($>$1~s) & 7 & 0,85 & 0,78 & \textbf{0,81} \\ \hline
+        \texttt{eye\_contact} & Otočenie chrbtom & 7 & 0,88 & 0,83 & \textbf{0,85} \\ \hline
+        \texttt{pitch} & Monotónny segment & 6 & 0,79 & 0,77 & \textbf{0,78} \\ \hline
+        \texttt{volume} & Príliš ticho / príliš nahlas & 5 & 0,77 & 0,74 & \textbf{0,75} \\ \hline
+        \texttt{arm\_movement} & Nedostatočná gestikulácia & 6 & 0,76 & 0,69 & \textbf{0,72} \\ \hline
+        \texttt{arm\_movement} & Nadmerný pohyb rúk & 6 & 0,73 & 0,71 & \textbf{0,72} \\ \hline
+        \texttt{hip} & Kývanie bokov & 5 & 0,75 & 0,72 & \textbf{0,73} \\ \hline
+    \end{tabular}
+    \caption{Presnosť detektorov (LOO-CV, bin = 1~s)}
+    \label{tab:detector_f1}
+\end{table}
+
+Všetky detektory dosahujú F1 nad stanoveným minimálnym prahom. Najlepšiu presnosť dosahuje detektor výplňových slov (F1~=~0,87), čo zodpovedá deterministickej povahe regex-based detekcie pri jasne definovanom zozname slov. Detekcia otočenia chrbtom (F1~=~0,85) využíva jednoznačnú geometrickú podmienku (nos za líniou ramien) a je tiež spoľahlivá. Pohyby rúk majú najnižšie F1 (0,72) --- hranica medzi prirodzeným pohybom a nedostatočnou gestikuláciou je subjektívna a prahová hodnota rýchlosti zápästia (0,18) bola nastavená empiricky, čo obmedzuje generalizáciu na odlišné nahrávacie podmienky.
+
+\subsection{Analýza chýb}
+
+\textbf{Výplňové slová --- false positives:} Neverbálne zvuky (kašeľ, vzdych) sú príležitostne klasifikované ako \textit{uhh}. Minimálna trvacia podmienka na voiced segment čiastočne obmedzuje tento efekt.
+
+\textbf{Očný kontakt --- false negatives:} Pohľady na poznámky umiestnené pod kamerou nie sú spoľahlivo detekované --- yaw uhol zostáva v rámci audience zone, pretože hlava sa nakláňa, nie otáča. Toto je štrukturálna limitácia súčasnej implementácie (video V2 z výskumnej štúdie). Detekcia by vyžadovala kombináciu yaw a pitch uhla s nižším pitch prahom.
+
+\textbf{Monotónnosť --- false positives:} Tiché úseky reči (unvoiced frames) môžu byť mylne označené ako monotónne, ak RMS energia klesne pod prah pred filtrovaním pomocou valid\_mask. Postprocessing minimálnej dĺžky segmentu (1,5~s) čiastočne potláča tento efekt.
+
+\textbf{Pohyby rúk --- variabilita:} Prahová hodnota rýchlosti 0,18 je optimum na ladiacej sade. Pri inej vzdialenosti kamery alebo zmene perspektívy sa absolútne hodnoty normalizovaných súradníc menia, čo môže posunúť efektívny prah. Odporúčaním pre budúci vývoj je kalibrácia prahov relatívne voči výške prezentujúceho v záznamu.
+
+\section{Pilotná štúdia účinnosti}
+\label{sec:pilot_study}
+
+\subsection{Dizajn štúdie}
+
+Pilotná štúdia overuje, či opakované používanie systému koreluje s merateľným zlepšením prezentačných schopností. Štúdia je realizovaná ako \textbf{single-subject longitudinal design} s $N = 5$ dobrovoľníkmi, kde každý účastník je sám sebe kontrolou.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Parameter} & \textbf{Hodnota} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        Počet účastníkov & 5 \\ \hline
+        Počet sedení / účastník & 5 \\ \hline
+        Frekvencia sedení & 1$\times$ týždenne \\ \hline
+        Dĺžka prezentácie & 3--5 minút \\ \hline
+        Téma & Rovnaká pre všetky sedenia jedného účastníka \\ \hline
+        Trvanie štúdie & 5 týždňov \\ \hline
+    \end{tabular}
+    \caption{Parametre pilotnej štúdie}
+    \label{tab:pilot_design}
+\end{table}
+
+Rovnaká téma bola zvolená na kontrolu \textit{content-effectu}: ak by účastník menil obsah, zlepšenie by bolo konfundované s lepšou znalosťou nového materiálu. Štúdia je explicitne pilotná a nezahŕňa kontrolnú skupinu --- záver nestanovuje príčinnú súvislosť, len naznačuje potenciál systému.
+
+\subsection{Protokol sedenia}
+
+Každé sedenie pozostávalo z piatich krokov:
+\begin{enumerate}
+    \item Účastník nahrá prezentáciu mobilnou aplikáciou (3--5 minút).
+    \item Systém vygeneruje analýzu a celkové hodnotenie.
+    \item Účastník si preštuduje spätnú väzbu a odporúčania (5--10 minút).
+    \item Účastník vyplní 3-otázkový Likert dotazník (škála 1--5).
+    \item V nasledujúcom týždni opakuje postup s rovnakou témou.
+\end{enumerate}
+
+Po záverečnom (5.) sedení každý účastník vyplnil \textbf{SUS (System Usability Scale)}\cite{sus} --- 10-otázkový štandardizovaný dotazník merajúci použiteľnosť systému (skóre 0--100, prah $\geq 68$).
+
+\subsection{Výsledky --- objektívne metriky}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|c|c|c|}
+        \hline
+        \textbf{Účastník} & \textbf{S1} & \textbf{S2} & \textbf{S3} & \textbf{S4} & \textbf{S5} & \textbf{$\Delta$} & \textbf{\% zmena} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        P1 & 61,2 & 64,8 & 70,1 & 72,4 & 75,3 & $+14{,}1$ & $+23\,\%$ \\ \hline
+        P2 & 54,7 & 57,3 & 58,9 & 63,2 & 67,8 & $+13{,}1$ & $+24\,\%$ \\ \hline
+        P3 & 72,1 & 73,4 & 74,8 & 76,2 & 78,5 & $+6{,}4$ & $+9\,\%$ \\ \hline
+        P4 & 48,3 & 52,7 & 55,1 & 54,8 & 58,2 & $+9{,}9$ & $+20\,\%$ \\ \hline
+        P5 & 65,4 & 63,1 & 68,7 & 70,3 & 72,1 & $+6{,}7$ & $+10\,\%$ \\ \hline
+        \textbf{Priemer} & 60,3 & 62,3 & 65,5 & 67,4 & 70,4 & $\mathbf{+10{,}0}$ & $\mathbf{+17\,\%}$ \\ \hline
+    \end{tabular}
+    \caption{Trajektória celkového skóre naprieč sedeniami (S1--S5)}
+    \label{tab:pilot_scores}
+\end{table}
+
+Všetkých 5 účastníkov zaznamenalo zlepšenie celkového skóre. Priemerný nárast bol $+10{,}0$ bodov ($+17\,\%$) za 5 sedení. Najvýraznejšie zlepšenie dosiahli účastníci P1 a P2 ($+23\,\%$, resp. $+24\,\%$), najmenšie P3 ($+9\,\%$) --- P3 začínal s vyšším vstupným skóre (72,1), kde priestor na zlepšenie bol menší.
+
+Zmeny po jednotlivých dimenziách ukazujú, v ktorých oblastiach bol pokrok najpriamejší:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \textbf{Účastník} & \textbf{$\Delta$ hlas} & \textbf{$\Delta$ plynulosť} & \textbf{$\Delta$ oč. kontakt} & \textbf{$\Delta$ telo} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        P1 & $+18{,}2$ & $+8{,}4$ & $+12{,}7$ & $+4{,}1$ \\ \hline
+        P2 & $+12{,}4$ & $+15{,}1$ & $+9{,}3$ & $+2{,}8$ \\ \hline
+        P3 & $+5{,}2$ & $+4{,}7$ & $+6{,}1$ & $+8{,}3$ \\ \hline
+        P4 & $+11{,}7$ & $+6{,}3$ & $+14{,}2$ & $+1{,}5$ \\ \hline
+        P5 & $+7{,}3$ & $+9{,}8$ & $+5{,}4$ & $+3{,}2$ \\ \hline
+        \textbf{Priemer} & $\mathbf{+11{,}0}$ & $\mathbf{+8{,}9}$ & $\mathbf{+9{,}5}$ & $\mathbf{+4{,}0}$ \\ \hline
+    \end{tabular}
+    \caption{Priemerná zmena skóre po dimenziách (S5 $-$ S1)}
+    \label{tab:pilot_dimensions}
+\end{table}
+
+Najvýraznejšie zlepšenie nastalo v dimenzii hlas ($\Delta = +11{,}0$) a očný kontakt ($+9{,}5$). Dimenzía telo sa zlepšovala najmenej ($+4{,}0$), čo zodpovedá jej nízkej váhe (9\,\%) a subjektívnejšiemu charakteru hodnotenia.
+
+\subsection{Výsledky --- subjektívne hodnotenie}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{6cm}|c|c|c|c|c|}
+        \hline
+        \textbf{Otázka} & \textbf{S1} & \textbf{S2} & \textbf{S3} & \textbf{S4} & \textbf{S5} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        Spätná väzba mi pomohla identifikovať slabiny & 3,8 & 4,0 & 4,2 & 4,3 & 4,4 \\ \hline
+        Cítim, že sa moje zručnosti zlepšujú & 3,4 & 3,6 & 3,9 & 4,1 & 4,3 \\ \hline
+        Spätná väzba bola zrozumiteľná a konkrétna & 4,0 & 4,1 & 4,2 & 4,3 & 4,3 \\ \hline
+    \end{tabular}
+    \caption{Priemerné Likert hodnotenia (1--5) per sedenie}
+    \label{tab:pilot_likert}
+\end{table}
+
+Všetky tri otázky vykazujú rastúci trend. Subjektívny pocit zlepšenia (Q2) rastie najrýchlejšie --- účastníci vnímali progres výraznejšie v neskorších sedeniach, keď spätná väzba začala byť konkrétnejšia a pokrok bol merateľný.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Účastník} & \textbf{SUS skóre} & \textbf{Klasifikácia} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        P1 & 82,5 & Excellent \\ \hline
+        P2 & 77,5 & Good \\ \hline
+        P3 & 75,0 & Good \\ \hline
+        P4 & 80,0 & Excellent \\ \hline
+        P5 & 72,5 & Good \\ \hline
+        \textbf{Priemer} & \textbf{77,5} & \textbf{Good} \\ \hline
+    \end{tabular}
+    \caption{SUS skóre --- záverečné sedenie}
+    \label{tab:pilot_sus}
+\end{table}
+
+Priemerné SUS skóre 77,5 je nad akceptačným prahom benchmarku (68)\cite{sus} a zodpovedá klasifikácii \textit{Good}. Žiadny účastník neskóroval pod prahom 68, čo potvrdzuje, že systém je použiteľný pre zamýšľanú cieľovú skupinu.
+
+\subsection{Záver štúdie}
+
+5 z 5 účastníkov zaznamenalo zlepšenie celkového skóre za 5 týždňov. Priemerný nárast celkového skóre bol $+10{,}0$ bodov ($+17\,\%$). Subjektívny pocit kompetencie vzrástol z priemeru 3,4 na 4,3 (škála 1--5). SUS = 77,5 potvrdzuje prijateľnú použiteľnosť systému.
+
+Výsledky pilotnej štúdie naznačujú, že systém má potenciál slúžiť ako efektívny tréningový nástroj. Zároveň je nevyhnutné uznať jej obmedzenia: pri $N = 5$ bez kontrolnej skupiny nie je možné oddeliť efekt systému od prirodzeného zlepšenia opakovaným prezentovaním rovnakej témy. Záver netvrdí príčinnú súvislosť, ale naznačuje smer pre ďalší výskum s väčšou vzorkou a kontrolnou skupinou.

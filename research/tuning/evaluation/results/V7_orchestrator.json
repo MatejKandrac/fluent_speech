@@ -1,0 +1,49 @@
+{
+  "success": true,
+  "recording_id": 49,
+  "completed_analyses": [
+    "hip"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "hip": {
+      "success": true,
+      "recording_id": 49,
+      "statistics": {
+        "total_frames": 534,
+        "valid_frames": 534,
+        "hip_sway": {
+          "x_mean": 0.4613543248522594,
+          "x_std": 0.020803225019942435,
+          "x_range": 0.07508477568626404,
+          "y_mean": 0.773352447520481,
+          "y_std": 0.004713944607499008,
+          "y_range": 0.03875437378883362
+        },
+        "hip_distance": {
+          "mean": 0.07902855838340478,
+          "std": 0.0036003793280747574,
+          "min": 0.0723809852715162,
+          "max": 0.09421886256540446
+        }
+      },
+      "swaying_segments": [
+        {
+          "start_timestamp": 0.0,
+          "end_timestamp": 53.3466,
+          "duration_seconds": 53.3466,
+          "direction_changes": 4
+        }
+      ],
+      "swaying_segments_count": 1,
+      "segmentation": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8010): Max retries exceeded with url: /api/v1/segment/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020E432AEA80>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+      }
+    }
+  },
+  "performance": {
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8012): Max retries exceeded with url: /api/v1/performance/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001E3B978C9E0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+  }
+}

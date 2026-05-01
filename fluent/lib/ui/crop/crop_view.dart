@@ -164,7 +164,10 @@ class _CropViewState extends ConsumerState<CropView> {
                   // Video Player
                   Expanded(
                     child: Center(
-                      child: VideoPlayer(_videoController),
+                      child: AspectRatio(
+                        aspectRatio: _videoController.value.aspectRatio,
+                        child: VideoPlayer(_videoController),
+                      ),
                     ),
                   ),
 

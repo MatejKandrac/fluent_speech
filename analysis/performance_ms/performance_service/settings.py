@@ -36,10 +36,12 @@ WEIGHT_EYE_CONTACT = float(os.getenv('WEIGHT_EYE_CONTACT', '0.27'))
 WEIGHT_BODY        = float(os.getenv('WEIGHT_BODY',        '0.09'))
 
 # Filler distribution penalty (model v3)
-# Penalises uniform filler distribution more than concentrated (per H2.1 finding)
-FILLER_DISTRIBUTION_BINS        = int(os.getenv('FILLER_DISTRIBUTION_BINS',        '6'))
-FILLER_DISTRIBUTION_MAX_PENALTY = float(os.getenv('FILLER_DISTRIBUTION_MAX_PENALTY', '20.0'))
-FILLER_DISTRIBUTION_CV_THRESHOLD = float(os.getenv('FILLER_DISTRIBUTION_CV_THRESHOLD', '1.0'))
+# Penalises uniform filler distribution more than concentrated (per H2.1 finding).
+# Uses bottom-up segmentation result from filler_words_ms (peak_zones.distribution).
+# Calibrated from 6-video validation: original 20.0 over-penalised V5 by 2.5×; 7.0 keeps
+# the directional signal while reducing |error vs human Δ| from 2.55 to ~1.25.
+FILLER_DISTRIBUTION_MAX_PENALTY = float(os.getenv('FILLER_DISTRIBUTION_MAX_PENALTY', '7.0'))
+
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
