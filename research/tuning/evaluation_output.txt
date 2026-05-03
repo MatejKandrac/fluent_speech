@@ -1,0 +1,154 @@
+======================================================================
+  SERVICE: EYE_CONTACT   (bin=1.0s)
+======================================================================
+
+  Video V5:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  eye_contact_away          0.714  0.556  0.625  0.455  (GT=4 segs=9.0s, pred=4 segs=7.0s)
+  eye_contact_back           N/A   0.000  0.000  0.000  (GT=1 segs=2.0s, pred=0 segs=0.0s)
+
+  Video V6:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  eye_contact_away          0.778  1.000  0.875  0.778  (GT=4 segs=14.0s, pred=6 segs=18.0s)
+  eye_contact_back          0.800  0.800  0.800  0.667  (GT=1 segs=5.0s, pred=1 segs=5.0s)
+
+  AGGREGATE (2 videos):
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  eye_contact_away          0.746  0.778  0.750  0.616
+  eye_contact_back          0.800  0.400  0.400  0.333
+
+======================================================================
+  SERVICE: ARM_MOVEMENT   (bin=1.0s)
+======================================================================
+
+  Video V1:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  arm_no_gesture            0.667  0.091  0.160  0.087  (GT=1 segs=44.0s, pred=5 segs=6.0s)
+  arm_excessive             0.250  0.250  0.250  0.143  (GT=1 segs=4.0s, pred=5 segs=4.0s)
+
+  Video V2:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  arm_no_gesture            0.688  1.000  0.815  0.688  (GT=2 segs=11.0s, pred=2 segs=16.0s)
+  arm_excessive             1.000  1.000  1.000  1.000  (GT=1 segs=3.0s, pred=2 segs=3.0s)
+
+  Video V3:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  arm_no_gesture            0.938  1.000  0.968  0.938  (GT=1 segs=15.0s, pred=1 segs=16.0s)
+  arm_excessive              N/A    N/A    N/A    N/A   (GT=0 segs=0.0s, pred=0 segs=0.0s)
+
+  Video V4:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  arm_no_gesture             N/A    N/A    N/A    N/A   (GT=0 segs=0.0s, pred=0 segs=0.0s)
+  arm_excessive              N/A   0.000  0.000  0.000  (GT=1 segs=11.0s, pred=0 segs=0.0s)
+
+  AGGREGATE (4 videos):
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  arm_no_gesture            0.764  0.697  0.647  0.571
+  arm_excessive             0.625  0.417  0.417  0.381
+
+======================================================================
+  SERVICE: HIP   (bin=1.0s)
+======================================================================
+
+  Video V7:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  hip_sway                  0.962  1.000  0.981  0.962  (GT=1 segs=51.0s, pred=1 segs=53.0s)
+
+  Video V8:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  hip_sway                  0.750  1.000  0.857  0.750  (GT=1 segs=9.0s, pred=1 segs=12.0s)
+
+  Video V9:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  hip_sway                  0.818  0.750  0.783  0.643  (GT=2 segs=12.0s, pred=1 segs=11.0s)
+
+  AGGREGATE (3 videos):
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  hip_sway                  0.844  0.917  0.874  0.785
+
+======================================================================
+  SERVICE: FILLER_WORDS   (bin=1.0s)
+======================================================================
+
+  Video V1:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  filler_words              0.556  0.417  0.476          (GT=12 events, pred=9 events)
+
+  Video V14:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  filler_words              0.750  1.000  0.857          (GT=3 events, pred=4 events)
+
+  Video V15:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  filler_words              0.933  0.903  0.918          (GT=31 events, pred=30 events)
+
+  AGGREGATE (3 videos):
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  filler_words              0.746  0.773  0.750
+
+======================================================================
+  SERVICE: PITCH   (bin=1.0s)
+======================================================================
+
+  Video V10:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  pitch_monotone             N/A    N/A    N/A    N/A   (GT=0 segs=0.0s, pred=0 segs=0.0s)
+
+  Video V11:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  pitch_monotone            0.000   N/A    N/A   0.000  (GT=0 segs=0.0s, pred=2 segs=11.0s)
+
+  Video V12:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  pitch_monotone            1.000  0.944  0.971  0.944  (GT=1 segs=18.0s, pred=1 segs=17.0s)
+
+  Video V13:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  pitch_monotone            0.700  0.636  0.667  0.500  (GT=2 segs=11.0s, pred=1 segs=10.0s)
+
+  AGGREGATE (4 videos):
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  pitch_monotone            0.567  0.790  0.819  0.481
+
+======================================================================
+  SERVICE: VOLUME   (bin=1.0s)
+======================================================================
+
+  Video V16:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  volume_too_quiet          0.778  1.000  0.875  0.778  (GT=1 segs=7.0s, pred=3 segs=9.0s)
+  volume_too_loud           0.000   N/A    N/A   0.000  (GT=0 segs=0.0s, pred=1 segs=2.0s)
+
+  Video V17:
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  volume_too_quiet          0.833  1.000  0.909  0.833  (GT=2 segs=10.0s, pred=3 segs=12.0s)
+  volume_too_loud            N/A    N/A    N/A    N/A   (GT=0 segs=0.0s, pred=0 segs=0.0s)
+
+  AGGREGATE (2 videos):
+  Dimension                      P       R      F1     IoU
+  ------------------------------------------------------
+  volume_too_quiet          0.805  1.000  0.892  0.805
+  volume_too_loud           0.000   N/A    N/A   0.000

@@ -4,7 +4,7 @@ Mojim návrhom je implementácia systému, ktorá umožní používateľovi prí
 \begin{itemize}
     \item Nahrávanie videa
     \item Spustenie analýzy
-    \item Zobrazenie výsledkov
+    \item Zobrazenie výsledkov a spätnej väzby
 \end{itemize}
 
 Jednoduchý proces používania teda vyzerá nasledovne:
@@ -17,7 +17,7 @@ Jednoduchý proces používania teda vyzerá nasledovne:
 \end{figure}
 
 \section{Špecifikácia požiadaviek}
-Pred samotnou implementáciou som definoval niekoľko funkčných požiadaviek, ktoré by aplikácia mala spĺňať. Pri rozhodovaní, ktoré údaje budem detekovať som sa odrážal od môjho výskumu a porovnaní existujúcich riešení, ktorý bol bližšie popísaný v kapitole analýzy problematiky.
+Pred samotnou implementáciou som definoval niekoľko funkčných požiadaviek, ktoré by aplikácia mala spĺňať. Pri rozhodovaní, ktoré údaje budem detekovať som sa odrážal od mojej analýzy a porovnaní existujúcich riešení, ktorý bol bližšie popísaný v kapitole analýzy problematiky.
 \begin{itemize}
     \item \textbf{Detekcia očného kontaktu}: Systém musí vedieť rozpoznať, či sa prezentujúci pozerá smerom do publika a nie je k nemu otočený chrbtom. Pre detekciu tohto javu sa využije viditeľnosť očí voči kamere, ktorá bude pred prezentujúcim.
     \item \textbf{Detekcia pohybu bokov}: Systém musí vedieť detekovať negatívny jav, nazývaný ako tancovanie (pohyb bokov zo strany na stranu). Detekcia bude počítaná akceleráciou stredu medzi bokmi, a bude detekovať kývanie z prava do ľava.
@@ -25,7 +25,7 @@ Pred samotnou implementáciou som definoval niekoľko funkčných požiadaviek, 
     \item \textbf{Detekcia monotónnosti}: Systém musí vedieť detekovať monotónny hlas. Monotónnosť hlasu je definovaná ako konštantný tón hlasu počas prezentácie. Bude sa teda sledovať zmena tónu hlasu.
     \item \textbf{Detekcia hlasitosti}: Systém musí vedieť detekovať nízku hlasitosť prezentujúceho.
     \item \textbf{Detekcia výplňových slov}: Systém musí vedieť detekovať výplňové slová.
-    \item \textbf{Detekcia kritických bodov zmien}: Systém musí pre relevantné kritériá uvedené vyššie definovať kritické body, kedy sa drasticky zmenil doterajší priebeh. Ide napríklad o definovanie hranice, kedy prezentujúci prestal náhle využívať všetky pohyby rúk, alebo že v prvej minúte prezentácie využíval veľké množstvo výplňových slov.
+    \item \textbf{Detekcia kritických bodov zmien}: Systém musí pre relevantné kritériá uvedené vyššie definovať kritické body, kedy sa drasticky zmenil doterajší priebeh. Ide napríklad o definovanie hranice, kedy prezentujúci prestal náhle využívať všetky pohyby rúk, alebo že po prvej minúte prezentácie využíval veľké množstvo výplňových slov.
     \item \textbf{Generovanie výsledku}: Systém musí vedieť generovať dáta s hodnotením prezentácie, ako aj o odporúčaných zmenách pre jej zlepšenie.
 \end{itemize}
 
@@ -35,13 +35,12 @@ Systém je navrhnutý pre podporu viacerých scenárov použitia. Na základe fu
 
 \begin{itemize}
     \item \textbf{Nahratie videa prezentácie} - Používateľ nahrá video svojej prezentácie pomocou mobilnej aplikácie a odošle ho na server
-    \item \textbf{Analýza konkrétneho javu} - Používateľ si vyberie konkrétny aspekt prezentácie (napr. očný kontakt) a systém ho analyzuje izolovane
-    \item \textbf{Analýza všetkých javov} - Systém vykoná komplexnú analýzu všetkých aspektov prezentácie
-    \item \textbf{Zobrazenie výsledkov analýzy} - Používateľ si prezerá detailné výsledky analýzy, časovými stopami chýb a s odporúčaniami
+    \item \textbf{Analýza prezentácie} - Systém vykoná komplexnú analýzu všetkých aspektov prezentácie
+    \item \textbf{Zobrazenie výsledkov analýzy} - Používateľ si prezerá detailné výsledky analýzy s časovými stopami chýb a odporúčaniami
     \item \textbf{Správa histórie nahrávok} - Používateľ môže prezerať a spravovať svoje predchádzajúce nahrávky
 \end{itemize}
 
-V nasledujúcich podkapitolách detailne popíšem dve najdôležitejšie prípady použitia. Pre grafické znázornenie som ešte pripravil diagram prípadov použitia pre celý systém.
+V nasledujúcich podkapitolách popíšem dva najdôležitejšie prípady použitia. Pre grafické znázornenie som pripravil diagram prípadov použitia pre celý systém.
 
 \begin{figure}[H]
     \begin{centering}
@@ -52,116 +51,111 @@ V nasledujúcich podkapitolách detailne popíšem dve najdôležitejšie prípa
 
 \subsection{Natočenie videa prezentácie}
 
-\textbf{Predpoklady:}
-\begin{itemize}
-    \item Používateľ má nainštalovanú mobilnú aplikáciu
-    \item Zariadenie má funkčnú kameru
-\end{itemize}
-
-\textbf{Hlavný tok:}
-\begin{enumerate}
-    \item Používateľ vyberie možnosť vytvorenia nového videa
-    \item Aplikácia požiada o povolenie k prístupu ku kamere
-    \item Používateľ udelí povolenie ku kamere
-    \item Systém ukáže používateľovi údaje o umiestnení kamery
-    \item Používateľ stlačí tlačidlo pre spustenie nahrávania
-    \item Aplikácia počká 3 sekundy a začne nahrávať video z kamery
-    \item Používateľ vykoná svoju prezentáciu pred kamerou
-    \item Používateľ ukončí nahrávanie stlačením tlačidla
-    \item Aplikácia zobrazí náhľad nahratého videa a ponúkne video orezať
-    \item Používateľ upraví dĺžku videa podľa preferencií
-    \item Systém oreže video a zobrazí finálny náhľad videa
-    \item Používateľ zadá názov pre nahrávku
-    \item Používateľ vyberie možnosť iba uložiť video
-    \item Systém uloží video
-\end{enumerate}
-
-\textbf{Alternatívne toky:}
-\begin{itemize}
-    \item \textbf{A1, po kroku 2:} Používateľ zamietne prístup ku kamere - aplikácia zobrazí chybovú hlášku a nemôže pokračovať
-    \item \textbf{A2, po kroku 6:} Počas nahrávania dôjde miesto v zariadení - aplikácia zastaví nahrávanie a upozorní používateľa
-    \item \textbf{A3, po kroku 12:}
-    \begin{itemize}
-        \item Používateľ zvolí možnosť uloženia a odoslania videa na server
-        \item Systém spustí prípad použitia pre odoslanie videa
-    \end{itemize}
-\end{itemize}
-
-\textbf{Výsledok:} Video je úspešne natočené a uložené v zariadení, pripravené na odoslanie na server (alebo už odoslané priamo pri ukladaní). Používateľ si vie video pozrieť v histórii videí.
+Používateľ otvorí aplikáciu a vyberie možnosť vytvorenia nového videa.
+Po udelení prístupu ku kamere systém zobrazí kalibračný náhľad s detekovanou pózou tela, čím si používateľ môže overiť správne umiestnenie pred kamerou ešte pred spustením nahrávania.
+Po stlačení tlačidla aplikácia odpočíta tri sekundy a začne zaznamenávať prezentáciu.
+Po ukončení nahrávania má používateľ možnosť video orezať, pomenovať a odoslať na server na spracovanie.
+Video je zároveň uložené lokálne v zariadení a dostupné v zozname nahrávok.
 
 \subsection{Celková analýza prezentácie}
 
-\textbf{Predpoklady:}
-\begin{itemize}
-    \item Video je úspešne nahrané na serveri
-    \item Aspoň jedna mikroslužba pre analýzu je dostupná
-\end{itemize}
+Po dokončení spracovania videa a zvuku na serveri môže používateľ spustiť celkovú analýzu prezentácie pri zobrazení videa v zozname nahrávok.
+Systém prostredníctvom orchestrátora paralelne spustí všetky analytické mikroslužby, výsledky agreguje a vygeneruje hodnotenie s odporúčaniami pre zlepšenie.
+V prípade výpadku niektorej mikroslužby pokračujú ostatné analýzy a chýbajúce výsledky sú označené ako nedostupné.
+Výsledky zahŕňajú všetky dostupné štatistiky, ako aj kritické body zmien a celkové skóre prezentácie.
 
-\textbf{Hlavný tok:}
-\begin{enumerate}
-    \item Používateľ vyberie video, ktoré chce analyzovať
-    \item Systém zobrazí stav spracovania videa
-    \item Používateľ zvolí možnosť analýzy prezentácie
-    \item Systém zobrazí možnosti analýzy
-    \item Používateľ zvolí možnosť celkovej analýzy
-    \item Systém spustí analýzu jednotlivých javov
-    \item Systém vygeneruje výsledky (prípad použitia generovanie výsledkov)
-    \item Systém zobrazí výsledky používateľovi, spolu s odporučaním pre zlepšenie
-\end{enumerate}
+\section{Použité technológie}
 
-\textbf{Alternatívne toky:}
-\begin{itemize}
-    \item \textbf{A1, po kroku 6:} Niektorá mikroslužba zlyhá - ostatné analýzy pokračujú, chýbajúce výsledky sú označené ako nedostupné
-\end{itemize}
+Riešenie je postavené na kombinácii moderných technológií pre mobilný vývoj, serverové spracovanie a analýzu údajov. Kľúčovým architektonickým rozhodnutím je, že \textbf{všetka analýza prebieha na serverovej strane}, čím sa minimalizujú výpočtové nároky na mobilné zariadenie a umožní sa budúce rozšírenie systému bez nutnosti aktualizácie mobilnej aplikácie.
 
-\textbf{Výsledok:} Komplexné výsledky analýzy prezentácie sú dostupné pre používateľa, zahŕňajúce (ak boli úspešné):
-\begin{itemize}
-    \item Štatistiky očného kontaktu
-    \item Analýzu pohybov rúk (priemerná rýchlosť, kritické body zmien)
-    \item Analýzu hlasu (monotónnosť, hlasitosť)
-    \item Detekované anomálie a odporúčania pre zlepšenie
-\end{itemize}
+\subsection{Mobilná aplikácia}
+
+Pre mobilnú aplikáciu bol zvolený framework \textbf{Flutter}\cite{flutter}, ktorý umožňuje vývoj cross-platform aplikácií pre iOS a Android z jedného kódového základu. Flutter poskytuje natívnu výkonnosť a integruje sa s kamerou mobilného zariadenia pre nahrávanie videa. Mobilná aplikácia bude mať limitovanú úlohu --- zabezpečí nahrávanie videa, jeho odoslanie na server a zobrazenie výsledkov analýzy.
+
+\subsection{Serverová časť - mikroslužby}
+
+Pre serverovú časť bol zvolený framework \textbf{Django} s programovacím jazykom \textbf{Python 3.11}.\cite{django}
+Python je štandardným jazykom pre strojové učenie a počítačové videnie, disponuje rozsiahlym ekosystémom knižníc pre spracovanie multimediálneho obsahu a analýzu časových radov. Každá mikroslužba bude samostatnou Django aplikáciou, čo umožní nezávislé nasadenie a škálovanie.
+
+\subsection{API Gateway}
+
+Pre API Gateway bol zvolený framework \textbf{Spring Boot} s programovacím jazykom \textbf{Kotlin}.\cite{springboot}
+Spring Boot poskytuje robustnú platformu pre správu HTTP požiadaviek, multipart file upload pre videá a koordináciu volania mikroslužieb. API Gateway bude slúžiť ako jediný vstupný bod pre mobilnú aplikáciu.
+
+\subsection{Počítačové videnie - MediaPipe}
+
+Najdôležitejším nástrojom pre analýzu videa bude knižnica \textbf{MediaPipe} od spoločnosti Google.\cite{mediapipe}
+MediaPipe je open-source framework určený pre real-time spracovanie multimediálneho obsahu.
+V navrhnutom riešení bude využitý modul \textbf{MediaPipe Pose}, ktorý dokáže detekovať 33 kľúčových bodov ľudského tela (landmarks) v každom snímku videa.
+MediaPipe bude bežať výhradne na serverovej strane v rámci Služby spracovania videa.
+
+Nasledujúci obrázok zobrazuje všetky kľúčové body, ktoré MediaPipe Pose detekuje:
+
+\begin{figure}[H]
+    \begin{centering}
+        \includegraphics[width=\textwidth]{assets/images/solution/pose_detection.png}
+        \par\end{centering}
+    \caption{33 kľúčových bodov detekovaných MediaPipe Pose\cite{mediapipe} \label{fig:mediapipeLandmarks}}
+\end{figure}
+
+\subsection{Spracovanie zvuku}
+
+Pre analýzu zvukových vlastností bude využitá knižnica \textbf{librosa}\cite{librosa}, ktorá je štandardným nástrojom pre audio analýzu v Pythone.
+Librosa poskytuje funkcie pre extrakciu výšky tónu pomocou YIN algoritmu a detekciu hlasitosti pomocou RMS energie. Pre extrakciu zvukovej stopy z videa bude využitý nástroj \textbf{ffmpeg}\cite{ffmpeg}.
+
+Pre transkripciu reči a detekciu výplňových slov bude využitý model \textbf{OpenAI Whisper}\cite{whisper}, moderný speech-to-text model poskytujúci presnú transkripciu slovenského aj anglického jazyka s časovými značkami na úrovni slov.
+
+\subsection{Analýza časových radov}
+
+Pre segmentáciu časových radov bude využitá knižnica \textbf{ruptures}\cite{ruptures}, ktorá poskytuje implementáciu algoritmu PELT popísaného v sekcii~\ref{sec:segmentacia}. Pre numerické výpočty bude využitá knižnica \textbf{NumPy} a pre vizualizáciu výsledkov \textbf{matplotlib}.
+
+\subsection{Databáza}
+
+Pre ukladanie dát bude využitá relačná databáza \textbf{PostgreSQL}\cite{postgresql}, ktorá zabezpečuje ACID vlastnosti a podporuje efektívne ukladanie štruktúrovaných dát (landmarks, audio features, výsledky analýz).
+Pre súborové úložisko videí bude využitý súborový systém servera.
+PostgreSQL bude rozšírené o \textbf{TimescaleDB}\cite{timescaledb} pre efektívnejšie narábanie s časovými radmi.
+
+\subsection{Kontajnerizácia}
+
+Pre nasadenie a orchestráciu služieb budú využité nástroje \textbf{Docker} a \textbf{Docker Compose}\cite{docker}, čo zabezpečí reprodukovateľné prostredie a zjednoduší deployment na rôzne platformy.
 
 \section{Architektúra riešenia}
-Nakoľko som počas analýzy zistil, že nevhodných javov ktoré je možné detekovať je veľke množstvo, navrhujem \textbf{mikroslužbovú architektúru}, kde každá mikroslužba bude detekovať skupinu súvisiacich negatívnych javov. Dôvodom použitia mikroslužieb je ich vlastnosť jednoduchého nasadzovania, ktorá môže byť využitá pri pridávaní nových detekcií. Zároveň mikroslužbová architektúra umožnuje technologickú voľnosť, ktorá by sa v prípade rozširovania mojej práce zišla.
+Nakoľko každá detekovaná dimenzia prezentačných schopností si vyžaduje odlišný prístup k spracovaniu dát, navrhujem \textbf{mikroslužbovú architektúru}, kde každá mikroslužba zodpovedá za jednu skupinu súvisiacich analýz. Dôvodom použitia mikroslužieb je jednoduchosť pridávania nových detekcií bez zásahu do existujúcich komponentov a technologická voľnosť pri prípadnom rozšírení systému.
 
 \subsection{Komponenty systému}
 
 \begin{itemize}
     \item \textbf{Mobilná aplikácia (Flutter)} - používateľské rozhranie pre nahrávanie videí a zobrazenie výsledkov analýzy
-    \item \textbf{API Gateway (Spring Boot/Kotlin)} - vstupný bod systému a správa HTTP požiadaviek. V rámci tohto komponentu sa zároveň budú videá ukládať do lokálneho úložiska, aby sa predišlo preposielaniu veľkých videí cez sieť medzi mikroslužbami.
-    \item \textbf{Video Processing Service (Django/Python)} - extrakcia landmarks pomocou MediaPipe Pose a spracovania video súborov
-    \item \textbf{Audio Processing Service (Django/Python)} - extrakcia zvukovej stopy z videa, spolu s úpravou vzorkovacej rýchlosti a normalizácie
-    \item \textbf{Eye Contact Analysis Service (Django/Python)} - analýza očného kontaktu a miesta, kde sa používateľ pozeral. Analýza bude obsahovať:
+    \item \textbf{API Gateway (Spring Boot/Kotlin)} - vstupný bod systému, ktorý smeruje požiadavky mobilnej aplikácie na príslušné komponenty (orchestrátor analýzy alebo spracovanie videa). Gateway neobsahuje žiadnu analytickú logiku --- jeho úlohou je výhradne smerovanie a správa HTTP požiadaviek. Architektúra Gateway zároveň vytvára základ pre budúce rozšírenie o autentifikáciu a vyvažovanie záťaže.
+    \item \textbf{Služba spracovania videa (Django/Python)} - extrakcia landmarks pomocou MediaPipe Pose a spracovanie video súborov
+    \item \textbf{Služba spracovania zvuku (Django/Python)} - extrakcia zvukovej stopy z videa, spolu s úpravou vzorkovacej rýchlosti a redukciou šumu
+    \item \textbf{Služba analýzy očného kontaktu (Django/Python)} - analýza smeru pohľadu prezentujúceho. Analýza bude obsahovať:
     \begin{itemize}
-        \item Heatmapu, kde sa používateľ pozeral
-        \item Časové vzorky videa, kedy sa nepozeral do publika
-        \item Časové vzorky, kedy sa príliš dlho pozeral na jedno miesto
-        \item Analýza časového radu, kedy sa výrazne zvýšili negatívne javy
+        \item Heatmapu rozloženia pohľadu počas prezentácie
+        \item Časové úseky, kedy sa prezentujúci nepozeral do publika, z pohľadu systému sa tým rozumie pozeranie mimo kamery
+        \item Časové úseky, kedy sa príliš dlho pozeral prezentujúci na jedno miesto
+        \item Detekciu kritických bodov zmien v miere očného kontaktu
     \end{itemize}
-    \item \textbf{Arm Movement Analysis Service (Django/Python)} - analýza gestikulácie, ktorá bude obsahovať:
+    \item \textbf{Služba analýzy pohybov rúk (Django/Python)} - analýza gestikulácie, ktorá bude obsahovať:
     \begin{itemize}
-        \item Časové vzorky, kedy používateľ dlho nepoužíval gestikuláciu
-        \item Časové vzorky, kedy používateľ spravil príliš rýchly pohyb rukami
-        \item Analýza časového radu, kedy sa výrazne zvýšil alebo znížil trend alebo priemer používania gestikulácie
+        \item Časové úseky nedostatočnej gestikulácie
+        \item Časové úseky nadmerného pohybu rúk
+        \item Detekciu kritických bodov zmien v intenzite gestikulácie
     \end{itemize}
-    \item \textbf{Hip Movement Analysis Service (Django/Python)} - analýza pohybov bokov, ktorá bude obsahovať:
+    \item \textbf{Služba analýzy pohybov bokov (Django/Python)} - detekcia kývania bokov zo strany na stranu počas prezentácie
+    \item \textbf{Služba analýzy výplňových slov (Django/Python)} - analýza používania výplňových slov, ktorá bude obsahovať:
     \begin{itemize}
-        \item Časové vzorky, kedy používateľ tancoval
+        \item Konkrétne miesta, kedy prezentujúci povedal výplňové slovo
+        \item Detekciu kritických bodov zmien v používaní výplňových slov
     \end{itemize}
-    \item \textbf{Filler Words Analysis Service (Django/Python)} - analýza používania výplňových slov, ktorá bude obsahovať:
-    \begin{itemize}
-        \item Jednoduché celkové štatistiky výplňových slov
-        \item Analýza časového radu, kedy sa výrazne zvýšil alebo znížil trend alebo priemer používania výplňových slov
-    \end{itemize}
-    \item \textbf{Pitch Analysis Service (Django/Python)} - analýza výšky hlasu (trendy) a detekovanie monotónnosti
-    \item \textbf{Volume Analysis Service (Django/Python)} - analýza hlasitosti hlasu, spolu s analýzou časových radov pre trendy
-    \item \textbf{Analysis Orchestrator (Django/Python)} - orchestrácia paralelného spracovania analýz a spájanie výsledkov
-    \item \textbf{Performance Service (Django/Python)} - agregácia výsledkov analytických služieb do celkového hodnotenia prezentácie a generovanie odporúčaní
-    \item \textbf{Segmentation Service (Django/Python)} - spoločná mikroslužba pre detekciu bodov zmien v časových radoch, využívaná všetkými analytickými mikroslužbami
-    \item \textbf{Transcript Processing Service (Django/Python)} - automatická transkripcia reči pomocou OpenAI Whisper s word-level timestamps
-    \item \textbf{Databáza (PostgreSQL/TimescaleDB)} - ukladanie pozícií tela, natočených videí a analýz
-    \item \textbf{Súborové úložisko} - ukladanie nahratých video súborov, spolu s príslušnými zvukovými súbormi
+    \item \textbf{Služba analýzy výšky hlasu (Django/Python)} - detekcia monotónnosti hlasu analýzou variácie základnej frekvencie
+    \item \textbf{Služba analýzy hlasitosti (Django/Python)} - detekcia úsekov s príliš tichým alebo príliš hlasným prejavom
+    \item \textbf{Orchestrátor analýz (Django/Python)} - centrálna služba zodpovedná za riadenie toku celkovej analýzy. Po prijatí požiadavky z API Gateway spustí paralelne všetky analytické mikroslužby, čaká na ich výsledky, agreguje ich a odovzdá hodnotiacej službe.
+    \item \textbf{Hodnotiaca služba (Django/Python)} - agregácia výsledkov všetkých analytických mikroslužieb do jednotného hodnotenia prezentácie. Každá dimenzia (hlas, plynulosť reči, pohyb tela, očný kontakt) dostane čiastkové skóre a celkové hodnotenie bude váženým súčtom týchto skóre. Systém prechádza dvoma verziami hodnotiaceho modelu: \textbf{Model v1} využíva počiatočné váhy dimenzií odvodené z predpokladov vychádzajúcich z analýzy. Tieto váhy slúžia ako východiskový bod, ktorý je následne overovaný a kalibrovaný výsledkami výskumnej štúdie popísanej v kapitole~\ref{chap:vyskum}. \textbf{Model v2} nahradí pôvodné váhy odvodenými hodnotami zo štúdie, pričom zhoda modelu s ľudskými hodnoteniami je vyjadrená Spearmanovou rank koreláciou. Súčasťou výstupu sú aj textové odporúčania s temporálnou lokalizáciou problémov, napríklad či sa jav vyskytoval počas celej prezentácie alebo iba v nejakej jej časti
+    \item \textbf{Segmentačná služba (Django/Python)} - zdieľaná mikroslužba implementujúca detekciu kritických bodov zmien v časových radoch pomocou algoritmu PELT. Analytické mikroslužby jej posielajú časový rad spolu s voľbou metódy (priemer, trend alebo štandardná odchýlka) a dostanú späť detekované body zmien. Centralizácia tejto funkcionality zabezpečuje, že prípadná zmena parametrov segmentácie sa prejaví konzistentne vo všetkých analytických mikroslužbách.
+    \item \textbf{Služba transkripcie reči (Django/Python)} - automatická transkripcia reči pomocou OpenAI Whisper s časovými značkami na úrovni slov
+    \item \textbf{Databáza (PostgreSQL/TimescaleDB)} - ukladanie pozícií tela, záznamov nahratých videí a slov získaných z Whisper transkripcie
+    \item \textbf{Súborové úložisko} - ukladanie nahratých video súborov a príslušných spracovaných audio súborov
 \end{itemize}
 
 \subsection{Mapovanie požiadaviek na komponenty}
@@ -175,19 +169,18 @@ Pre prehľadnosť uvádzam tabuľku, ktorá mapuje funkčné požiadavky na konk
 \textbf{Požiadavka} & \textbf{Zodpovedná mikroslužba} \\
 \hline
 \specialrule{1.2pt}{0pt}{0pt}
-Detekcia očného kontaktu a sledovanie smeru pohľadu & Eye Contact Analysis Service \\ \hline
-Detekcia pohybu bokov (tancovanie) & Hip Movement Analysis Service \\ \hline
-Detekcia pohybov rúk a gestikulácie & Arm Movement Analysis Service \\ \hline
-Detekcia monotónnosti hlasu & Pitch Analysis Service \\ \hline
-Detekcia hlasitosti hlasu & Volume Analysis Service \\ \hline
-Detekcia výplňových slov v reči & Filler Words Analysis Service \\ \hline
-Detekcia kritických bodov zmien v časových radoch & Segmentation Service \\ \hline
-Orchestrácia paralelného spracovania analýz & Analysis Orchestrator \\ \hline
-Generovanie celkového hodnotenia a odporúčaní & Performance Service \\ \hline
-Transkripcia reči pre detekciu výplňových slov & Transcript Processing Service \\ \hline
-Transkripcia reči pre detekciu výplňových slov & Transcript Processing Service \\ \hline
-Extrakcia kľúčových bodov tela z videa & Video Processing Service \\ \hline
-Extrakcia a normalizácia audio signálu & Audio Processing Service \\ \hline
+Detekcia očného kontaktu a sledovanie smeru pohľadu & Služba analýzy očného kontaktu \\ \hline
+Detekcia pohybu bokov (tancovanie) & Služba analýzy pohybov bokov \\ \hline
+Detekcia pohybov rúk a gestikulácie & Služba analýzy pohybov rúk \\ \hline
+Detekcia monotónnosti hlasu & Služba analýzy výšky hlasu \\ \hline
+Detekcia hlasitosti hlasu & Služba analýzy hlasitosti \\ \hline
+Detekcia výplňových slov v reči & Služba analýzy výplňových slov \\ \hline
+Detekcia kritických bodov zmien v časových radoch & Segmentačná služba \\ \hline
+Koordinácia paralelného spracovania analýz & Orchestrátor analýz \\ \hline
+Generovanie celkového hodnotenia a odporúčaní & Hodnotiaca služba \\ \hline
+Transkripcia reči pre detekciu výplňových slov & Služba transkripcie reči \\ \hline
+Extrakcia kľúčových bodov tela z videa & Služba spracovania videa \\ \hline
+Extrakcia a normalizácia audio signálu & Služba spracovania zvuku \\ \hline
 \end{tabularx}
 \caption{Mapovanie funkčných požiadaviek na komponenty systému}
 \label{tab:requirementsMapping}
@@ -195,7 +188,6 @@ Extrakcia a normalizácia audio signálu & Audio Processing Service \\ \hline
 
 \subsection{Komponentový diagram}
 Pre celkový obraz systému som pripravil nasledujúci komponentový diagram, ktorý zobrazuje všetky vyššie spomínané komponenty.
-Jediný komponent ktorý nie je znázornený je súborové úložisko, pretože to sa bude nachádzať priamo na servery, kde budu bežať aj mikroslužby.
 
 \begin{figure}[H]
     \begin{centering}
@@ -203,8 +195,13 @@ Jediný komponent ktorý nie je znázornený je súborové úložisko, pretože 
         \par\end{centering}
     \caption{Komponent diagram riešenia \label{fig:componentDiag}}
 \end{figure}
+Vo vrchnej časti tohto diagramu sa nachádza mobilná aplikácia, ktorá sa dopytuje na API gateway, ktorá preposiela požiadavky do orchestrátorov spracovania a analýzy.
+V pravej časti sa nachádza časť systému, ktorá zodpovedá spracovaniu videa, zatiaľ čo ľavá strana obsahuje všetky mikroslužby pre analýzu videí. Služby medzi sebou komunikujú pomocou REST api.
+V spodnej časti je ešte zobrazené súborové úložisko a databáza, kde sa ukladajú dáta o nahrávkach, ako aj nahrávky samotné.
 
-Pre pochopenie som vytvoril sekvenčný diagram, ktorý znázorňuje interakciu používateľa so systémom pri nahrávaní nového videa a jeho automatickým spracovaním na strane servera. Dôležité v tomto diagrame je si všimnúť asynchrónne volania medzi jednotlivými mikroslužbami. Výsledkom tohto sekvenčneho diagramu je, že video je uložené v úložisku na serveri a zároveň sú v databáze uložené všetky landmarky extrahované z MediaPipe. Zároveň je v úložisku vytvorený audio súbor patriaci videu, normalizovaný a so vzorkovacou rýchlosťou 16 tisíc.
+Pre pochopenie som vytvoril sekvenčný diagram, ktorý znázorňuje interakciu používateľa so systémom pri nahrávaní nového videa a jeho automatickým spracovaním na strane servera.
+Pre jednoduchšie pochopenie diagramu som zjednotil mikroslužby spracovania do jednej čiary života. Pod týmto označením teda môžete chápat mikroslužbu pre spracovanie videa, zvuku alebo transkripcie. Tieto služby sa spustia všetky naraz v momente vytvorenia záznamu videa v databáze.
+Dôležité v tomto diagrame je si všimnúť asynchrónne volania medzi jednotlivými mikroslužbami. Výsledkom tohto spracovania bude video uložené v úložisku na serveri, všetky landmarky uložené v databáze a audio súbor so vzorkovacou rýchlosťou 16 kHz.
 
 \begin{figure}[H]
     \begin{centering}
@@ -213,7 +210,12 @@ Pre pochopenie som vytvoril sekvenčný diagram, ktorý znázorňuje interakciu 
     \caption{Natočenie a spracovanie videa \label{fig:sequenceVideoProcessing}}
 \end{figure}
 
-Po spracovaní videa bude používateľ informovaný o dokončení spracovania. Toto spracovanie totiž bude trvať istý čas a nakoľko prezentácie čakám v rozsahu 10-30 minút, bude musieť systém istý čas pracovať. Po spracovaní videa a zvuku môže používateľ potom analyzovať konkrétne javy prezentácie. Tieto analýzy už budú synchrónne, pretože keď sme video predspracovali, najdlhšia časť analýzy je hotová. Nasledujúci sekvenčný diagram už zobrazuje ako bude používateľ analyzovať konkrétne javy, pre príklad som vybral analýzu očného kontaktu.
+Spracovanie videa a zvuku môže trvať niekoľko minút v závislosti od dĺžky prezentácie.
+Systém poskytuje informácie o aktuálnom stave spracovania videa, zvuku a transkriptu, takže používateľ vie sledovať priebeh bez čakania naslepo.
+Po dokončení všetkých fáz predspracovania môže používateľ spustiť celkovú analýzu prezentácie.
+Predspracovanie je najdlhšia fáza — samotná analýza bude synchrónna a výrazne rýchlejšia.
+Pri celkovej analýze požiadavka smeruje na orchestrátor analýz, ktorý spustí všetky analytické mikroslužby paralelne, výsledky spojí a vráti ich spolu s hodnotením z zodnotiacej mikroslužby.
+Nasledujúci sekvenčný diagram zobrazuje tok celkovej analýzy, kde si pod analyzačnou mikroslužbou môžete predstaviť jednu z analyzačných mikroslužieb.
 
 \begin{figure}[H]
     \begin{centering}
@@ -221,62 +223,3 @@ Po spracovaní videa bude používateľ informovaný o dokončení spracovania. 
         \par\end{centering}
     \caption{Príklad analyzovania očného kontaktu\label{fig:sequenceEyeDetect}}
 \end{figure}
-
-\section{Použité technológie}
-
-Riešenie je postavené na kombinácii moderných technológií pre mobilný vývoj, serverové spracovanie a analýzu údajov. Kľúčovým architektonickým rozhodnutím je, že \textbf{všetka analýza prebieha na serverovej strane}, čím sa minimalizujú výpočtové nároky na mobilné zariadenie a umožní sa budúce rozšírenie systému bez nutnosti aktualizácie mobilnej aplikácie.
-
-\subsection{Mobilná aplikácia}
-
-Pre mobilnú aplikáciu využívam framework \textbf{Flutter}, ktorý umožňuje vývoj cross-platform aplikácií pre iOS a Android z jedného kódového základu. Flutter poskytuje natívnu výkonnosť a integruje sa s kamerou mobilného zariadenia pre nahrávanie videa. Mobilná aplikácia má limitovanú úlohu - zabezpečuje nahrávanie videa, jeho upload na server a zobrazenie výsledkov analýzy.
-
-\subsection{Serverová časť - mikroslužby}
-
-Pre serverovú časť využívam framework \textbf{Django} s programovacím jazykom \textbf{Python 3.11}. %\cite{django}
-Python je štandardným jazykom pre strojové učenie a počítačové videnie, disponuje rozsiahlym ekosystémom knižníc pre spracovanie multimediálneho obsahu a analýzu časových radov. Každá mikroslužba je samostatná Django aplikácia, čo umožňuje nezávislé nasadenie a škálovanie.
-
-\subsection{API Gateway}
-
-Pre API Gateway využívam \textbf{Spring Boot} s programovacím jazykom \textbf{Kotlin}.% \cite{springboot}
-Spring Boot poskytuje robustnú platformu pre správu HTTP requestov, multipart file upload pre videá a orchestráciu volania mikroslužieb. API Gateway slúži ako jediný vstupný bod pre mobilnú aplikáciu.
-
-\subsection{Počítačové videnie - MediaPipe}
-
-Najdôležitejším nástrojom pre analýzu videa je knižnica \textbf{MediaPipe} od spoločnosti Google. % \cite{mediapipe}
-MediaPipe je open-source framework určený pre real-time spracovanie multimediálneho obsahu.
-V mojom riešení využívam modul \textbf{MediaPipe Pose}, ktorý dokáže detekovať 33 kľúčových bodov ľudského tela (landmarks) v každom snímku videa.
-MediaPipe beží výhradne na serverovej strane v rámci Video Analysis Service.
-
-Nasledujúci obrázok zobrazuje všetky kľúčové body, ktoré MediaPipe Pose detekuje:
-
-\begin{figure}[H]
-    \begin{centering}
-        \includegraphics[width=\textwidth]{assets/images/solution/pose_detection.png}
-        \par\end{centering}
-    \caption{33 kľúčových bodov detekovaných MediaPipe Pose\cite{mediapipe} \label{fig:mediapipeLandmarks}}
-\end{figure}
-
-V prípade, že by chcel používateľ spustiť celkovú analýzu prezentácie, požiadavka pôjde na Analysis Orchestrator, ktorý spustí analýzy vo všetkých zvolených službách paralelne, výsledky spojí a vráti tieto údaje spolu s celkovým hodnotením z Performance Service.
-
-\subsection{Spracovanie zvuku}
-
-Pre analýzu zvukových vlastností využívam knižnicu \textbf{librosa}, ktorá je štandardným nástrojom pre audio analýzu v Pythone. % \cite{librosa}
-Librosa poskytuje funkcie pre extrakciu pitch (výšky tónu) pomocou YIN algoritmu a detekciu hlasitosti pomocou RMS (Root Mean Square) energie. Pre extrakciu zvukovej stopy z videa využívam nástroj \textbf{ffmpeg}. % \cite{ffmpeg}
-
-Pre detekciu výplňových slov využívam \textbf{OpenAI Whisper}, moderný speech-to-text model, ktorý poskytuje presnú transkripciu slovenského aj anglického jazyka s word-level timestamps.
-Whisper model \textbf{base} poskytuje dobrý pomer medzi rýchlosťou a presnosťou transkripcie, no tým, že na transkripciu budeme mať väčšiu výpočtovú silu kvôli tomu, že mikroslužba bude bežať na servery, môžeme použiť model large-v3.
-
-\subsection{Analýza časových radov}
-
-Pre segmentáciu a analýzu časových radov využívam knižnicu \textbf{NumPy} pre numerické výpočty a vlastné implementácie algoritmov pre detekciu zmien trendu.
-Pre vizualizáciu výsledkov používam knižnicu \textbf{matplotlib}.
-
-\subsection{Databáza}
-
-Pre ukladanie dát využívam relačnú databázu \textbf{PostgreSQL}, ktorá zabezpečuje ACID vlastnosti a podporuje efektívne ukladanie štruktúrovaných dát (landmarks, audio features, výsledky analýz).% \cite{postgresql}
-Pre súborové úložisko videí využívam súborový systém servera.
-PostgreSQL zároveň využíva TimescaleDB pre efektívnejšie narábanie s časovými radmi.% \cite{timescaledb}
-
-\subsection{Kontajnerizácia}
-
-Pre nasadenie a orchestráciu služieb využívam \textbf{Docker} a \textbf{Docker Compose}, čo zabezpečuje reprodukovateľné prostredie a zjednodušuje deployment na rôzne platformy.% \cite{docker}

@@ -55,13 +55,13 @@
 \clearpage\null\thispagestyle{empty}
 \input{content/3navrh}
 
-% Vyskumna studia
-\clearpage\null\thispagestyle{empty}
-\input{content/vyskum}
-
 % Implementacia
 \clearpage\null\thispagestyle{empty}
 \input{content/4implementacia}
+
+% Vyskumna studia
+\clearpage\null\thispagestyle{empty}
+\input{content/vyskum}
 
 % Hodnotenie
 \clearpage\null\thispagestyle{empty}
@@ -75,6 +75,10 @@
 \clearpage\null\thispagestyle{empty}
 \printbibliography[heading=references,segment=\therefsegment,resetnumbers=true]
 
+% Ai
+\clearpage\null\thispagestyle{empty}
+\input{content/ai}
+
 \end{refsegment}
 
 % % Appendix
@@ -83,13 +87,13 @@
 \null\thispagestyle{empty}\clearpage\thispagestyle{empty}
 \renewcommand{\thepage}{\Alph{chapter}-\arabic{page}}
 
-%\setcounter{page}{0}
-%\clearpage\null\thispagestyle{empty}
-%\include{appendices/tech_doc}
+\setcounter{page}{0}
+\clearpage\null\thispagestyle{empty}
+\include{appendices/tech_doc}
 
-%\setcounter{page}{0}
-%\clearpage\null\thispagestyle{empty}
-%\include{appendices/cdrom}
+\setcounter{page}{0}
+\clearpage\null\thispagestyle{empty}
+\include{appendices/cdrom}
 
 \setcounter{page}{0}
 \clearpage\null\thispagestyle{empty}

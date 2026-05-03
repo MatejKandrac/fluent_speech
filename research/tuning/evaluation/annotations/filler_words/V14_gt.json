@@ -1,0 +1,13 @@
+{
+  "video_id": "V14",
+  "duration_s": 65.0,
+  "annotator": "Matej",
+  "notes": "Kazde vypln. slovo = bod. Tolerancia pri evaluacii: ±1s",
+  "annotations": {
+    "filler_words": [
+      {"start": 23.0, "end": 23.5, "word": "vlastne"},
+      {"start": 27.5, "end": 28.0, "word": "čiže"},
+      {"start": 28.5, "end": 29.0, "word": "skrátka"}
+    ]
+  }
+}

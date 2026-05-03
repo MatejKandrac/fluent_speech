@@ -58,7 +58,7 @@ class _DashboardViewState extends State<DashboardView> {
           children: [
             ListTile(
               leading: const Icon(Icons.videocam),
-              title: const Text('Record video'),
+              title: const Text('Natočiť video'),
               onTap: () {
                 Navigator.of(ctx).pop();
                 _startRecording();
@@ -66,7 +66,7 @@ class _DashboardViewState extends State<DashboardView> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
+              title: const Text('Vybrať z galérie'),
               onTap: () {
                 Navigator.of(ctx).pop();
                 _pickFromGallery();
@@ -82,7 +82,7 @@ class _DashboardViewState extends State<DashboardView> {
   Widget build(BuildContext context) => Scaffold(
         appBar: LargeAppBar(
           title: Text(
-            'Recordings',
+            'Nahrávky',
             style: Theme.of(context)
                 .textTheme
                 .headlineLarge
@@ -103,7 +103,7 @@ class _DashboardViewState extends State<DashboardView> {
             if (records.isEmpty) {
               return const Center(
                 child: Text(
-                  'No recordings yet.\nTap + to record a presentation.',
+                  'Zatiaľ ziadne nahrávky.\nStlač + pre nahratie prezentácie.',
                   textAlign: TextAlign.center,
                 ),
               );

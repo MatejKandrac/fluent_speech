@@ -71,7 +71,7 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Upload failed: ${state.error}'),
+            content: Text('Odoslanie zlyhalo: ${state.error}'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -113,7 +113,7 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
                       children: [
                         const SizedBox(height: 16),
                         Text(
-                          'Recording Name',
+                          'Názov videa',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -123,13 +123,13 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
                           controller: _nameController,
                           enabled: !uploadState.isUploading,
                           decoration: const InputDecoration(
-                            hintText: 'Enter a name for this recording',
+                            hintText: 'Zadajte názov pre nahrávku',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.videocam),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Please enter a recording name';
+                              return 'Pole je povinné';
                             }
                             return null;
                           },
@@ -141,7 +141,7 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
                               children: [
                                 CircularProgressIndicator(),
                                 SizedBox(height: 16),
-                                Text('Uploading video...'),
+                                Text('Odosielam video...'),
                               ],
                             ),
                           ),
@@ -156,7 +156,7 @@ class _SummariseViewState extends ConsumerState<SummariseView> {
                     onPressed: uploadState.isUploading ? null : () => _handleUpload(context),
                     child: Text(
                       uploadState.isUploading
-                          ? 'Uploading...'
+                          ? 'Odosielam...'
                           : AppTexts.of(context).sendForAnalysis,
                     ),
                   ),

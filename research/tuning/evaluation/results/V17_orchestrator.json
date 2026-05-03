@@ -1,0 +1,50 @@
+{
+  "success": true,
+  "recording_id": 126,
+  "completed_analyses": [
+    "volume"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "volume": {
+      "success": true,
+      "recording_id": 126,
+      "volume_frames": 1353,
+      "volume_mean_rms": 0.02360752411186695,
+      "volume_min_rms": 3.836094765574671E-5,
+      "volume_max_rms": 0.15850557386875153,
+      "volume_std_rms": 0.019529376178979874,
+      "dbfs_mean": -33.52,
+      "dbfs_min": -60.0,
+      "dbfs_max": -16.0,
+      "too_soft_segments": [
+        {
+          "start_timestamp": 9.5,
+          "end_timestamp": 10.95,
+          "duration_seconds": 1.45,
+          "mean_dbfs": -36.05
+        },
+        {
+          "start_timestamp": 31.35,
+          "end_timestamp": 36.7,
+          "duration_seconds": 5.35,
+          "mean_dbfs": -42.64
+        },
+        {
+          "start_timestamp": 51.75,
+          "end_timestamp": 54.65,
+          "duration_seconds": 2.9,
+          "mean_dbfs": -41.58
+        }
+      ],
+      "too_soft_count": 3,
+      "too_loud_segments": [],
+      "too_loud_count": 0,
+      "segmentation": null
+    }
+  },
+  "performance": {
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8012): Max retries exceeded with url: /api/v1/performance/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000021A7B92A630>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+  }
+}

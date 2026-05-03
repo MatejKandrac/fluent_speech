@@ -108,7 +108,7 @@ class _CropViewState extends ConsumerState<CropView> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to crop video. Please try again.'),
+            content: Text('Nepodarilo sa orezať video.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -124,7 +124,7 @@ class _CropViewState extends ConsumerState<CropView> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: Text('Chyba: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -153,7 +153,7 @@ class _CropViewState extends ConsumerState<CropView> {
   Widget build(BuildContext context) => Scaffold(
       appBar: LargeAppBar(
         title: Text(
-          'Trim Video',
+          'Orezať video',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
@@ -179,7 +179,7 @@ class _CropViewState extends ConsumerState<CropView> {
                       children: [
                         // Instructions
                         Text(
-                          'Adjust the slider to trim the end of the video',
+                          'Pohybujte sliderom pre orezanie videa',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -187,7 +187,7 @@ class _CropViewState extends ConsumerState<CropView> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Remove the part where you approach the camera',
+                          'Odstránte časť, kde sa vrátite ku kamere',
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
@@ -201,7 +201,7 @@ class _CropViewState extends ConsumerState<CropView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Start',
+                                  'Štart',
                                   style: Theme.of(context).textTheme.labelSmall,
                                 ),
                                 Text(
@@ -216,7 +216,7 @@ class _CropViewState extends ConsumerState<CropView> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  'End',
+                                  'Koniec',
                                   style: Theme.of(context).textTheme.labelSmall,
                                 ),
                                 Text(
@@ -253,7 +253,7 @@ class _CropViewState extends ConsumerState<CropView> {
                         ),
 
                         Text(
-                          'Final duration: ${_formatDuration(_endTime - _startTime)}',
+                          'Celková dĺžka: ${_formatDuration(_endTime - _startTime)}',
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
@@ -267,7 +267,7 @@ class _CropViewState extends ConsumerState<CropView> {
                               children: [
                                 CircularProgressIndicator(),
                                 SizedBox(height: 16),
-                                Text('Processing video...'),
+                                Text('Spracovanie videa...'),
                               ],
                             ),
                           )
@@ -287,7 +287,7 @@ class _CropViewState extends ConsumerState<CropView> {
                                       ),
                                     );
                                   },
-                                  child: const Text('Skip'),
+                                  child: const Text('Preskočiť'),
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -295,7 +295,7 @@ class _CropViewState extends ConsumerState<CropView> {
                                 flex: 2,
                                 child: FilledButton(
                                   onPressed: _cropVideo,
-                                  child: const Text('Trim & Continue'),
+                                  child: const Text('Orezať a pokračovať'),
                                 ),
                               ),
                             ],

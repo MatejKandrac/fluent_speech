@@ -9,44 +9,44 @@ class AppTextsEn extends AppTexts {
   AppTextsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get startPreparing => 'Start preparing';
+  String get startExercise => 'Začať cvičenie';
 
   @override
-  String get startExercise => 'Start exercise';
+  String get startPreparing => 'Začnite sa pripravovať';
 
   @override
-  String get calibrate => 'Calibrate';
+  String get calibrate => 'Kalibrácia';
 
   @override
-  String get record => 'Record';
+  String get record => 'Nahrávanie';
 
   @override
-  String get summary => 'Summary';
+  String get summary => 'Zhrnutie';
 
   @override
-  String get requiredLandmarks => 'Required landmarks:';
+  String get requiredLandmarks => 'Požadované body';
 
   @override
-  String get rightHip => 'Right hip';
+  String get rightHip => 'Pravý bok';
 
   @override
-  String get leftHip => 'Left hip';
+  String get leftHip => 'Ľavý bok';
 
   @override
-  String get rightEye => 'Right eye';
+  String get rightEye => 'Pravé oko';
 
   @override
-  String get leftEye => 'Left eye';
+  String get leftEye => 'Ľavé oko';
 
   @override
-  String get leftCheek => 'Left cheek';
+  String get leftCheek => 'Ľavé líce';
 
   @override
-  String get rightCheek => 'Right cheek';
+  String get rightCheek => 'Pravé líce';
 
   @override
-  String get getReady => 'Get ready';
+  String get getReady => 'Priprav sa!';
 
   @override
-  String get sendForAnalysis => 'Send data for analysis';
+  String get sendForAnalysis => 'Odoslať na analýzu';
 }

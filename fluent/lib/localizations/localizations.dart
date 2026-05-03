@@ -92,88 +92,88 @@ abstract class AppTexts {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[Locale('en'), Locale('sk')];
 
-  /// No description provided for @startPreparing.
-  ///
-  /// In en, this message translates to:
-  /// **'Start preparing'**
-  String get startPreparing;
-
   /// No description provided for @startExercise.
   ///
   /// In en, this message translates to:
-  /// **'Start exercise'**
+  /// **'Začať cvičenie'**
   String get startExercise;
+
+  /// No description provided for @startPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Začnite sa pripravovať'**
+  String get startPreparing;
 
   /// No description provided for @calibrate.
   ///
   /// In en, this message translates to:
-  /// **'Calibrate'**
+  /// **'Kalibrácia'**
   String get calibrate;
 
   /// No description provided for @record.
   ///
   /// In en, this message translates to:
-  /// **'Record'**
+  /// **'Nahrávanie'**
   String get record;
 
   /// No description provided for @summary.
   ///
   /// In en, this message translates to:
-  /// **'Summary'**
+  /// **'Zhrnutie'**
   String get summary;
 
   /// No description provided for @requiredLandmarks.
   ///
   /// In en, this message translates to:
-  /// **'Required landmarks:'**
+  /// **'Požadované body'**
   String get requiredLandmarks;
 
   /// No description provided for @rightHip.
   ///
   /// In en, this message translates to:
-  /// **'Right hip'**
+  /// **'Pravý bok'**
   String get rightHip;
 
   /// No description provided for @leftHip.
   ///
   /// In en, this message translates to:
-  /// **'Left hip'**
+  /// **'Ľavý bok'**
   String get leftHip;
 
   /// No description provided for @rightEye.
   ///
   /// In en, this message translates to:
-  /// **'Right eye'**
+  /// **'Pravé oko'**
   String get rightEye;
 
   /// No description provided for @leftEye.
   ///
   /// In en, this message translates to:
-  /// **'Left eye'**
+  /// **'Ľavé oko'**
   String get leftEye;
 
   /// No description provided for @leftCheek.
   ///
   /// In en, this message translates to:
-  /// **'Left cheek'**
+  /// **'Ľavé líce'**
   String get leftCheek;
 
   /// No description provided for @rightCheek.
   ///
   /// In en, this message translates to:
-  /// **'Right cheek'**
+  /// **'Pravé líce'**
   String get rightCheek;
 
   /// No description provided for @getReady.
   ///
   /// In en, this message translates to:
-  /// **'Get ready'**
+  /// **'Priprav sa!'**
   String get getReady;
 
   /// No description provided for @sendForAnalysis.
   ///
   /// In en, this message translates to:
-  /// **'Send data for analysis'**
+  /// **'Odoslať na analýzu'**
   String get sendForAnalysis;
 }
 

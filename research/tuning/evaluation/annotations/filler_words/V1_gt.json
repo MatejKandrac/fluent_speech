@@ -1,0 +1,23 @@
+{
+  "video_id": "V1",
+  "video_file": "V7.mp4",
+  "duration_s": 107,
+  "annotator": "Matej",
+  "notes": "Prejav PS",
+  "annotations": {
+    "filler_words": [
+      {"start": 3.0, "end": 3.5, "word": "uhh"},
+      {"start": 8.5, "end": 9.0, "word": "uhh"},
+      {"start": 10.5, "end": 11, "word": "teda"},
+      {"start": 13.0, "end": 14, "word": "uhh"},
+      {"start": 26.0, "end": 26.0, "word": "uhh"},
+      {"start": 40.0, "end": 40.5, "word": "uhh"},
+      {"start": 42.0, "end": 42.5, "word": "uhh"},
+      {"start": 71.5, "end": 72.0, "word": "uhh"},
+      {"start": 77.0, "end": 77.5, "word": "no"},
+      {"start": 92.0, "end": 93.0, "word": "uhh"},
+      {"start": 96.0, "end": 96.5, "word": "no"},
+      {"start": 38.5, "end": 39.0, "word": "teda"}
+    ]
+  }
+}

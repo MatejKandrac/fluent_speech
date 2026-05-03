@@ -106,7 +106,7 @@ class _RecordingDetailViewState extends ConsumerState<RecordingDetailView> {
           _fetchStatus();
         }
       } else {
-        if (mounted) setState(() => _uploadError = 'Server returned failure');
+        if (mounted) setState(() => _uploadError = 'Server vrátil chybu');
       }
     } catch (e) {
       if (mounted) setState(() => _uploadError = e.toString());
@@ -152,7 +152,7 @@ class _RecordingDetailViewState extends ConsumerState<RecordingDetailView> {
         if (!_notUploaded)
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh status',
+            tooltip: 'Obnoviť stav',
             onPressed: _fetchStatus,
           ),
       ],
@@ -174,7 +174,7 @@ class _RecordingDetailViewState extends ConsumerState<RecordingDetailView> {
                     children: const [
                       Icon(Icons.cloud_off, color: Colors.orange),
                       SizedBox(width: 8),
-                      Text('Not uploaded to server yet', style: TextStyle(color: Colors.orange)),
+                      Text('Video nebolo odslané', style: TextStyle(color: Colors.orange)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -182,7 +182,7 @@ class _RecordingDetailViewState extends ConsumerState<RecordingDetailView> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
-                        'Error: $_uploadError',
+                        'Chyba: $_uploadError',
                         style: const TextStyle(color: Colors.red, fontSize: 12),
                       ),
                     ),
@@ -197,7 +197,7 @@ class _RecordingDetailViewState extends ConsumerState<RecordingDetailView> {
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : const Icon(Icons.cloud_upload),
-                      label: Text(_uploading ? 'Uploading...' : 'Upload to server'),
+                      label: Text(_uploading ? 'Odosielane...' : 'Odoslať na server'),
                     ),
                   ),
                 ],
@@ -230,12 +230,12 @@ class _RecordingDetailViewState extends ConsumerState<RecordingDetailView> {
                       : const Icon(Icons.analytics),
                   label: Text(
                     _analyzing
-                        ? 'Analyzing...'
+                        ? 'Analyzovanie...'
                         : _analysisResult != null
-                        ? 'Analysis complete'
+                        ? 'Analýza hotová'
                         : _allReady
-                        ? 'Analyze presentation'
-                        : 'Waiting for processing...',
+                        ? 'Analyzovať prezentáciu'
+                        : 'Čaká sa na spracovanie...',
                   ),
                 ),
               ),
@@ -245,7 +245,7 @@ class _RecordingDetailViewState extends ConsumerState<RecordingDetailView> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Error: $_analysisError',
+                  'Chyba: $_analysisError',
                   style: const TextStyle(color: Colors.red),
                 ),
               ),
@@ -310,7 +310,7 @@ class _VideoSectionState extends State<_VideoSection> {
         height: 220,
         color: Colors.black,
         child: const Center(
-          child: Text('No video available', style: TextStyle(color: Colors.white54)),
+          child: Text('Žiadne video nie je dostupné', style: TextStyle(color: Colors.white54)),
         ),
       );
     }
@@ -411,7 +411,7 @@ class _StatusRow extends StatelessWidget {
           children: [
             SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
             SizedBox(width: 8),
-            Text('Checking processing status...'),
+            Text('Zistujem stav spracovania...'),
           ],
         ),
       );
@@ -423,7 +423,7 @@ class _StatusRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _StatusChip(label: 'Video', ready: videoReady),
-          _StatusChip(label: 'Audio', ready: audioReady),
+          _StatusChip(label: 'Zvuk', ready: audioReady),
           _StatusChip(label: 'Transcript', ready: transcriptReady),
         ],
       ),
@@ -466,14 +466,15 @@ class _ResultsSection extends StatelessWidget {
     final tabs = _buildTabs(analysisResults);
 
     return DefaultTabController(
-      length: tabs.length + 1,
+      length: tabs.length + 2,
       child: Column(
         children: [
           TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: [
-              const Tab(text: 'Score'),
+              const Tab(text: 'Skóre'),
+              const Tab(text: 'Štatistiky'),
               ...tabs.map((t) => Tab(text: t.label)),
             ],
           ),
@@ -481,6 +482,7 @@ class _ResultsSection extends StatelessWidget {
             child: TabBarView(
               children: [
                 _ScoreTab(performance: performance),
+                _StatsTab(results: analysisResults),
                 ...tabs.map((t) => _EventsTab(tab: t, onSeek: onSeek)),
               ],
             ),
@@ -499,10 +501,11 @@ class _ResultsSection extends StatelessWidget {
     if (monotone.isNotEmpty) {
       tabs.add(
         _TabData(
-          label: 'Monotone',
+          label: 'Monotónnosť',
           icon: Icons.graphic_eq,
           events: monotone,
-          description: 'Monotonous speech segments',
+          description: 'Segmenty s monotónnym hlasom',
+          changePoints: _extractChangePoints(pitch?['segmentation']),
         ),
       );
     }
@@ -514,13 +517,14 @@ class _ResultsSection extends StatelessWidget {
     if (tooSoft.isNotEmpty || tooLoud.isNotEmpty) {
       tabs.add(
         _TabData(
-          label: 'Volume',
+          label: 'Hlasitosť',
           icon: Icons.volume_up,
           events: [
             ..._labelEvents(tooSoft, 'Too soft'),
             ..._labelEvents(tooLoud, 'Too loud'),
           ],
-          description: 'Volume issues',
+          description: 'Problémy s hlasom',
+          changePoints: _extractChangePoints(volume?['segmentation']),
         ),
       );
     }
@@ -531,10 +535,11 @@ class _ResultsSection extends StatelessWidget {
     if (fillerEvents.isNotEmpty) {
       tabs.add(
         _TabData(
-          label: 'Filler words',
+          label: 'Výplňové slová',
           icon: Icons.record_voice_over,
           events: fillerEvents,
-          description: 'Filler word occurrences',
+          description: 'Miesta s výplňovými slovami',
+          changePoints: _extractFillerZoneStarts(filler?['peak_zones']),
         ),
       );
     }
@@ -547,13 +552,14 @@ class _ResultsSection extends StatelessWidget {
     if (noMovement.isNotEmpty || excessive.isNotEmpty) {
       tabs.add(
         _TabData(
-          label: 'Arms',
+          label: 'Pohyby rúk',
           icon: Icons.accessibility_new,
           events: [
             ..._labelEvents(noMovement, 'No movement'),
             ..._labelEvents(excessive, 'Excessive'),
           ],
-          description: 'Arm movement issues',
+          description: 'Problémy s gestikuláciou',
+          changePoints: _extractChangePoints(arm?['segmentation']),
         ),
       );
     }
@@ -564,10 +570,11 @@ class _ResultsSection extends StatelessWidget {
     if (hipSegments.isNotEmpty) {
       tabs.add(
         _TabData(
-          label: 'Hip sway',
+          label: 'Pohyby bokov',
           icon: Icons.directions_walk,
           events: hipSegments,
-          description: 'Hip swaying detected',
+          description: 'Detekované pohyby bokov',
+          changePoints: _extractChangePoints(hip?['segmentation']),
         ),
       );
     }
@@ -582,21 +589,39 @@ class _ResultsSection extends StatelessWidget {
       if (lookingAway.isNotEmpty || staring.isNotEmpty || heatmapData != null) {
         tabs.add(
           _TabData(
-            label: 'Eye contact',
+            label: 'Očný kontakt',
             icon: Icons.visibility,
             events: [
               ..._labelEvents(lookingAway, 'Looking away'),
               ..._labelEvents(staring, 'Staring'),
             ],
-            description: 'Eye contact issues',
+            description: 'Problémy s očným kontaktom',
             heatmapData: heatmapData,
             audienceZone: audienceZone,
+            changePoints: _extractChangePoints(eye['segmentation']),
           ),
         );
       }
     }
 
     return tabs;
+  }
+
+  /// Extracts and flattens all change point times from a segmentation result.
+  List<double> _extractChangePoints(dynamic segmentation) {
+    if (segmentation == null) return [];
+    final seg = segmentation as Map<String, dynamic>?;
+    if (seg == null || seg['success'] != true) return [];
+    final cps = seg['change_points'] as Map<String, dynamic>?;
+    if (cps == null) return [];
+    final result = <double>[];
+    for (final times in cps.values) {
+      for (final t in times as List<dynamic>) {
+        result.add((t as num).toDouble());
+      }
+    }
+    result.sort();
+    return result;
   }
 
   /// Safely converts a dynamic value to double — handles num, String, or null.
@@ -657,6 +682,19 @@ class _ResultsSection extends StatelessWidget {
 
   List<_Event> _labelEvents(List<_Event> events, String prefix) =>
       events.map((e) => _Event(start: e.start, end: e.end, label: prefix)).toList();
+
+  /// Returns zone start times from filler words bottom-up segmentation.
+  List<double> _extractFillerZoneStarts(dynamic peakZones) {
+    if (peakZones == null) return [];
+    final zones = peakZones['zones'] as List<dynamic>?;
+    if (zones == null || zones.isEmpty) return [];
+    return zones
+        .map((z) => (z as Map<String, dynamic>)['start'])
+        .whereType<num>()
+        .map((v) => v.toDouble())
+        .toList()
+      ..sort();
+  }
 }
 
 // ─── Score tab ────────────────────────────────────────────────────────────────
@@ -669,7 +707,7 @@ class _ScoreTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (performance == null || performance!['success'] != true) {
-      return const Center(child: Text('Performance score not available.'));
+      return const Center(child: Text('Skóre nedostupné.'));
     }
 
     final total = (performance!['total_score'] as num).toDouble();
@@ -711,7 +749,7 @@ class _ScoreTab extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Overall score', style: Theme.of(context).textTheme.bodySmall),
+                    Text('Celkové skóre', style: Theme.of(context).textTheme.bodySmall),
                     Text(
                       label,
                       style: Theme.of(
@@ -774,7 +812,7 @@ class _ScoreTab extends StatelessWidget {
 
         if (recommendations.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text('Recommendations', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text('Odporúčania', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           ...recommendations.map(
             (r) => Padding(
@@ -813,6 +851,125 @@ class _ScoreTab extends StatelessWidget {
   }
 }
 
+// ─── Stats tab ────────────────────────────────────────────────────────────────
+
+class _Stat {
+  const _Stat(this.label, this.value);
+  final String label;
+  final String value;
+}
+
+class _StatsTab extends StatelessWidget {
+  const _StatsTab({required this.results});
+
+  final Map<String, dynamic> results;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleStyle = Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold);
+    final items = <Widget>[];
+
+    void section(String title, List<_Stat> rows) {
+      if (rows.isEmpty) return;
+      items.add(Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+        child: Text(title, style: titleStyle),
+      ));
+      for (final s in rows) {
+        items.add(ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          title: Text(s.label, style: const TextStyle(fontSize: 13)),
+          trailing: Text(s.value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        ));
+      }
+      items.add(const Divider(height: 1));
+    }
+
+    final pitch = results['pitch'] as Map<String, dynamic>?;
+    if (pitch != null) {
+      section('Výška hlasu', [
+        _Stat('Priemerná výška', '${_n1(pitch['pitch_mean'])} Hz'),
+        _Stat('Min / Max', '${_n1(pitch['pitch_min'])} / ${_n1(pitch['pitch_max'])} Hz'),
+        _Stat('Štandardná odchýlka', '${_n1(pitch['pitch_std'])} Hz'),
+        _Stat('Monotónne segmenty', '${pitch['monotonous_segments_count'] ?? 0}'),
+      ]);
+    }
+
+    final volume = results['volume'] as Map<String, dynamic>?;
+    if (volume != null) {
+      section('Hlasitosť', [
+        _Stat('Priemer', '${_n1(volume['dbfs_mean'])} dBFS'),
+        _Stat('Min / Max', '${_n1(volume['dbfs_min'])} / ${_n1(volume['dbfs_max'])} dBFS'),
+        _Stat('Príliš tiché segmenty', '${volume['too_soft_count'] ?? 0}'),
+        _Stat('Príliš hlasné segmenty', '${volume['too_loud_count'] ?? 0}'),
+      ]);
+    }
+
+    final filler = results['filler_words'] as Map<String, dynamic>?;
+    final fillerStats = filler?['statistics'] as Map<String, dynamic>?;
+    if (fillerStats != null) {
+      final mc = fillerStats['most_common_filler'] as Map<String, dynamic>?;
+      section('Výplňové slová', [
+        _Stat('Celkový počet', '${fillerStats['total_filler_words'] ?? 0}'),
+        _Stat('Za minútu', _n2(fillerStats['fillers_per_minute'])),
+        if (mc != null) _Stat('Najčastejšie', '"${mc['word']}" (${mc['count']}×)'),
+      ]);
+    }
+
+    final arm = results['arm_movement'] as Map<String, dynamic>?;
+    if (arm != null) {
+      final armStats = arm['statistics'] as Map<String, dynamic>?;
+      final anomalies = arm['anomalies'] as Map<String, dynamic>?;
+      final lw = armStats?['left_wrist'] as Map<String, dynamic>?;
+      final rw = armStats?['right_wrist'] as Map<String, dynamic>?;
+      final noMov = (anomalies?['no_movement_periods'] as List?)?.length ?? 0;
+      final exc = (anomalies?['excessive_movement_periods'] as List?)?.length ?? 0;
+      section('Pohyby rúk', [
+        if (lw != null) _Stat('Ľ. zápästie – priem. rýchlosť', _n3(lw['avg_velocity'])),
+        if (rw != null) _Stat('P. zápästie – priem. rýchlosť', _n3(rw['avg_velocity'])),
+        _Stat('Bez pohybu (periód)', '$noMov'),
+        _Stat('Nadmerný pohyb (periód)', '$exc'),
+      ]);
+    }
+
+    final hip = results['hip'] as Map<String, dynamic>?;
+    if (hip != null) {
+      final hipStats = hip['statistics'] as Map<String, dynamic>?;
+      final hipDist = hipStats?['hip_distance'] as Map<String, dynamic>?;
+      section('Pohyby bokov', [
+        _Stat('Segmenty hojdania', '${hip['swaying_segments_count'] ?? 0}'),
+        if (hipDist != null) _Stat('Priem. vzdialenosť bokov', _n3(hipDist['mean'])),
+      ]);
+    }
+
+    final eye = results['eye_contact'] as Map<String, dynamic>?;
+    final eyeStats = eye?['statistics'] as Map<String, dynamic>?;
+    if (eyeStats != null) {
+      section('Očný kontakt', [
+        _Stat('Pohľad na publikum', '${_n1(eyeStats['looking_at_audience_percentage'])} %'),
+        _Stat('Odvrátenie pohľadu', '${_n1(eyeStats['looking_away_percentage'])} %'),
+        _Stat('Čas odvrátenia', '${_n1(eyeStats['looking_away_duration'])} s'),
+        _Stat('Priem. yaw / pitch', '${_n1(eyeStats['avg_yaw'])}° / ${_n1(eyeStats['avg_pitch'])}°'),
+        _Stat('Počet odvrátení', '${eyeStats['num_looking_away_events'] ?? 0}'),
+      ]);
+    }
+
+    if (items.isEmpty) {
+      return const Center(child: Text('Žiadne štatistiky dostupné.'));
+    }
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 16),
+      children: items,
+    );
+  }
+
+  String _n1(dynamic v) => v == null ? '-' : (v as num).toStringAsFixed(1);
+  String _n2(dynamic v) => v == null ? '-' : (v as num).toStringAsFixed(2);
+  String _n3(dynamic v) => v == null ? '-' : (v as num).toStringAsFixed(3);
+}
+
 // ─── Events tab ───────────────────────────────────────────────────────────────
 
 class _TabData {
@@ -822,6 +979,7 @@ class _TabData {
   final String description;
   final Map<String, dynamic>? heatmapData;
   final Map<String, dynamic>? audienceZone;
+  final List<double> changePoints;
 
   _TabData({
     required this.label,
@@ -830,6 +988,7 @@ class _TabData {
     required this.description,
     this.heatmapData,
     this.audienceZone,
+    this.changePoints = const [],
   });
 }
 
@@ -864,9 +1023,56 @@ class _EventsTab extends StatelessWidget {
     onTap: () => onSeek(event.start),
   );
 
+  Widget _buildChangePointDivider(BuildContext context, double time) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    child: Row(
+      children: [
+        Expanded(child: Divider(color: Theme.of(context).colorScheme.primary, thickness: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.trending_flat, size: 14, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 4),
+              Text(
+                'Výrazná zmena @ ${_fmt(time)}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: Divider(color: Theme.of(context).colorScheme.primary, thickness: 1)),
+      ],
+    ),
+  );
+
+  /// Interleaves sorted events with change-point dividers.
+  List<dynamic> _buildItems(List<_Event> sorted) {
+    final cps = [...tab.changePoints]..sort();
+    final items = <dynamic>[];
+    int cpIdx = 0;
+    for (final event in sorted) {
+      while (cpIdx < cps.length && cps[cpIdx] <= event.start) {
+        items.add(cps[cpIdx]);
+        cpIdx++;
+      }
+      items.add(event);
+    }
+    while (cpIdx < cps.length) {
+      items.add(cps[cpIdx++]);
+    }
+    return items;
+  }
+
   @override
   Widget build(BuildContext context) {
     final sorted = [...tab.events]..sort((a, b) => a.start.compareTo(b.start));
+    final items = _buildItems(sorted);
 
     if (tab.heatmapData != null) {
       return Column(
@@ -881,11 +1087,15 @@ class _EventsTab extends StatelessWidget {
           const Divider(height: 8),
           Expanded(
             child: sorted.isEmpty
-                ? const Center(child: Text('No eye contact issues detected.'))
+                ? const Center(child: Text('Žiadne problémy s očným kontaktom'))
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: sorted.length,
-                    itemBuilder: (ctx, i) => _buildEventTile(ctx, sorted[i]),
+                    itemCount: items.length,
+                    itemBuilder: (ctx, i) {
+                      final item = items[i];
+                      if (item is double) return _buildChangePointDivider(ctx, item);
+                      return _buildEventTile(ctx, item as _Event);
+                    },
                   ),
           ),
         ],
@@ -893,13 +1103,17 @@ class _EventsTab extends StatelessWidget {
     }
 
     if (sorted.isEmpty) {
-      return Center(child: Text('No ${tab.description.toLowerCase()} detected.'));
+      return Center(child: Text('Žiadne ${tab.description.toLowerCase()} detekované.'));
     }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: sorted.length,
-      itemBuilder: (context, i) => _buildEventTile(context, sorted[i]),
+      itemCount: items.length,
+      itemBuilder: (context, i) {
+        final item = items[i];
+        if (item is double) return _buildChangePointDivider(context, item);
+        return _buildEventTile(context, item as _Event);
+      },
     );
   }
 
@@ -926,7 +1140,7 @@ class _GazeHeatmap extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Gaze Heatmap',
+          'Heatmapa pohľadu',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 6),
@@ -941,7 +1155,7 @@ class _GazeHeatmap extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Less time', style: TextStyle(fontSize: 10, color: Colors.black54)),
+            const Text('Menej času', style: TextStyle(fontSize: 10, color: Colors.black54)),
             const SizedBox(width: 6),
             Container(
               width: 100,
@@ -954,7 +1168,7 @@ class _GazeHeatmap extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            const Text('More time', style: TextStyle(fontSize: 10, color: Colors.black54)),
+            const Text('Viac času', style: TextStyle(fontSize: 10, color: Colors.black54)),
           ],
         ),
       ],

@@ -1,13 +1,15 @@
 \chapter{Obsah digitálneho média \label{cha:cdrom} }
 
-Digitálne médium je súčasťou práce a obsahuje zdrojové kódy aplikácií, back-endu a databázy, spolu s niekoľkými dodatočnými súbormi. Obsahuje nasledujúcu adresárovú štruktúru:
+Digitálne médium je súčasťou práce a obsahuje zdrojové kódy aplikácií, mikroslužieb, api gateway a databázy, spolu s niekoľkými dodatočnými súbormi.
+Obsahuje nasledujúcu adresárovú štruktúru:
 
 \begin{itemize}
-\item \texttt{/AppBackend} --- zdrojové kódy back-endu (Spring boot projekt)
-\item \texttt{/administrative\_app} --- zdrojové kódy administrátorskej aplikácie (Flutter projekt)
-\item \texttt{/client\_app} --- zdrojové kódy klientskej aplikácie (Flutter projekt)
-\item \texttt{/secret} --- adresár, kde majú byť citlivé súbory a konfigurácie
-\item \texttt{/compose.yaml} --- docker compose skript na spustenie back-endu a databázy
+\item \texttt{/analysis} --- zdrojové kódy analyzačných mikroslužieb (Django Python)
+\item \texttt{/processing} --- zdrojové kódy mikroslužieb spracovania videa (Django Python)
+\item \texttt{/fluent} --- zdrojové kódy mobilnej aplikácie (Flutter projekt)
+\item \texttt{/FluentApiGateway} --- zdrojové kody pre API Gateway (Spring boot Kotlin)
+\item \texttt{/research} --- python notebooky a json súbory s výsledkami výskumu a odpoveďami systému
 \item \texttt{/init.sql} --- sql skript pre vytvorenie databázy
-\item \texttt{/API\_Documentation.pdf} --- pdf s opisom jednotlivých koncových bodov
+\item \texttt{/.env} --- súbor s premennými prostredia s poslednými nastaveniami
+\item \texttt{/docker-compose.yml} --- docker compose súbor pre spustenie systému
 \end{itemize}

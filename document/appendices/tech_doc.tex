@@ -1,28 +1,456 @@
 \chapter{Technická dokumentácia \label{cha:technicalDocumentation}}
 \pagestyle{plain}
 
-\begin{table}[H]
-  \centering
-  \begin{tabularx}{\textwidth}{|X|X|X|X|}
-    \hline
-    \textbf{Stĺpec} & \textbf{Typ} & \textbf{Povinný údaj} & \textbf{Opis} \\
-    \hline
-    \specialrule{1.2pt}{0pt}{0pt}
-    code & VARCHAR(5) & Áno & Primárny kľúč reprezentujúci kód jazyka a kód štátu oddelený podčiarkovníkom \\ \hline
-    name & TEXT & Áno & Čitateľný názov jazyka \\ \hline
-    flag & TEXT & Áno & Odkaz na obrázok vlajky \\ \hline
-    iso\_639\_3 & TEXT & Áno & Označenie jazyka vo formáte ISO 139 3\\ \hline
-  \end{tabularx}
-  \caption{Tabuľka languages}
-  \label{tab:languages}
+\section{Špecifikácia požiadaviek}
+
+\subsection{Funkčné požiadavky}
+
+Systém Fluent Speech musí spĺňať nasledujúce funkčné požiadavky:
+
+\begin{enumerate}
+    \item \textbf{Nahrávanie a odosielanie videa} — mobilná aplikácia umožňuje zaznamenanie prezentácie s trojsekundovým odpočtom, ostrihnutie záznamu a jeho odoslanie na server.
+    \item \textbf{Extrakcia kĺbových bodov} — server extrahuje 33 kĺbových bodov (MediaPipe Pose) z každého spracovávaného snímku videa a ukladá ich do databázy.
+    \item \textbf{Transkripcia reči} — server transkribuje zvukový záznam do slov s časovými pečiatkami pomocou modelu Whisper.
+    \item \textbf{Detekcia výplňových slov} — identifikácia výplňových slov (napr. \emph{ehm}, \emph{teda}, \emph{takže}) v transkripte na základe slovníkových vzorov a regex pravidiel.
+    \item \textbf{Analýza výšky hlasu} — výpočet základnej frekvencie reči algoritmom YIN a detekcia monotónnych úsekov s nízkou variabilitou.
+    \item \textbf{Analýza hlasitosti} — meranie hladiny energie v dBFS a detekcia úsekov, ktoré sú príliš tiché alebo príliš hlasné.
+    \item \textbf{Analýza pohybu rúk} — sledovanie kinematiky zápästí a detekcia dlhých periód chýbajúcej gestikulácie a úsekov nadmerného pohybu.
+    \item \textbf{Analýza pohybu bokov} — detekcia oscilácií bokov počas prezentácie na základe horizontálnych výchyliek kĺbových bodov.
+    \item \textbf{Analýza očného kontaktu} — výpočet yaw a pitch uhlov hlavy z interaurálneho vektora a určenie percenta času, počas ktorého prezentujúci hľadel smerom k publiku.
+    \item \textbf{Segmentácia časových radov} — detekcia výrazných štatistických zmien v analyzovaných signáloch algoritmom PELT prostredníctvom zdieľanej segmentačnej mikroslužby.
+    \item \textbf{Hodnotenie prezentácie} — výpočet celkového skóre a skóre v štyroch dimenziách (hlas, plynulosť, očný kontakt, telo) a generovanie textových odporúčaní.
+    \item \textbf{Zobrazenie výsledkov} — mobilná aplikácia zobrazuje skóre, štatistiky a zoznamy detekovaných udalostí s možnosťou seekovania prehrávaného videa na konkrétny timestamp.
+\end{enumerate}
+
+\subsection{Nefunkčné požiadavky}
+
+\begin{itemize}
+    \item \textbf{Modularita} — každá analytická funkcia je implementovaná ako samostatná mikroslužba s vlastným REST API rozhraním.
+    \item \textbf{Konfigurovateľnosť} — parametre všetkých algoritmov sú nastaviteľné cez environmentálne premenné bez nutnosti rekompilácie.
+    \item \textbf{Rozšíriteľnosť} — systém podporuje pridávanie nových analytických modulov bez zmeny existujúcich mikroslužieb.
+    \item \textbf{Prenositeľnosť} — serverová časť je plne kontajnerizovaná pomocou Docker Compose.
+    \item \textbf{Multiplatformnosť} — mobilná aplikácia je implementovaná vo Flutteri, čo umožňuje kompiláciu pre Android aj iOS z jedinej kódovej základne.
+    \item \textbf{Offline nahrávanie} — záznam prezentácie nevyžaduje sieťové pripojenie; odosielanie na server prebieha až po dokončení záznamu.
+    \item \textbf{Paralelné spracovanie} — analytický orchestrátor spúšťa analytické mikroslužby súbežne pomocou vlákien (\texttt{ThreadPoolExecutor}).
+    \item \textbf{Odolnosť voči chybám} — zlyhanie jednej analytickej mikroslužby nepreruší ostatné analýzy; orchestrátor zaznamenáva neúspešné analýzy a pokračuje.
+\end{itemize}
+
+\section{Návrh systému}
+
+\subsection{Architektúra}
+
+Systém sa skladá zo štyroch logických vrstiev:
+
+\begin{enumerate}
+    \item \textbf{Mobilná aplikácia} (Flutter) — zachytáva video, odosiela ho na server a zobrazuje výsledky analýzy.
+    \item \textbf{API brána} (Spring Boot / Kotlin, port 8000) — jediný vstupný bod pre mobilnú aplikáciu. Koordinuje volania na spracovateľský orchestrátor a analytický orchestrátor.
+    \item \textbf{Spracovateľská vrstva} — mikroslužby zodpovedné za predspracovanie vstupných dát: extrakcia kĺbových bodov z videa, normalizácia a prevzorkovanie zvuku a transkripcia reči.
+    \item \textbf{Analytická vrstva} — mikroslužby vykonávajúce špecializované analýzy nad predspracovanými dátami uloženými v zdieľanej databáze.
+\end{enumerate}
+
+Prehľad všetkých mikroslužieb so zodpovedajúcimi portmi je uvedený v tabuľke~\ref{tab:td-microservices}.
+
+\begin{table}[ht]
+\centering
+\caption{Zoznam mikroslužieb systému}
+\label{tab:td-microservices}
+\begin{tabular}{|l|c|l|}
+\hline
+\textbf{Mikroslužba} & \textbf{Port} & \textbf{Účel} \\
+\hline
+API brána & 8000 & Vstupný bod, proxy na spracovanie a analýzu \\
+Spracovanie videa & 8001 & MediaPipe — extrakcia 33 kĺbových bodov do DB \\
+Pohyb rúk & 8002 & Kinematika zápästí, detekcia chýb gestikulácie \\
+Očný kontakt & 8003 & Yaw/pitch uhly hlavy, heatmapa pohľadu \\
+Spracovanie zvuku & 8004 & FFmpeg extrakcia, RMS normalizácia, 16\,kHz \\
+Výška hlasu & 8005 & Algoritmus YIN, monotónne úseky \\
+Hlasitosť & 8006 & RMS energia v dBFS, tiché/hlasné úseky \\
+Pohyby bokov & 8007 & Detekcia oscilácií bokov \\
+Výplňové slová & 8008 & Regex nad transkriptom Whisper \\
+Transkripcia reči & 8009 & OpenAI Whisper — slová s časovými pečiatkami \\
+Hodnotenie & 8012 & Výpočet skóre, generovanie odporúčaní \\
+Sprac.\ orchestrátor & 8013 & Koordinácia video + zvuk + prepis \\
+Segmentácia & 8010 & Algoritmus PELT — detekcia zmien v signáloch \\
+Anal.\ orchestrátor & 8011 & Paralelná koordinácia analytických mikroslužieb \\
+\hline
+\end{tabular}
 \end{table}
 
-\begin{lstlisting}
-@RestApi(baseUrl: '/auth')
-abstract class AuthService {
-    ...
-    @POST('/register')
-    Future<HttpResponse<dynamic>> register(
-        @Body() RegisterRequest request);
+\subsection{Databázová schéma}
+
+Systém využíva databázu PostgreSQL s rozšírením TimescaleDB. Všetky mikroslužby pristupujú k tej istej databáze cez spoločné prihlasovacie údaje. Schéma pozostáva zo štyroch tabuliek popísaných nižšie.
+
+\subsubsection{Tabuľka \texttt{recording}}
+
+Uchováva metadáta každého nahraného videa vrátane stavových príznakov spracovania.
+
+\begin{table}[ht]
+\centering
+\caption{Schéma tabuľky \texttt{recording}}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Stĺpec} & \textbf{Typ} & \textbf{Popis} \\
+\hline
+\texttt{id} & BIGSERIAL PK & Primárny kľúč záznamu \\
+\texttt{filename} & VARCHAR(255) & Názov uloženého video súboru \\
+\texttt{fps} & DOUBLE PRECISION & Snímková frekvencia videa \\
+\texttt{video\_processing\_finished} & BOOLEAN & Príznak dokončenia extrakcie kĺbov \\
+\texttt{audio\_processing\_finished} & BOOLEAN & Príznak dokončenia spracovania zvuku \\
+\texttt{transcript\_processing\_finished} & BOOLEAN & Príznak dokončenia transkripcie \\
+\texttt{created\_at} & TIMESTAMPTZ & Čas vytvorenia záznamu \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Tabuľka \texttt{frame\_data}}
+
+Uchováva časové pečiatky a poradové čísla pre každý analyzovaný snímok videa.
+
+\begin{table}[ht]
+\centering
+\caption{Schéma tabuľky \texttt{frame\_data}}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Stĺpec} & \textbf{Typ} & \textbf{Popis} \\
+\hline
+\texttt{id} & BIGSERIAL PK & Primárny kľúč snímku \\
+\texttt{recording\_id} & BIGINT FK & Cudzí kľúč do tabuľky \texttt{recording} \\
+\texttt{timestamp} & TIME & Čas snímku v rámci videa \\
+\texttt{frame\_index} & INTEGER & Poradové číslo snímku \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Tabuľka \texttt{landmark}}
+
+Uchováva normalizované súradnice každého z 33 kĺbových bodov MediaPipe pre každý snímok.
+
+\begin{table}[ht]
+\centering
+\caption{Schéma tabuľky \texttt{landmark}}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Stĺpec} & \textbf{Typ} & \textbf{Popis} \\
+\hline
+\texttt{id} & BIGSERIAL PK & Primárny kľúč záznamu \\
+\texttt{frame\_data\_id} & BIGINT FK & Cudzí kľúč do tabuľky \texttt{frame\_data} \\
+\texttt{type} & VARCHAR(50) & Názov kĺbového bodu (napr.\ \texttt{nose}) \\
+\texttt{x} & DOUBLE PRECISION & Normalizovaná súradnica X v rozsahu $\langle 0, 1\rangle$ \\
+\texttt{y} & DOUBLE PRECISION & Normalizovaná súradnica Y v rozsahu $\langle 0, 1\rangle$ \\
+\texttt{z} & DOUBLE PRECISION & Hĺbka relatívna k stredu bokov \\
+\texttt{visibility} & DOUBLE PRECISION & Spoľahlivosť detekcie v rozsahu $\langle 0, 1\rangle$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Tabuľka \texttt{word}}
+
+Uchováva transkribované slová z modelu Whisper s časovými pečiatkami a hodnotením spoľahlivosti.
+
+\begin{table}[ht]
+\centering
+\caption{Schéma tabuľky \texttt{word}}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Stĺpec} & \textbf{Typ} & \textbf{Popis} \\
+\hline
+\texttt{id} & BIGSERIAL PK & Primárny kľúč slova \\
+\texttt{recording\_id} & BIGINT FK & Cudzí kľúč do tabuľky \texttt{recording} \\
+\texttt{start\_time} & DOUBLE PRECISION & Čas začiatku slova v sekundách \\
+\texttt{end\_time} & DOUBLE PRECISION & Čas konca slova v sekundách \\
+\texttt{word} & TEXT & Transkribované slovo \\
+\texttt{probability} & DOUBLE PRECISION & Spoľahlivosť transkripcie v rozsahu $\langle 0, 1\rangle$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{API rozhrania}
+
+\subsubsection{API brána (port 8000)}
+
+Mobilná aplikácia komunikuje výhradne s API bránou. Dostupné endpointy sú uvedené v tabuľke~\ref{tab:td-api-gateway}.
+
+\begin{table}[ht]
+\centering
+\caption{Endpointy API brány}
+\label{tab:td-api-gateway}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Metóda} & \textbf{Cesta} & \textbf{Popis} \\
+\hline
+POST & \texttt{/api/v1/processing/upload} & Nahratie video súboru (multipart/form-data) \\
+GET  & \texttt{/api/v1/processing/status/\{id\}} & Stav spracovania záznamu \\
+POST & \texttt{/api/v1/analysis/analyze?recording-id=\{id\}} & Spustenie analýzy \\
+\hline
+\end{tabular}
+\end{table}
+
+Telo požiadavky na endpoint spustenia analýzy je JSON objekt umožňujúci selektívnu aktiváciu jednotlivých analytických modulov:
+
+\begin{verbatim}
+POST /api/v1/analysis/analyze?recording-id=49
+Content-Type: application/json
+
+{
+  "arm_movement": true,
+  "eye_contact":  true,
+  "pitch":        true,
+  "volume":       true,
+  "hip":          true,
+  "filler_words": true
 }
-\end{lstlisting}
+\end{verbatim}
+
+Nastavením hodnoty \texttt{false} pre konkrétnu oblasť je možné vynechať jej analýzu a skrátiť čas spracovania.
+
+\subsubsection{Priame endpointy mikroslužieb}
+
+Pre priame testovanie alebo integráciu sú k dispozícii aj endpointy jednotlivých mikroslužieb. Prehľad je v tabuľke~\ref{tab:td-ms-api}.
+
+\begin{table}[ht]
+\centering
+\caption{Priame endpointy analytických mikroslužieb}
+\label{tab:td-ms-api}
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Port} & \textbf{Endpoint} & \textbf{Popis} \\
+\hline
+8001 & POST \texttt{/api/v1/video/\{id\}/analyze/} & Extrakcia kĺbových bodov z videa \\
+8004 & POST \texttt{/api/v1/audio/\{id\}/analyze/} & Extrakcia a normalizácia zvuku \\
+8009 & POST \texttt{/api/v1/\{id\}/transcribe/} & Transkripcia modelu Whisper \\
+8005 & POST \texttt{/api/v1/pitch/\{id\}/analyze/} & Analýza výšky hlasu \\
+8005 & GET  \texttt{/api/v1/pitch/\{id\}/timeseries/} & Časový rad výšky hlasu \\
+8006 & POST \texttt{/api/v1/volume/\{id\}/analyze/} & Analýza hlasitosti \\
+8002 & POST \texttt{/api/v1/analyze/arm-movements/\{id\}/} & Analýza pohybu rúk \\
+8003 & POST \texttt{/api/v1/eye-contact/\{id\}/analyze/} & Analýza očného kontaktu \\
+8007 & POST \texttt{/api/v1/hip/\{id\}/analyze/} & Analýza pohybu bokov \\
+8008 & POST \texttt{/api/v1/filler-words/\{id\}/analyze/} & Detekcia výplňových slov \\
+8012 & POST \texttt{/api/v1/performance/} & Výpočet skóre prezentácie \\
+\hline
+\end{tabular}
+\end{table}
+
+Každá mikroslužba sprístupňuje aj health check endpoint: \texttt{GET /api/v1/health/}. Kompletný súbor HTTP požiadaviek pre všetky endpointy je dostupný v súbore \texttt{requests.http} v koreňovom adresári projektu.
+
+\section{Implementácia}
+
+\subsection{Technologický zásobník}
+
+Tabuľka~\ref{tab:td-tech} poskytuje prehľad technológií použitých v jednotlivých častiach systému.
+
+\begin{table}[ht]
+\centering
+\caption{Prehľad použitých technológií}
+\label{tab:td-tech}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Komponent} & \textbf{Technológia} & \textbf{Verzia} \\
+\hline
+Mobilná aplikácia & Flutter (Dart 3) & $\geq$ 3.9.0 \\
+API brána & Spring Boot + Kotlin & 3.x \\
+Analytické mikroslužby & Python + Django REST Framework & Python 3.12, Django 5.1 \\
+Spracovanie videa & MediaPipe Pose & 0.10.x \\
+Extrakcia zvuku & FFmpeg & 6.x \\
+Spracovanie zvuku & librosa & 0.11.0 \\
+Transkripcia reči & OpenAI Whisper & large-v3-turbo \\
+Segmentácia & ruptures (PELT) & 1.x \\
+Databáza & PostgreSQL + TimescaleDB & 16 \\
+Kontajnerizácia & Docker / Docker Compose & 3.x \\
+HTTP klient (Flutter) & Dio + Retrofit & 5.x / 4.7 \\
+Stavový manažment & Riverpod & 3.x \\
+Lokálna DB (Flutter) & sqflite & 2.4.x \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Štruktúra projektu}
+
+Projekt je rozdelený do nasledujúcich vrcholových adresárov:
+
+\begin{verbatim}
+fluent_speech/
+├── FluentApiGateway/          API brána (Spring Boot / Kotlin)
+│   └── src/main/kotlin/       Zdrojové súbory (controller, service, config)
+├── analysis/                  Analytické mikroslužby (Python / Django)
+│   ├── analysis_orchestrator_ms/
+│   ├── arm_movement_analysis_ms/
+│   ├── eye_contact_analysis_ms/
+│   ├── filler_words_analysis_ms/
+│   ├── hip_analysis_ms/
+│   ├── performance_ms/
+│   ├── pitch_analysis_ms/
+│   ├── segmentation_ms/
+│   └── volume_analysis_ms/
+├── processing/                Spracovateľské mikroslužby
+│   ├── audio_processing_ms/
+│   ├── processing_orchestrator_ms/
+│   ├── transcript_processing_ms/
+│   └── video_processing_ms/
+├── fluent/                    Mobilná aplikácia (Flutter)
+│   ├── lib/ui/                Obrazovky a widgety
+│   ├── lib/api/               HTTP klient a modely odpovedí
+│   └── lib/db/                Lokálna SQLite databáza
+├── document/                  Diplomová práca (LaTeX)
+├── research/                  Výskumné skripty a dáta
+├── docker-compose.yml         Konfigurácia kontajnerov
+├── init-db.sql                Inicializačný SQL skript databázy
+├── .env.example               Vzorová konfigurácia prostredia
+└── requests.http              Testovacia sada HTTP požiadaviek
+\end{verbatim}
+
+Každá Python mikroslužba má štandardnú štruktúru Django projektu:
+\begin{verbatim}
+<mikrosluzba>/
+├── <app>/
+│   ├── views.py       REST endpointy (Django REST Framework)
+│   ├── services.py    Biznis logika a algoritmy
+│   ├── urls.py        Mapovanie URL adries
+│   └── db_connection.py  Prístup k zdieľanej databáze
+├── <project>/
+│   └── settings.py   Konfigurácia Django (načítava .env)
+└── requirements.txt  Závislosti mikroslužby
+\end{verbatim}
+
+\subsection{Konfigurácia prostredia}
+
+Všetky konfigurovateľné parametre systému sú definované cez environmentálne premenné, ktoré Docker Compose načítava zo súboru \texttt{.env}. Premenné sú rozdelené do skupín:
+
+\begin{itemize}
+    \item \textbf{Databáza} — \texttt{DB\_HOST}, \texttt{DB\_PORT}, \texttt{DB\_NAME}, \texttt{DB\_USER}, \texttt{DB\_PASSWORD}
+    \item \textbf{Whisper} — \texttt{WHISPER\_MODEL} (napr.\ \texttt{large-v3-turbo}), \texttt{WHISPER\_LANGUAGE}
+    \item \textbf{MediaPipe} — \texttt{MIN\_DETECTION\_CONFIDENCE}, \texttt{MIN\_TRACKING\_CONFIDENCE}, \texttt{MODEL\_COMPLEXITY}, \texttt{FRAME\_INTERVAL}
+    \item \textbf{Analýza hlasu} — prahové hodnoty pre hlasitosť v dBFS a citlivosť segmentácie
+    \item \textbf{Analýza pohybu} — prahy pre gestikuláciu, z-score koeficient pre detekciu nadmerného pohybu, citlivosť segmentácie
+    \item \textbf{Očný kontakt} — rozsahy zóny publika (\texttt{AUDIENCE\_YAW\_MIN/MAX}, \texttt{AUDIENCE\_PITCH\_MIN/MAX})
+    \item \textbf{Výplňové slová} — prah počtu výplňových slov za minútu (\texttt{HIGH\_USAGE\_THRESHOLD})
+    \item \textbf{Hodnotenie} — váhy dimenzií skóre (hlas 0,37; plynulosť 0,27; očný kontakt 0,27; telo 0,09)
+\end{itemize}
+
+Vzorová konfigurácia so všetkými premennými a ich predvolenými hodnotami je dostupná v súbore \texttt{.env.example}.
+
+\section{Inštalácia a nasadenie}
+
+\subsection{Predpoklady}
+
+Pre nasadenie serverovej časti systému sú potrebné:
+
+\begin{itemize}
+    \item Docker Engine $\geq$ 24.0 a Docker Compose $\geq$ 2.20
+    \item Minimálne 8\,GB operačnej pamäte (model Whisper \texttt{large-v3-turbo} vyžaduje cca 3\,GB)
+    \item Minimálne 10\,GB voľného diskového priestoru (Docker obrazy + video súbory + model Whisper)
+    \item Sieťový prístup pre počiatočné stiahnutie Docker obrazov a váh modelu Whisper
+\end{itemize}
+
+Pre vývoj alebo kompiláciu mobilnej aplikácie sú navyše potrebné:
+
+\begin{itemize}
+    \item Flutter SDK $\geq$ 3.9.0
+    \item Android Studio (pre Android) alebo Xcode $\geq$ 14 (pre iOS)
+    \item Fyzické zariadenie alebo emulátor s Androidom $\geq$ 7.0, resp.\ iOS $\geq$ 14.0
+\end{itemize}
+
+\subsection{Konfigurácia prostredia}
+
+\begin{enumerate}
+    \item Skopírujte vzorový konfiguračný súbor:
+    \begin{verbatim}
+cp .env.example .env
+    \end{verbatim}
+    \item Otvorte \texttt{.env} a nastavte minimálne tieto premenné:
+    \begin{verbatim}
+DB_PASSWORD=<zvolte_heslo>
+WHISPER_MODEL=large-v3-turbo
+    \end{verbatim}
+    Ostatné predvolené hodnoty sú funkčné pre lokálne nasadenie.
+\end{enumerate}
+
+\subsection{Spustenie serverovej časti}
+
+\begin{enumerate}
+    \item Zostavte a spustite všetky kontajnery príkazom:
+    \begin{verbatim}
+docker compose up --build
+    \end{verbatim}
+    \item Počkajte, kým sa inicializuje databáza a načíta model Whisper. Pri prvom spustení môže tento krok trvať niekoľko minút.
+    \item Overte dostupnosť API brány health check požiadavkou:
+    \begin{verbatim}
+curl http://localhost:8000/api/v1/health
+    \end{verbatim}
+    \item Pre zastavenie všetkých kontajnerov:
+    \begin{verbatim}
+docker compose down
+    \end{verbatim}
+    Pre zastavenie s vymazaním databázových dát pridajte príznak \texttt{-v}.
+\end{enumerate}
+
+\subsection{Spustenie mobilnej aplikácie}
+
+\begin{enumerate}
+    \item Prejdite do adresára mobilnej aplikácie a nainštalujte závislosti:
+    \begin{verbatim}
+cd fluent
+flutter pub get
+    \end{verbatim}
+    \item Vygenerujte sieťové modely pomocou code generation:
+    \begin{verbatim}
+dart run build_runner build --delete-conflicting-outputs
+    \end{verbatim}
+    \item Spustite aplikáciu na pripojenom zariadení alebo emulátore:
+    \begin{verbatim}
+flutter run
+    \end{verbatim}
+    \item Adresu API servera nastavte v konfiguračnom súbore aplikácie tak, aby smerovala na IP adresu stroja, kde beží Docker Compose, s portom 8000. Pri testovaní na fyzickom zariadení musia byť server aj zariadenie v rovnakej sieti.
+\end{enumerate}
+
+\section{Používanie systému}
+
+\subsection{Mobilná aplikácia}
+
+Základný tok používania mobilnej aplikácie pozostáva zo štyroch krokov:
+
+\begin{enumerate}
+    \item \textbf{Nahrávanie prezentácie} — na domovskej obrazovke stlačte tlačidlo záznamu. Po trojsekundovom odpočte sa spustí nahrávanie. Po jeho ukončení sa zobrazí ukážka záznamu s možnosťou ostrihnutia začiatku a konca videa.
+
+    \item \textbf{Odosielanie a sledovanie stavu} — video sa automaticky odošle na server po potvrdení záznamu. Na obrazovke detailu nahrávky sú zobrazené indikátory stavu troch fáz predspracovania: \emph{Video} (extrakcia kĺbov), \emph{Zvuk} (normalizácia) a \emph{Transkript} (prepis reči). V prípade chyby siete je možné nahrávku odoslať znova manuálne.
+
+    \item \textbf{Spustenie analýzy} — po dokončení všetkých troch fáz predspracovania sa odblokuje tlačidlo \emph{Analyzovať prezentáciu}. Analýza zvyčajne trvá niekoľko sekúnd.
+
+    \item \textbf{Prezeranie výsledkov} — po dokončení analýzy sú k dispozícii nasledujúce záložky výsledkov:
+    \begin{itemize}
+        \item \textbf{Skóre} — celkové skóre prezentácie, skóre jednotlivých dimenzií s váhami a textové odporúčania.
+        \item \textbf{Štatistiky} — agregované číselné hodnoty pre každú analytickú oblasť (priemerná výška hlasu, percento očného kontaktu, počet výplňových slov a pod.).
+        \item \textbf{Tematické záložky} — zoznamy detekovaných problémových udalostí (monotónnosť, hlasitosť, výplňové slová, pohyby rúk, pohyby bokov, očný kontakt). Kliknutím na udalosť sa video posunie na daný čas. Výrazné zmeny v signáli sú oddelené vizuálnym dividerom s časovým údajom.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Priame API volania}
+
+Pre integráciu s iným systémom alebo manuálne testovanie je možné ovládať systém priamo cez REST API. Typická sekvencia volaní:
+
+\begin{enumerate}
+    \item \textbf{Nahratie video súboru:}
+    \begin{verbatim}
+POST http://localhost:8000/api/v1/processing/upload
+Content-Type: multipart/form-data
+video=<video_subor.mp4>
+    \end{verbatim}
+    Odpoveď obsahuje \texttt{id} nového záznamu, ktoré sa použije v ďalších volaniach.
+
+    \item \textbf{Kontrola stavu predspracovania} (opakovane, kým sú všetky príznaky \texttt{true}):
+    \begin{verbatim}
+GET http://localhost:8000/api/v1/processing/status/{id}
+    \end{verbatim}
+
+    \item \textbf{Spustenie komplexnej analýzy:}
+    \begin{verbatim}
+POST http://localhost:8000/api/v1/analysis/analyze?recording-id={id}
+Content-Type: application/json
+
+{
+  "arm_movement": true, "eye_contact": true,
+  "pitch": true,        "volume": true,
+  "hip": true,          "filler_words": true
+}
+    \end{verbatim}
+    Odpoveď je JSON objekt s kľúčom \texttt{results} obsahujúci výstupy jednotlivých mikroslužieb a kľúčom \texttt{performance} s celkovým skóre a odporúčaniami.
+\end{enumerate}

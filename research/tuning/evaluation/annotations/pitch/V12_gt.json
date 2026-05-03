@@ -1,0 +1,11 @@
+{
+  "video_id": "V12",
+  "duration_s": 65.0,
+  "annotator": "Matej",
+  "notes": "121 - Monotonna rec cely cas",
+  "annotations": {
+    "pitch_monotone": [
+      {"start": 0.0, "end": 18.0}
+    ]
+  }
+}

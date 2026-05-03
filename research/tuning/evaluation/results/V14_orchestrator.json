@@ -1,0 +1,102 @@
+{
+  "success": true,
+  "recording_id": 123,
+  "completed_analyses": [
+    "filler_words"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "filler_words": {
+      "success": true,
+      "recording_id": 123,
+      "duration": 47.12,
+      "detected_language": "unknown",
+      "statistics": {
+        "total_filler_words": 4,
+        "fillers_per_minute": 5.09,
+        "most_common_filler": {
+          "word": "uhh",
+          "count": 1
+        },
+        "slovak_fillers_count": 3,
+        "english_fillers_count": 0,
+        "filler_word_distribution": {
+          "uhh": 1,
+          "vlastne": 1,
+          "čiže": 1,
+          "skrátka": 1
+        },
+        "duration": 47.12,
+        "is_high_usage": true,
+        "high_usage_threshold": 5.0
+      },
+      "filler_occurrences": [
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 12.15,
+          "end_time": 12.7,
+          "pitch_mean": 114.46,
+          "pitch_std": 1.09,
+          "voiced_duration": 0.55
+        },
+        {
+          "word": "vlastne",
+          "language": "slovak",
+          "start_time": 23.36,
+          "end_time": 23.7,
+          "segment_text": "všade. Máme ich v telefónoch, vlastne aj v autách. Dokonca aj v domácich spotrebyčoch.",
+          "probability": 0.996825118859609
+        },
+        {
+          "word": "čiže",
+          "language": "slovak",
+          "start_time": 27.72,
+          "end_time": 28.5,
+          "segment_text": "Je to revolúcia. Čiže skrátka, hlavné oblasti sú počítačové viedenie, sprácovanie",
+          "probability": 0.8637948483228683
+        },
+        {
+          "word": "skrátka",
+          "language": "slovak",
+          "start_time": 28.5,
+          "end_time": 29.04,
+          "segment_text": "Je to revolúcia. Čiže skrátka, hlavné oblasti sú počítačové viedenie, sprácovanie",
+          "probability": 0.8702652305364609
+        }
+      ],
+      "total_filler_occurrences": 4,
+      "uhh_occurrences": [
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 12.15,
+          "end_time": 12.7,
+          "pitch_mean": 114.46,
+          "pitch_std": 1.09,
+          "voiced_duration": 0.55
+        }
+      ],
+      "uhh_occurrences_count": 1,
+      "peak_zones": {
+        "distribution": "concentrated",
+        "zones": [
+          {
+            "start": 20.0,
+            "end": 30.0,
+            "rate_per_min": 18.0,
+            "overall_rate_per_min": 5.09,
+            "peak_ratio": 3.53
+          }
+        ],
+        "overall_rate_per_min": 5.09,
+        "threshold_multiplier": 2.0
+      },
+      "message": "Filler words analysis completed successfully."
+    }
+  },
+  "performance": {
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8012): Max retries exceeded with url: /api/v1/performance/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000027AA6D52990>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+  }
+}

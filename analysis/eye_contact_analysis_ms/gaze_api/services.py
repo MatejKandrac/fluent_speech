@@ -392,14 +392,13 @@ class EyeContactAnalysisService:
         shoulder_z_values = [frame.get('z_depth', {}).get('shoulder_center_z', 0) for frame in angle_data]
         z_diff_values = [frame.get('z_depth', {}).get('z_diff', 0) for frame in angle_data]
 
-        fig = plt.figure(figsize=(16, 20))
-        gs = fig.add_gridspec(5, 1, height_ratios=[2, 1, 1, 1, 1], hspace=0.35)
+        fig = plt.figure(figsize=(16, 16))
+        gs = fig.add_gridspec(4, 1, height_ratios=[2, 1, 1, 1], hspace=0.35)
 
         ax1 = fig.add_subplot(gs[0])
         ax2 = fig.add_subplot(gs[1])
         ax3 = fig.add_subplot(gs[2])
         ax4 = fig.add_subplot(gs[3])
-        ax5 = fig.add_subplot(gs[4])
 
         extent = [yaw_bins[0], yaw_bins[-1], pitch_bins[0], pitch_bins[-1]]
         im = ax1.imshow(duration_matrix, extent=extent, origin='lower',
@@ -466,14 +465,6 @@ class EyeContactAnalysisService:
         ax4.set_title('Z-Depth Analysis (Back-Facing Detection)', fontsize=12, fontweight='bold')
         ax4.legend(loc='upper right', fontsize=9)
         ax4.grid(True, alpha=0.3)
-
-        ax5.plot(times, delta_z_values, color='darkorange', linewidth=1, label='Δz (right_ear − left_ear)')
-        ax5.axhline(0, color='gray', linestyle=':', alpha=0.5)
-        ax5.set_xlabel('Time (s)', fontsize=12)
-        ax5.set_ylabel('Δz', fontsize=10)
-        ax5.set_title('Ear Δz — drives the yaw atan2 (positive = turning right)', fontsize=11, fontweight='bold')
-        ax5.legend(loc='upper right', fontsize=9)
-        ax5.grid(True, alpha=0.3)
 
         plt.tight_layout()
         output_path = output_dir / f'gaze_heatmap_{recording_id}.png'

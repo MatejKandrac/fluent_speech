@@ -20,11 +20,11 @@ class RecordButton extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Theme.of(context).colorScheme.surface,
-        border: BoxBorder.all(color: Colors.white, width: 2),
+        border: BoxBorder.all(color: Theme.of(context).colorScheme.onSurface, width: 2),
       ),
       padding: EdgeInsets.all(4),
       child: Container(
-        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: Theme.of(context).colorScheme.onSurface),
         child: isStop ? Icon(Icons.stop, color: Theme.of(context).colorScheme.errorContainer) : null,
       ),
     ),

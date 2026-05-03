@@ -9,10 +9,10 @@ class AppTextsSk extends AppTexts {
   AppTextsSk([String locale = 'sk']) : super(locale);
 
   @override
-  String get startPreparing => 'Začnite sa pripravovať';
+  String get startExercise => 'Začať cvičenie';
 
   @override
-  String get startExercise => 'Začať cvičenie';
+  String get startPreparing => 'Začnite sa pripravovať';
 
   @override
   String get calibrate => 'Kalibrácia';

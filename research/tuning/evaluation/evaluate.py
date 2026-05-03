@@ -236,8 +236,11 @@ SERVICES = {
 
 def evaluate_video_service(gt: dict, orchestrator: dict, svc_name: str, bin_size: float) -> dict:
     cfg          = SERVICES[svc_name]
-    duration     = gt["duration_s"]
     gt_annots    = gt.get("annotations", {})
+    # Extend duration if any GT interval reaches past duration_s (guards against annotation errors).
+    all_gt_ends = [iv.get("end", iv.get("end_timestamp", 0))
+                   for ivs in gt_annots.values() for iv in ivs]
+    duration = max(gt["duration_s"], max(all_gt_ends, default=0))
     svc_result   = orchestrator.get("results", {}).get(cfg["orchestrator_key"], {})
 
     if not svc_result.get("success"):

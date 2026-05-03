@@ -41,9 +41,9 @@ Pre štúdiu bolo nahrané séria šiestich videí s rovnakým prezentujúcim a 
         \hline
         V4 & Monotónny hlas & Prezentujúci hovorí s konštantnou výškou a rytmom hlasu, bez akejkoľvek prozódie. \\
         \hline
-        V5 & Výplňové slová (rovnomerne) & Výplňové slová sú rozložené rovnomerne počas celej prezentácie (9 výskytov, $\approx$8 za minútu). \\
+        V5 & Výplňové slová (rovnomerne) & Výplňové slová sú rozložené rovnomerne počas celej prezentácie. \\
         \hline
-        V6 & Výplňové slová (sústredene) & Rovnaký celkový počet výplňových slov sústredený do strednej časti prezentácie (6 výskytov, $\approx$5,7 za minútu). \\
+        V6 & Výplňové slová (sústredene) & Rovnaký celkový počet výplňových slov sústredený do strednej časti prezentácie. \\
         \hline
     \end{tabularx}
     \caption{Prehľad videí použitých v štúdii}
@@ -52,7 +52,45 @@ Pre štúdiu bolo nahrané séria šiestich videí s rovnakým prezentujúcim a 
 
 \subsection{Zber dát}
 
-Dáta boli zozbierané prostredníctvom online dotazníka (Google Forms). Respondentom bolo postupne zobrazených všetkých šesť videí, pričom poradie videí bolo rovnaké pre všetkých. Po každom videu hodnotili prezentujúceho na škále 0--10 v piatich dimenziách: \textbf{celkové hodnotenie}, \textbf{očný kontakt}, \textbf{pohyb tela}, \textbf{plynulosť reči} a \textbf{hlas}. Celkový počet respondentov bol \textbf{n~=~52}.
+Dáta boli zozbierané prostredníctvom online dotazníka (Google Forms). Respondentom bolo postupne zobrazených všetkých šesť videí v rovnakom poradí. Po každom videu hodnotili prezentujúceho na škále 0--10 v piatich dimenziách: \textbf{celkové hodnotenie}, \textbf{očný kontakt}, \textbf{pohyb tela}, \textbf{plynulosť reči} a \textbf{hlas}. Celkový počet respondentov bol \textbf{n~=~52}.
+
+Demografické charakteristiky vzorky sú uvedené v tabuľkách~\ref{tab:demographics} a~\ref{tab:experience}. Vzorka zahŕňala 16 žien (30,8\,\%) a 36 mužov (69,2\,\%). Väčšinu tvorili respondenti vo vekovej kategórii 18--25 rokov (46,2\,\%). Z hľadiska skúseností s prezentovaním dominovali respondenti, ktorí prezentujú len výnimočne (44,2\,\%), nasledovaní tými, pre ktorých je prezentovanie bežnou súčasťou štúdia alebo práce (34,6\,\%). Vzorka pokrývala rôzne úrovne skúseností, čo zvyšuje jej reprezentatívnosť.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Charakteristika} & \textbf{Počet} & \textbf{Podiel} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        \multicolumn{3}{|l|}{\textit{Pohlavie}} \\ \hline
+        Ženy & 16 & 30,8\,\% \\ \hline
+        Muži & 36 & 69,2\,\% \\ \hline
+        \multicolumn{3}{|l|}{\textit{Veková skupina}} \\ \hline
+        18--25 rokov & 24 & 46,2\,\% \\ \hline
+        26--35 rokov & 12 & 23,1\,\% \\ \hline
+        36--50 rokov & 14 & 26,9\,\% \\ \hline
+        51 a viac rokov & 2 & 3,8\,\% \\ \hline
+    \end{tabular}
+    \caption{Demografické charakteristiky respondentov}
+    \label{tab:demographics}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Skúsenosti s prezentovaním} & \textbf{Počet} & \textbf{Podiel} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        Prezentovanie je bežná súčasť štúdia/práce & 18 & 34,6\,\% \\ \hline
+        Prezentuje výnimočne & 23 & 44,2\,\% \\ \hline
+        Dlhšie neprezentoval & 10 & 19,2\,\% \\ \hline
+        Aktívne sa venuje prezentovaniu & 1 & 1,9\,\% \\ \hline
+    \end{tabular}
+    \caption{Skúsenosti respondentov s prezentovaním}
+    \label{tab:experience}
+\end{table}
 
 \section{Štatistické metódy}
 
@@ -71,6 +109,24 @@ Pre overenie hypotéz boli použité nasledujúce štatistické metódy, impleme
 Pred spustením RM ANOVA boli overené jej predpoklady: normalita pomocou Shapiro-Wilkovho testu\cite{shapiroWilk}, sféricita pomocou Mauchlyho testu\cite{mauchlySphericity} a prítomnosť odľahlých hodnôt podľa IQR pravidla. Normalita bola mierne porušená pre V1 ($p < 0{,}001$) a V5 ($p = 0{,}047$), čo je pri $n = 52$ akceptovateľné vzhľadom na Centrálnu limitnú vetu\cite{fieldStatistics}. Sféricita bola porušená ($W = 0{,}476$, $p < 0{,}001$, $\varepsilon = 0{,}780$), preto bola použitá Greenhouse-Geisserova korekcia.
 
 \section{Výsledky}
+
+Tabuľka~\ref{tab:hypotheses_summary} poskytuje stručný prehľad všetkých testovaných hypotéz a ich výsledkov. Podrobné štatistiky a interpretácia sú uvedené v nasledujúcich podkapitolách.
+
+\begin{table}[H]
+    \centering
+    \begin{tabularx}{\textwidth}{|l|X|l|l|}
+        \hline
+        \textbf{Hypotéza} & \textbf{Čo testuje} & \textbf{Výsledok} & \textbf{p-hodnota} \\
+        \hline
+        \specialrule{1.2pt}{0pt}{0pt}
+        H1.1a & Vizuálne+hlasové majú väčší vplyv ako plynulosť & Zamietnutá\,$^\dagger$ & 0,037 \\ \hline
+        H1.1b & Hierarchia: Vizuálne > Hlasové > Plynulosť & Čiastočná\,$^\dagger$ & $<$0,001 \\ \hline
+        H1.2 & Monotónnosť vnímaná horšie ako fillery & Nepodporená & 0,870 \\ \hline
+        H2.1 & Sústredené fillery horšie ako rovnomerne & Zamietnutá\,$^\dagger$ & $<$0,001 \\ \hline
+    \end{tabularx}
+    \caption{Prehľad hypotéz a ich výsledkov ($^\dagger$ signifikantný efekt nájdený v opačnom smere)}
+    \label{tab:hypotheses_summary}
+\end{table}
 
 \subsection{H1.1 --- Vplyv dimenzií na celkové hodnotenie}
 
@@ -98,9 +154,9 @@ Pred spustením RM ANOVA boli overené jej predpoklady: normalita pomocou Shapir
 
 Empirická hierarchia je teda \textbf{hlas~>~očný kontakt~>~plynulosť~>~pohyb tela}, čo je v rozpore s predpokladanou hierarchiou vizuálne~>~hlasové~>~plynulosť.
 
-\textbf{H1.1a:} Párový t-test na per-respondent koreláciách (Fisherovou z-transformáciou): $t = -2{,}143$, $p = 0{,}037$. Priemerná korelácia kombinovanej skupiny vizuálne+hlasové ($\bar r = 0{,}550$) je štatisticky signifikantne \textbf{nižšia} než korelácia plynulosti s celkovým hodnotením ($\bar r = 0{,}613$). \textit{Hypotéza bola zamietnutá v opačnom smere} --- vizuálne+hlasové dimenzie spolu nie sú silnejším prediktorom než plynulosť. Príčinou je nízky príspevok pohybu tela ($\beta = 0{,}250$), ktorý ``stiahne'' priemer kombinovanej skupiny pod úroveň plynulosti.
+\textbf{H1.1a:} Párový t-test na per-respondent koreláciách (Fisherovou z-transformáciou): $t = -2{,}143$, $p = 0{,}037$. Priemerná korelácia kombinovanej skupiny vizuálne+hlasové ($\bar r = 0{,}550$) je štatisticky signifikantne \textbf{nižšia} než korelácia plynulosti s celkovým hodnotením ($\bar r = 0{,}613$). \textbf{Záver: Hypotéza H1.1a zamietnutá v opačnom smere} --- vizuálne+hlasové dimenzie spolu nie sú silnejším prediktorom než plynulosť. Príčinou je nízky príspevok pohybu tela ($\beta = 0{,}250$), ktorý ``stiahne'' priemer kombinovanej skupiny pod úroveň plynulosti.
 
-\textbf{H1.1b:} Vizuálne vs. hlasové: $t = -5{,}238$, $p < 0{,}001$ --- hlasové dimenzie \textbf{štatisticky signifikantne dominujú} nad vizuálnymi. Hlasové vs. plynulosť: $t = 1{,}457$, $p = 0{,}151$ --- rozdiel nie je signifikantný. \textit{Hypotéza bola čiastočne podporená v opačnom smere:} hlas dominuje nad vizuálnymi dimenziami, ale poradie hlas~>~plynulosť nebolo štatisticky dokázané.
+\textbf{H1.1b:} Vizuálne vs. hlasové: $t = -5{,}238$, $p < 0{,}001$ --- hlasové dimenzie \textbf{štatisticky signifikantne dominujú} nad vizuálnymi. Hlasové vs. plynulosť: $t = 1{,}457$, $p = 0{,}151$ --- rozdiel nie je signifikantný. \textbf{Záver: Hypotéza H1.1b čiastočne podporená v opačnom smere} --- hlas dominuje nad vizuálnymi dimenziami, ale poradie hlas~>~plynulosť nebolo štatisticky dokázané.
 
 \textbf{Metodologická poznámka --- halo efekt:} Pri within-subjects dizajne hodnotili respondenti každé video vo všetkých dimenziách súčasne. V dátach sa prejavil halo efekt: keď bolo video zámerne zhoršené v jednej dimenzii, klesali aj hodnotenia ostatných dimenzií, ktoré neboli manipulované (napr. V4 s monotónnym hlasom mal nižšie hodnotenie plynulosti $5{,}67$ oproti baseline $8{,}18$). Beta koeficienty z regresie teda odrážajú aj tento efekt, nie len izolovaný vplyv každej dimenzie, a ich interpretáciu ako čistých váh treba brať s rezervou.
 
@@ -108,13 +164,13 @@ Empirická hierarchia je teda \textbf{hlas~>~očný kontakt~>~plynulosť~>~pohyb
 
 Priemerné celkové hodnotenie V4 (monotónny hlas) = 4,40~±~1,91 a V5 (výplňové slová rovnomerne) = 4,44~±~2,09. Párový t-test: $t = -0{,}164$, $p = 0{,}870$, $d = -0{,}019$. Wilcoxon: $W = 386{,}0$, $p = 0{,}742$.
 
-\textit{Hypotéza nebola podporená.} Oba javy boli respondentmi hodnotené identicky. Pravdepodobným vysvetlením je intenzita manipulácie v V5 --- výplňové slová boli natoľko frekventované, že spôsobili rovnako silný negatívny dojem ako monotónny hlas.
+\textbf{Záver: Hypotéza H1.2 nebola podporená} --- oba javy boli respondentmi hodnotené identicky. Pravdepodobným vysvetlením je intenzita manipulácie v V5 --- výplňové slová boli natoľko frekventované, že spôsobili rovnako silný negatívny dojem ako monotónny hlas.
 
 \subsection{H2.1 --- Distribúcia výplňových slov}
 
 Priemerné celkové hodnotenie V5 (rovnomerne) = 4,44~±~2,09 a V6 (sústredene) = 6,27~±~2,07. Párový t-test: $t = 5{,}492$, $p < 0{,}001$, $d = 0{,}871$. Wilcoxon: $W = 81{,}0$, $p < 0{,}001$. 40 z 52 respondentov (76,9\,\%) hodnotilo V5 horšie ako V6.
 
-\textit{Hypotéza bola zamietnutá s opačným nálezom.} Rovnomerne rozložené výplňové slová sú vnímané výrazne horšie ako sústredené. Konštantná prítomnosť výplňových slov neposkytuje poslucháčovi žiadnu ``oddychovú fázu'', čo vedie k vyššej miere rušenia. Efekt je veľký ($d = 0{,}871$) a robustný.
+\textbf{Záver: Hypotéza H2.1 zamietnutá s opačným nálezom} --- rovnomerne rozložené výplňové slová sú vnímané \emph{výrazne horšie} ako sústredené, nie naopak. Konštantná prítomnosť výplňových slov neposkytuje poslucháčovi žiadnu ``oddychovú fázu'', čo vedie k vyššej miere rušenia. Efekt je veľký ($d = 0{,}871$) a robustný.
 
 \subsection{Repeated Measures ANOVA}
 
@@ -184,7 +240,7 @@ Tretia výskumná oblasť overuje, či poradie videí podľa systémového skór
 
 Hypotéza: Spearmanova korelácia poradia videí bude vyššia pre model v2 (empirické váhy) ako pre model v1 (intuitívne váhy).
 
-Výsledky sú zhrnuté v tabuľke~\ref{tab:spearman} v predchádzajúcej sekcii. Prechod z modelu v1 ($\rho = 0{,}771$, $p = 0{,}072$) na model v2 ($\rho = 0{,}943$, $p = 0{,}005$) predstavuje nárast o $+0{,}171$. Model v1 nie je štatisticky signifikantný, model v2 áno. \textit{Hypotéza H3.1 je potvrdená.}
+Výsledky sú zhrnuté v tabuľke~\ref{tab:spearman} v predchádzajúcej sekcii. Prechod z modelu v1 ($\rho = 0{,}771$, $p = 0{,}072$) na model v2 ($\rho = 0{,}943$, $p = 0{,}005$) predstavuje nárast o $+0{,}171$. Model v1 nie je štatisticky signifikantný, model v2 áno. \textbf{Záver: Hypotéza H3.1 potvrdená.}
 
 Ako doplnková kontrola bola vykonaná leave-one-out krížová validácia (LOO-CV): pre každé z 6 videí boli váhy odvodené z regresie na zostávajúcich 5 videách a aplikované na vynechané video. Výsledná korelácia dosiahla $\rho = 0{,}829$ ($p = 0{,}042$, $\text{MAE} = 0{,}43$), čo naznačuje, že regresne odvodené váhy generalizujú aj mimo trénovacej vzorky.
 
@@ -212,8 +268,12 @@ Hypotéza: Absolútna chyba $|\Delta_\text{sys} - \Delta_\text{human}|$ na dimen
     \label{tab:h32}
 \end{table}
 
-\textit{Hypotéza H3.2 nebola potvrdená --- výsledok je opačný.} Modely v1 a v2 sú výrazne bližšie k ľudskému rozdielu ($|\text{chyba}| = 0{,}015$) ako model v3 ($|\text{chyba}| = 0{,}605$). Distribučná penalizácia zveličuje rozdiel medzi rovnomerne a sústrednene rozloženými výplňovými slovami nad mieru, akú ľudia skutočne vnímajú. Smer efektu (V5 vnímané horšie ako V6) je zachytený správne vo všetkých troch modeloch, avšak veľkosť penalizácie v modeli v3 si vyžaduje ďalšiu kalibráciu.
+\textbf{Záver: Hypotéza H3.2 nebola potvrdená --- výsledok je opačný.} Modely v1 a v2 sú výrazne bližšie k ľudskému rozdielu ($|\text{chyba}| = 0{,}015$) ako model v3 ($|\text{chyba}| = 0{,}605$). Distribučná penalizácia zveličuje rozdiel medzi rovnomerne a sústrednene rozloženými výplňovými slovami nad mieru, akú ľudia skutočne vnímajú. Smer efektu (V5 vnímané horšie ako V6) je zachytený správne vo všetkých troch modeloch, avšak veľkosť penalizácie v modeli v3 si vyžaduje ďalšiu kalibráciu.
 
-\subsection{Obmedzenia validácie}
+\subsection{Obmedzenia štúdie}
 
-Validácia je realizovaná na rovnakom korpuse 6 videí, ktoré boli použité aj v štúdii RQ1/RQ2. Pri $n = 6$ videách je Spearmanova korelácia citlivá na jednotlivé body a bootstrap intervaly spoľahlivosti pri tejto veľkosti vzorky neposkytujú konfirmačnú informáciu. LOO-CV zostáva tiež v rovnakom korpuse. Validácia na nezávislom korpuse reálnych prezentácií je predmetom ďalšieho výskumu.
+\textbf{Fixné poradie videí.} Všetci respondenti videli videá v rovnakom poradí. To môže vytvárať order effects --- napríklad únava pri posledných videách alebo kontrastné efekty voči predchádzajúcemu videu. Náhodné poradie by tieto efekty eliminovalo, avšak pre 6 videí by vyžadovalo výrazne väčší počet respondentov.
+
+\textbf{Jeden prezentujúci.} Všetky videá nakrútila jedna osoba, čo obmedzuje zovšeobecniteľnosť výsledkov --- vplyv dimenzií môže byť čiastočne špecifický pre konkrétneho prezentujúceho, jeho hlas alebo fyziognómiu. Pre potvrdenie záverov by boli potrebné videá s viacerými prezentujúcimi.
+
+\textbf{Malý korpus pre validáciu modelu.} Spearmanova korelácia počítaná z $n = 6$ videí je citlivá na jednotlivé body. Bootstrap intervaly spoľahlivosti pri tejto veľkosti vzorky neposkytujú konfirmačnú informáciu. LOO-CV zostáva v tom istom korpuse. Validácia na nezávislom korpuse reálnych prezentácií je predmetom ďalšieho výskumu.

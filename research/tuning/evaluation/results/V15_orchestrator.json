@@ -1,0 +1,338 @@
+{
+  "success": true,
+  "recording_id": 96,
+  "completed_analyses": [
+    "filler_words"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "filler_words": {
+      "success": true,
+      "recording_id": 96,
+      "duration": 77.14,
+      "detected_language": "unknown",
+      "statistics": {
+        "total_filler_words": 30,
+        "fillers_per_minute": 23.33,
+        "most_common_filler": {
+          "word": "viete",
+          "count": 6
+        },
+        "slovak_fillers_count": 26,
+        "english_fillers_count": 0,
+        "filler_word_distribution": {
+          "takže": 3,
+          "no": 4,
+          "viete": 6,
+          "vlastne": 5,
+          "teda": 4,
+          "uhh": 4,
+          "proste": 1,
+          "čiže": 1,
+          "skrátka": 1,
+          "inak": 1
+        },
+        "duration": 77.14,
+        "is_high_usage": true,
+        "high_usage_threshold": 5.0
+      },
+      "filler_occurrences": [
+        {
+          "word": "takže",
+          "language": "slovak",
+          "start_time": 0.0,
+          "end_time": 0.86,
+          "segment_text": "Takže dnes by som vám chcel predstaviť no tému umielnej inteligencie v každú denom",
+          "probability": 0.5960025787353516
+        },
+        {
+          "word": "no",
+          "language": "slovak",
+          "start_time": 2.94,
+          "end_time": 3.14,
+          "segment_text": "Takže dnes by som vám chcel predstaviť no tému umielnej inteligencie v každú denom",
+          "probability": 0.7964356541633606
+        },
+        {
+          "word": "viete",
+          "language": "slovak",
+          "start_time": 6.06,
+          "end_time": 6.36,
+          "segment_text": "živote. Viete, vlastne je to oblast, ktorá sa jako veľmi rýchlo rozvíja,",
+          "probability": 0.9590899050235748
+        },
+        {
+          "word": "vlastne",
+          "language": "slovak",
+          "start_time": 6.52,
+          "end_time": 6.88,
+          "segment_text": "živote. Viete, vlastne je to oblast, ktorá sa jako veľmi rýchlo rozvíja,",
+          "probability": 0.9704063733418783
+        },
+        {
+          "word": "teda",
+          "language": "slovak",
+          "start_time": 14.38,
+          "end_time": 14.92,
+          "segment_text": "tak začneme od základu. Umielná inteligencia teda je vlastne schopnosť",
+          "probability": 0.763022243976593
+        },
+        {
+          "word": "vlastne",
+          "language": "slovak",
+          "start_time": 15.36,
+          "end_time": 15.94,
+          "segment_text": "tak začneme od základu. Umielná inteligencia teda je vlastne schopnosť",
+          "probability": 0.9955961306889852
+        },
+        {
+          "word": "no",
+          "language": "slovak",
+          "start_time": 17.64,
+          "end_time": 17.64,
+          "segment_text": "strojou, no učiť sa zdáť. Takže ako by som tu povedal? Je to",
+          "probability": 0.9815924763679504
+        },
+        {
+          "word": "takže",
+          "language": "slovak",
+          "start_time": 18.92,
+          "end_time": 19.18,
+          "segment_text": "strojou, no učiť sa zdáť. Takže ako by som tu povedal? Je to",
+          "probability": 0.988664984703064
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 19.6,
+          "end_time": 20.45,
+          "pitch_mean": 97.6,
+          "pitch_std": 2.23,
+          "voiced_duration": 0.85
+        },
+        {
+          "word": "vlastne",
+          "language": "slovak",
+          "start_time": 21.46,
+          "end_time": 21.76,
+          "segment_text": "vlastne simulácia ľudského myslenia. Viete, proste stroj sa dokáže jako adaptovať",
+          "probability": 0.9988217949867249
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 22.55,
+          "end_time": 23.4,
+          "pitch_mean": 95.62,
+          "pitch_std": 2.34,
+          "voiced_duration": 0.85
+        },
+        {
+          "word": "viete",
+          "language": "slovak",
+          "start_time": 23.82,
+          "end_time": 24.16,
+          "segment_text": "vlastne simulácia ľudského myslenia. Viete, proste stroj sa dokáže jako adaptovať",
+          "probability": 0.9941691160202026
+        },
+        {
+          "word": "proste",
+          "language": "slovak",
+          "start_time": 24.34,
+          "end_time": 24.74,
+          "segment_text": "vlastne simulácia ľudského myslenia. Viete, proste stroj sa dokáže jako adaptovať",
+          "probability": 0.9728527963161469
+        },
+        {
+          "word": "teda",
+          "language": "slovak",
+          "start_time": 36.84,
+          "end_time": 37.02,
+          "segment_text": "tak vidíme ich úplne všade. Vysilky máme ich v telefóne, teda v autách,",
+          "probability": 0.912618488073349
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 40.3,
+          "end_time": 41.1,
+          "pitch_mean": 95.19,
+          "pitch_std": 1.38,
+          "voiced_duration": 0.8
+        },
+        {
+          "word": "viete",
+          "language": "slovak",
+          "start_time": 41.36,
+          "end_time": 41.62,
+          "segment_text": "dokonca aj v domácich spôtrebičoch. Viete vlastne, je to ako",
+          "probability": 0.9001148343086243
+        },
+        {
+          "word": "vlastne",
+          "language": "slovak",
+          "start_time": 41.62,
+          "end_time": 42.12,
+          "segment_text": "dokonca aj v domácich spôtrebičoch. Viete vlastne, je to ako",
+          "probability": 0.8795539140701294
+        },
+        {
+          "word": "čiže",
+          "language": "slovak",
+          "start_time": 44.66,
+          "end_time": 44.94,
+          "segment_text": "revolúcia. Čiže tak skrátka, hlavné oblasti sú počítačové",
+          "probability": 0.9674968868494034
+        },
+        {
+          "word": "skrátka",
+          "language": "slovak",
+          "start_time": 45.76,
+          "end_time": 46.52,
+          "segment_text": "revolúcia. Čiže tak skrátka, hlavné oblasti sú počítačové",
+          "probability": 0.8106892257928848
+        },
+        {
+          "word": "no",
+          "language": "slovak",
+          "start_time": 49.8,
+          "end_time": 50.06,
+          "segment_text": "videnie, no spracovanie prírodzeného jazyka a teda strohe",
+          "probability": 0.6834796071052551
+        },
+        {
+          "word": "teda",
+          "language": "slovak",
+          "start_time": 52.62,
+          "end_time": 53.4,
+          "segment_text": "videnie, no spracovanie prírodzeného jazyka a teda strohe",
+          "probability": 0.9406135678291321
+        },
+        {
+          "word": "viete",
+          "language": "slovak",
+          "start_time": 56.66,
+          "end_time": 56.9,
+          "segment_text": "učenie. Actually tieto tri oblasti viete spolu úsko súvisia.",
+          "probability": 0.6376387029886246
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 58.35,
+          "end_time": 58.95,
+          "pitch_mean": 93.89,
+          "pitch_std": 1.8,
+          "voiced_duration": 0.6
+        },
+        {
+          "word": "no",
+          "language": "slovak",
+          "start_time": 65.26,
+          "end_time": 65.34,
+          "segment_text": "No takže na záver by som chcel povedať vlastne, že umela inteligencia inak nie je vľucnosť,",
+          "probability": 0.895256757736206
+        },
+        {
+          "word": "takže",
+          "language": "slovak",
+          "start_time": 65.34,
+          "end_time": 65.76,
+          "segment_text": "No takže na záver by som chcel povedať vlastne, že umela inteligencia inak nie je vľucnosť,",
+          "probability": 0.9616460502147675
+        },
+        {
+          "word": "vlastne",
+          "language": "slovak",
+          "start_time": 67.5,
+          "end_time": 67.94,
+          "segment_text": "No takže na záver by som chcel povedať vlastne, že umela inteligencia inak nie je vľucnosť,",
+          "probability": 0.9250933726628622
+        },
+        {
+          "word": "inak",
+          "language": "slovak",
+          "start_time": 69.2,
+          "end_time": 69.54,
+          "segment_text": "No takže na záver by som chcel povedať vlastne, že umela inteligencia inak nie je vľucnosť,",
+          "probability": 0.5718338713049889
+        },
+        {
+          "word": "teda",
+          "language": "slovak",
+          "start_time": 71.06,
+          "end_time": 71.36,
+          "segment_text": "je to teda prítomnosť. Viete prosím, musíme sa s ňou naučiť, viete ako opracovať.",
+          "probability": 0.9871522486209869
+        },
+        {
+          "word": "viete",
+          "language": "slovak",
+          "start_time": 72.38,
+          "end_time": 72.54,
+          "segment_text": "je to teda prítomnosť. Viete prosím, musíme sa s ňou naučiť, viete ako opracovať.",
+          "probability": 0.8922138214111328
+        },
+        {
+          "word": "viete",
+          "language": "slovak",
+          "start_time": 74.78,
+          "end_time": 75.12,
+          "segment_text": "je to teda prítomnosť. Viete prosím, musíme sa s ňou naučiť, viete ako opracovať.",
+          "probability": 0.964950442314148
+        }
+      ],
+      "total_filler_occurrences": 30,
+      "uhh_occurrences": [
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 19.6,
+          "end_time": 20.45,
+          "pitch_mean": 97.6,
+          "pitch_std": 2.23,
+          "voiced_duration": 0.85
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 22.55,
+          "end_time": 23.4,
+          "pitch_mean": 95.62,
+          "pitch_std": 2.34,
+          "voiced_duration": 0.85
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 40.3,
+          "end_time": 41.1,
+          "pitch_mean": 95.19,
+          "pitch_std": 1.38,
+          "voiced_duration": 0.8
+        },
+        {
+          "word": "uhh",
+          "language": "non-verbal",
+          "start_time": 58.35,
+          "end_time": 58.95,
+          "pitch_mean": 93.89,
+          "pitch_std": 1.8,
+          "voiced_duration": 0.6
+        }
+      ],
+      "uhh_occurrences_count": 4,
+      "peak_zones": {
+        "distribution": "even",
+        "zones": [],
+        "overall_rate_per_min": 23.33,
+        "threshold_multiplier": 2.0
+      },
+      "message": "Filler words analysis completed successfully."
+    }
+  },
+  "performance": {
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8012): Max retries exceeded with url: /api/v1/performance/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000027AA6D51520>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+  }
+}

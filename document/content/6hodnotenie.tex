@@ -32,7 +32,7 @@ Metriky sú vypočítané pomocou evaluačného skriptu \texttt{evaluate.py}, kt
     \item \textbf{IoU} --- priesečník delený zjednotením (Jaccard index) pre segmentové detektory
 \end{itemize}
 
-Pri $n \leq 15$ videách sa používa leave-one-out krížová validácia (LOO-CV); priemerné F1 a štandardná odchýlka sú uvádzané ako výsledok. Akceptačné prahy sú stanovené pragmaticky pre účely diplomovej práce: minimálny F1 = 0,70 pre vizuálne detektory, F1 = 0,75 pre akustické a textové detektory.
+Výsledné metriky sú priemerom hodnôt naprieč všetkými testovacími videami daného detektora. Akceptačné prahy sú stanovené pragmaticky pre účely diplomovej práce: minimálny F1 = 0,70 pre vizuálne detektory, F1 = 0,75 pre akustické a textové detektory.
 
 \subsection{Testovací materiál}
 
@@ -43,17 +43,17 @@ Pri $n \leq 15$ videách sa používa leave-one-out krížová validácia (LOO-C
         \textbf{Detektor} & \textbf{N scenárov} & \textbf{Popis manipulácií} \\
         \hline
         \specialrule{1.2pt}{0pt}{0pt}
-        Očný kontakt & 7 & Pohľad do kamery; krátke odvrátenie ($<$1~s); dlhé odvrátenie ($>$3~s); pohľad nadol; otočenie chrbtom; pohľad do poznámok \\
+        Očný kontakt & 2 & Dlhé odvrátenie pohľadu ($>$1~s); otočenie chrbtom k publiku \\
         \hline
-        Pohyby rúk & 6 & Ruky pri tele; prirodzená gestikulácia; intenzívna gestikulácia; opakované rovnaké gesto \\
+        Pohyby rúk & 4 & Ruky pri tele; prirodzená gestikulácia; intenzívna gestikulácia; žiadna gestikulácia \\
         \hline
-        Pohyb bokov & 5 & Pevný stoj; kývanie zo strany na stranu; prešľapovanie; jeden krok stranou \\
+        Pohyb bokov & 3 & Pevný stoj; kývanie zo strany na stranu; prešľapovanie \\
         \hline
-        Monotónnosť hlasu & 6 & Výrazná intonácia; priemerná konverzácia; zámerne monotónne; monotónne s občasnou intonáciou \\
+        Monotónnosť hlasu & 4 & Výrazná intonácia; priemerná konverzácia; zámerne monotónne; monotónne s občasnou intonáciou \\
         \hline
-        Hlasitosť & 5 & Konštantná; potichu po celý čas; nahlas po celý čas; striedanie \\
+        Hlasitosť & 2 & Konštantná hlasitosť; príliš tichý hlas v časti prezentácie \\
         \hline
-        Výplňové slová & 8 & Bez výplniek; občasné (1/30~s); husté (5/30~s); sústredené v bloku \\
+        Výplňové slová & 3 & Bez výplniek; občasné (1/30~s); husté (5/30~s) \\
         \hline
     \end{tabularx}
     \caption{Prehľad testovacích scenárov per detektor}
@@ -69,30 +69,32 @@ Pri $n \leq 15$ videách sa používa leave-one-out krížová validácia (LOO-C
         \textbf{Detektor} & \textbf{Jav} & \textbf{N} & \textbf{P} & \textbf{R} & \textbf{F1} \\
         \hline
         \specialrule{1.2pt}{0pt}{0pt}
-        \texttt{filler\_words} & Detekcia výplňkového slova & 8 & 0,91 & 0,84 & \textbf{0,87} \\ \hline
-        \texttt{eye\_contact} & Pozeranie mimo publika ($>$1~s) & 7 & 0,85 & 0,78 & \textbf{0,81} \\ \hline
-        \texttt{eye\_contact} & Otočenie chrbtom & 7 & 0,88 & 0,83 & \textbf{0,85} \\ \hline
-        \texttt{pitch} & Monotónny segment & 6 & 0,79 & 0,77 & \textbf{0,78} \\ \hline
-        \texttt{volume} & Príliš ticho / príliš nahlas & 5 & 0,77 & 0,74 & \textbf{0,75} \\ \hline
-        \texttt{arm\_movement} & Nedostatočná gestikulácia & 6 & 0,76 & 0,69 & \textbf{0,72} \\ \hline
-        \texttt{arm\_movement} & Nadmerný pohyb rúk & 6 & 0,73 & 0,71 & \textbf{0,72} \\ \hline
-        \texttt{hip} & Kývanie bokov & 5 & 0,75 & 0,72 & \textbf{0,73} \\ \hline
+        \texttt{volume} & Príliš tichý hlas & 2 & 0,805 & 1,000 & \textbf{0,892} \\ \hline
+        \texttt{hip} & Kývanie bokov & 3 & 0,844 & 0,917 & \textbf{0,874} \\ \hline
+        \texttt{pitch} & Monotónny segment & 4 & 0,567 & 0,790 & \textbf{0,819}$^\dagger$ \\ \hline
+        \texttt{eye\_contact} & Pozeranie mimo publika ($>$1~s) & 2 & 0,746 & 0,778 & \textbf{0,750} \\ \hline
+        \texttt{filler\_words} & Detekcia výplňového slova & 3 & 0,746 & 0,773 & \textbf{0,750} \\ \hline
+        \texttt{arm\_movement} & Nedostatočná gestikulácia & 4 & 0,764 & 0,697 & \textbf{0,647} \\ \hline
+        \texttt{eye\_contact} & Otočenie chrbtom & 2 & 0,800 & 0,400 & \textbf{0,400} \\ \hline
+        \texttt{arm\_movement} & Nadmerná gestikulácia & 4 & 0,625 & 0,417 & \textbf{0,417} \\ \hline
     \end{tabular}
-    \caption{Presnosť detektorov (LOO-CV, bin = 1~s)}
+    \caption{Presnosť detektorov (priemerné metriky, bin = 1~s)}
     \label{tab:detector_f1}
 \end{table}
 
-Všetky detektory dosahujú F1 nad stanoveným minimálnym prahom. Najlepšiu presnosť dosahuje detektor výplňových slov (F1~=~0,87), čo zodpovedá deterministickej povahe regex-based detekcie pri jasne definovanom zozname slov. Detekcia otočenia chrbtom (F1~=~0,85) využíva jednoznačnú geometrickú podmienku (nos za líniou ramien) a je tiež spoľahlivá. Pohyby rúk majú najnižšie F1 (0,72) --- hranica medzi prirodzeným pohybom a nedostatočnou gestikuláciou je subjektívna a prahová hodnota rýchlosti zápästia (0,18) bola nastavená empiricky, čo obmedzuje generalizáciu na odlišné nahrávacie podmienky.
+Detektory hlasitosti (F1~=~0,892), pohybu bokov (F1~=~0,874) a monotónnosti (F1~=~0,819\,*) dosahujú najlepšie výsledky. \mbox{(*~Agregát} pitch počítaný z videí V12 a V13; video V11 bez GT udalostí prispieva iba k priemeru presnosti.) Detektor očného kontaktu --- pohľad mimo publika (F1~=~0,750) a výplňové slová (F1~=~0,750) presne dosahujú akceptačné prahy. Pod prahom zostávajú tri dimenzie: nedostatočná gestikulácia (F1~=~0,647), otočenie chrbtom (F1~=~0,400) a nadmerná gestikulácia (F1~=~0,417). Nízke výsledky gestikul­ácie reflektujú subjektívnu povahu hranice medzi prirodzeným a nedostatočným pohybom, kde empiricky nastavený prah rýchlosti zápästia (0,18) zle generalizuje na iné snímacie podmienky. Nízky recall otočenia chrbtom (0,400) je spôsobený jedným testovacím videom, kde sa prezentujúci otáčal pri pohľade na plátno v nepravidelných, krátkych intervaloch, ktoré neprekročili minimálnu dobu trvania udalosti.
 
 \subsection{Analýza chýb}
 
 \textbf{Výplňové slová --- false positives:} Neverbálne zvuky (kašeľ, vzdych) sú príležitostne klasifikované ako \textit{uhh}. Minimálna trvacia podmienka na voiced segment čiastočne obmedzuje tento efekt.
 
-\textbf{Očný kontakt --- false negatives:} Pohľady na poznámky umiestnené pod kamerou nie sú spoľahlivo detekované --- yaw uhol zostáva v rámci audience zone, pretože hlava sa nakláňa, nie otáča. Toto je štrukturálna limitácia súčasnej implementácie (video V2 z výskumnej štúdie). Detekcia by vyžadovala kombináciu yaw a pitch uhla s nižším pitch prahom.
+\textbf{Očný kontakt --- pohľad mimo publika, false negatives:} Pohľady na poznámky umiestnené pod kamerou nie sú spoľahlivo detekované --- yaw uhol zostáva v rámci audience zone, pretože hlava sa nakláňa, nie otáča. Detekcia by vyžadovala kombináciu yaw a pitch uhla s nižším pitch prahom.
 
-\textbf{Monotónnosť --- false positives:} Tiché úseky reči (unvoiced frames) môžu byť mylne označené ako monotónne, ak RMS energia klesne pod prah pred filtrovaním pomocou valid\_mask. Postprocessing minimálnej dĺžky segmentu (1,5~s) čiastočne potláča tento efekt.
+\textbf{Očný kontakt --- otočenie chrbtom, nízky recall:} Krátkodobé otočenia (menej ako minimálna doba trvania udalosti) nie sú zachytené. V testovacích scenároch, kde prezentujúci opakovane nakukol na plátno, systém tieto epizódy prehliadol, čo znížilo recall na 0,400.
 
-\textbf{Pohyby rúk --- variabilita:} Prahová hodnota rýchlosti 0,18 je optimum na ladiacej sade. Pri inej vzdialenosti kamery alebo zmene perspektívy sa absolútne hodnoty normalizovaných súradníc menia, čo môže posunúť efektívny prah. Odporúčaním pre budúci vývoj je kalibrácia prahov relatívne voči výške prezentujúceho v záznamu.
+\textbf{Monotónnosť --- false positives:} Tiché úseky reči (unvoiced frames) môžu byť mylne označené ako monotónne, ak RMS energia klesne pod prah pred filtrovaním pomocou valid\_mask. Video V11 (priemerná konverzácia) vygenerovalo 11 sekúnd falošne pozitívnych detekcií, čo výrazne znížilo priemernú presnosť (0,567) bez dopadu na agregátne F1 (počítané len z videí s GT udalosťami).
+
+\textbf{Gestikulácia --- variabilita a nízke F1:} Prahová hodnota rýchlosti zápästia 0,18 je optimum na ladiacej sade. Pri inej vzdialenosti kamery alebo zmene perspektívy sa absolútne hodnoty normalizovaných súradníc menia. Detekcia nadmerného pohybu rúk (F1~=~0,417) má dodatočnú príčinu: hranica medzi expresívnou a nervóznou gestikuláciou je ťažko definovateľná bez subjektívneho hodnotenia, a teda ani anotácia ground truth nie je jednoznačná. Odporúčaním pre budúci vývoj je kalibrácia prahov relatívne voči výške prezentujúceho v záznamu.
 
 \section{Pilotná štúdia účinnosti}
 \label{sec:pilot_study}

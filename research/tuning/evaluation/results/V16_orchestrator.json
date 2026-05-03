@@ -1,0 +1,57 @@
+{
+  "success": true,
+  "recording_id": 124,
+  "completed_analyses": [
+    "volume"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "volume": {
+      "success": true,
+      "recording_id": 124,
+      "volume_frames": 458,
+      "volume_mean_rms": 0.01791004277765751,
+      "volume_min_rms": 1.0619667591527104E-5,
+      "volume_max_rms": 0.10368108004331589,
+      "volume_std_rms": 0.016432518139481544,
+      "dbfs_mean": -36.1,
+      "dbfs_min": -60.0,
+      "dbfs_max": -19.69,
+      "too_soft_segments": [
+        {
+          "start_timestamp": 4.05,
+          "end_timestamp": 5.4,
+          "duration_seconds": 1.35,
+          "mean_dbfs": -40.42
+        },
+        {
+          "start_timestamp": 12.25,
+          "end_timestamp": 15.0,
+          "duration_seconds": 2.75,
+          "mean_dbfs": -44.77
+        },
+        {
+          "start_timestamp": 15.85,
+          "end_timestamp": 18.6,
+          "duration_seconds": 2.75,
+          "mean_dbfs": -47.69
+        }
+      ],
+      "too_soft_count": 3,
+      "too_loud_segments": [
+        {
+          "start_timestamp": 18.65,
+          "end_timestamp": 19.85,
+          "duration_seconds": 1.2,
+          "mean_dbfs": -26.1
+        }
+      ],
+      "too_loud_count": 1,
+      "segmentation": null
+    }
+  },
+  "performance": {
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8012): Max retries exceeded with url: /api/v1/performance/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000021A7B995130>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+  }
+}

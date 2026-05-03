@@ -1,0 +1,41 @@
+{
+  "video_id": "V15",
+  "duration_s": 65.0,
+  "annotator": "Matej",
+  "notes": "Kazde vypln. slovo = bod. Tolerancia pri evaluacii: ±1s",
+  "annotations": {
+    "filler_words": [
+      {"start": 0.0, "end": 0.5, "word": "takže"},
+      {"start": 0.5, "end": 1.0, "word": "uhh"},
+      {"start": 2.5, "end": 3.0, "word": "no"},
+      {"start": 6.0, "end": 6.5, "word": "viete"},
+      {"start": 6.5, "end": 7.0, "word": "vlastne"},
+      {"start": 14.5, "end": 15.0, "word": "teda"},
+      {"start": 15.5, "end": 16.0, "word": "vlastne"},
+      {"start": 17.5, "end": 18.0, "word": "no"},
+      {"start": 18.5, "end": 19.0, "word": "takže"},
+      {"start": 19.5, "end": 20.0, "word": "uhh"},
+      {"start": 21.5, "end": 22.0, "word": "vlastne"},
+      {"start": 23.5, "end": 24.0, "word": "viete"},
+      {"start": 24.0, "end": 24.5, "word": "proste"},
+      {"start": 30.0, "end": 30.5, "word": "uhh"},
+      {"start": 36.5, "end": 37.0, "word": "teda"},
+      {"start": 37.5, "end": 38.0, "word": "uhh"},
+      {"start": 40.0, "end": 41.0, "word": "uhh"},
+      {"start": 41.5, "end": 42.0, "word": "viete"},
+      {"start": 42.0, "end": 42.5, "word": "vlastne"},
+      {"start": 44.5, "end": 45.0, "word": "čiže"},
+      {"start": 45.5, "end": 46.0, "word": "sktrátka"},
+      {"start": 49.5, "end": 50.0, "word": "no"},
+      {"start": 52.5, "end": 53.0, "word": "teda"},
+      {"start": 56.5, "end": 57.0, "word": "viete"},
+      {"start": 58.0, "end": 58.5, "word": "uhh"},
+      {"start": 65.0, "end": 65.5, "word": "no"},
+      {"start": 65.5, "end": 67.0, "word": "takže"},
+      {"start": 67.5, "end": 68.0, "word": "vlastne"},
+      {"start": 71.0, "end": 71.5, "word": "teda"},
+      {"start": 72.0, "end": 72.5, "word": "viete"},
+      {"start": 74.5, "end": 75.0, "word": "viete"}
+    ]
+  }
+}

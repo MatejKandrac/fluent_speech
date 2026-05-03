@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "recording_id": 122,
+  "completed_analyses": [
+    "pitch"
+  ],
+  "failed_analyses": [],
+  "results": {
+    "pitch": {
+      "success": true,
+      "recording_id": 122,
+      "pitch_frames": 335,
+      "voiced_frames": 293,
+      "pitch_mean": 107.76316658908996,
+      "pitch_min": 89.33722610463067,
+      "pitch_max": 191.9432539624787,
+      "pitch_std": 15.219941221982028,
+      "monotonous_segments": [
+        {
+          "start_timestamp": 7.05,
+          "end_timestamp": 16.75,
+          "duration_seconds": 9.7,
+          "std_dev": 3.24,
+          "range": 11.64
+        }
+      ],
+      "monotonous_segments_count": 1,
+      "segmentation": null
+    }
+  },
+  "performance": {
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8012): Max retries exceeded with url: /api/v1/performance/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000027AA6D51820>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+  }
+}
