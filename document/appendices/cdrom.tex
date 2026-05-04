@@ -1,15 +1,19 @@
-\chapter{Obsah digitálneho média \label{cha:cdrom} }
+\chapter{Obsah digitálnej časti práce \label{cha:cdrom} }
+
+Evidenčné číslo práce v informačnom systéme: FIIT-82905-116208
 
 Digitálne médium je súčasťou práce a obsahuje zdrojové kódy aplikácií, mikroslužieb, api gateway a databázy, spolu s niekoľkými dodatočnými súbormi.
 Obsahuje nasledujúcu adresárovú štruktúru:
 
 \begin{itemize}
-\item \texttt{/analysis} --- zdrojové kódy analyzačných mikroslužieb (Django Python)
-\item \texttt{/processing} --- zdrojové kódy mikroslužieb spracovania videa (Django Python)
+\item \texttt{/analysis} --- zdrojové kódy všetkých analyzačných mikroslužieb (Django Python)
+\item \texttt{/processing} --- zdrojové kódy všetkých mikroslužieb spracovania videa (Django Python)
 \item \texttt{/fluent} --- zdrojové kódy mobilnej aplikácie (Flutter projekt)
 \item \texttt{/FluentApiGateway} --- zdrojové kody pre API Gateway (Spring boot Kotlin)
-\item \texttt{/research} --- python notebooky a json súbory s výsledkami výskumu a odpoveďami systému
+\item \texttt{/research} --- python notebooky a json súbory s výsledkami výskumu, odpoveďami systému a overovací skript pre presnosť detektorov
+\item \texttt{/document} --- latex projekt tejto diplomovej práce
 \item \texttt{/init.sql} --- sql skript pre vytvorenie databázy
 \item \texttt{/.env} --- súbor s premennými prostredia s poslednými nastaveniami
 \item \texttt{/docker-compose.yml} --- docker compose súbor pre spustenie systému
+\item \texttt{/requests.http} --- príkladné požiadavky na server
 \end{itemize}

@@ -1,4 +1,5 @@
 \chapter{Analýza problematiky}
+\label{chap:analyza}
 V kontexte prezentácií existuje mnoho foriem prezentovania, ako napríklad pracovné pohovory, verejné vystúpenia alebo aj školské prezentácie. Nakoľko zachytiť všetky tieto formy v rámci jedného riešenia je náročné, rozhodol som sa sústrediť iba na verejné prezentácie pred publikom.
 
 Pred samotným návrhom riešenia je potrebné pochopiť základné pojmy spojené s prezentáciami a prezentačnými schopnosťami. V nasledujúcich podkapitolách postupne vysvetlím mnou analyzované pojmy úzko spojené s touto problematikou.
@@ -217,7 +218,7 @@ RAP (Retroalimentación Automática de Presentaciones) je systém vyvinutý na u
 
 Systém analyzuje:
 \begin{itemize}
-    \item \textbf{Postoj} --- pomocou BlazePose (MediaPipe) extrahuje landmarky tela a klasifikuje ich do piatich posturálnych kategórií (ruky otvorené, ruky dole, ruky v bok atď.) pomocou natrénovanej doprednej neurónovej siete
+    \item \textbf{Postoj} --- pomocou BlazePose (MediaPipe) extrahuje kľúčové body tela a klasifikuje ich do piatich posturálnych kategórií (ruky otvorené, ruky dole, ruky v bok atď.) pomocou natrénovanej doprednej neurónovej siete
     \item \textbf{Smer pohľadu} --- klasifikuje pohľad do štyroch smerov (do publika, dozadu, doľava, doprava) pomocou algoritmu k-najbližších susedov (kNN)
     \item \textbf{Výplňové slová} --- detekuje akustické charakteristiky výplňových zvukov priamo z audio signálu pomocou nástroja Praat (analýza formantov), bez transkripcie reči
     \item \textbf{Hlasitosť} --- meria úroveň hlasitosti reči voči kalibrovanej úrovni ticha v miestnosti
@@ -228,6 +229,7 @@ Výstupom je bodové skóre pre každú dimenziu a heatmapa zobrazujúca frekven
 \subsection{Porovnanie riešení}
 
 Po analýze týchto štyroch existujúcich riešení som sa rozhodol vytvoriť tabuľku parametrov, ktorá zachytáva podstatné parametre jednotlivých riešení, ako aj to, či detekujú negatívne javy, ktoré som opísal ako najpodstatnejšie v časti neverbálnej a verbálnej komunikácii.
+\newpage
 
 \begin{table}[H]
     \centering
@@ -307,9 +309,9 @@ Analyzované riešenia poskytujú prevažne \textbf{agregované štatistiky} (na
 
 \begin{enumerate}
     \item \textbf{Výskumu}, ktorý by overil, ktoré dimenzie prezentácie majú najväčší vplyv na celkové vnímanie jej kvality, a či distribúcia negatívnych javov v čase tento vplyv mení.
-    \item \textbf{Komplexného systému}, ktorý by detekoval všetkých šesť identifikovaných dimenzií (gestikulácia, očný kontakt, pohyby bokov, výplňové slová, monotónnosť, hlasitosť) v jednom riešení, poskytoval nielen agregované štatistiky, ale aj časovú analýzu, a mal hodnotiace váhy podložené empirickým výskumom.
+    \item \textbf{Komplexného systému}, ktorý by detekoval všetkých šesť identifikovaných dimenzií (gestikulácia, očný kontakt, pohyby bokov, výplňové slová, monotónnosť, hlasitosť) v jednom riešení, poskytoval nielen agregované štatistiky, ale aj časovú analýzu, a mal hodnotiace váhy podložené výskumom.
 \end{enumerate}
 
-\textbf{Prečo je tento problém dôležitý?} Prezentačné schopnosti sú kľúčové v mnohých oblastiach života, od akademického prostredia cez pracovné pohovory až po profesionálne vystúpenia. Tradičné formy nácviku (kurzy, tréningy) sú časovo aj finančne náročné a nie vždy dostupné. Moderný systém, ktorý poskytne komplexnú spätnú väzbu využitím pokročilých metód spracovania videa a zvuku a ktorého hodnotenie je podložené empirickým výskumom, môže zlepšiť prístup k trénovaniu prezentačných schopností a umožniť používateľom efektívne sa zlepšovať aj bez prítomnosti fyzického trénera.
+\textbf{Prečo je tento problém dôležitý?} Prezentačné schopnosti sú kľúčové v mnohých oblastiach života, od akademického prostredia cez pracovné pohovory až po profesionálne vystúpenia. Tradičné formy nácviku (kurzy, tréningy) sú časovo aj finančne náročné a nie vždy dostupné. Moderný systém, ktorý poskytne komplexnú spätnú väzbu využitím pokročilých metód spracovania videa a zvuku a ktorého hodnotenie je podložené výskumom, môže zlepšiť prístup k trénovaniu prezentačných schopností a umožniť používateľom efektívne sa zlepšovať aj bez prítomnosti fyzického trénera.
 
-Moje riešenie sa preto zameriava na dve vzájomne prepojené časti: realizáciu \textbf{empirickej výskumnej štúdie} ($n = 52$ respondentov), ktorá overuje vplyv jednotlivých dimenzií na celkové vnímanie prezentácie a skúma efekt časovej distribúcie negatívnych javov, a \textbf{implementáciu systému}, ktorého hodnotiace váhy sú výsledkami tejto štúdie priamo podložené. Štúdia je podrobne popísaná v kapitole~\ref{chap:vyskum}.
+Moje riešenie sa preto zameriava na dve vzájomne prepojené časti: realizáciu \textbf{výskumnej štúdie} ($n = 52$ respondentov), ktorá overuje vplyv jednotlivých dimenzií na celkové vnímanie prezentácie a skúma efekt časovej distribúcie negatívnych javov, a \textbf{implementáciu systému}, ktorého hodnotiace váhy sú výsledkami tejto štúdie priamo podložené. Štúdia je podrobne popísaná v kapitole~\ref{chap:vyskum}.

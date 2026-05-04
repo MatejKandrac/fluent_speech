@@ -5,13 +5,13 @@ Cieľom tejto diplomovej práce bolo navrhnúť a implementovať inteligentného
 
 \section{Zhrnutie dosiahnutých výsledkov}
 
-Systém bol navrhnutý ako sada mikroslužieb, pričom každá pokrýva jednu analytickú dimenziu. Implementované boli nasledujúce komponenty:
+Systém bol navrhnutý ako sada mikroslužieb, pričom každá pokrýva rozdielne detekcie negatívnych javov. Implementované boli nasledujúce komponenty:
 
 \begin{itemize}
     \item \textbf{Spracovanie vstupných dát} --- extrakcia kľúčových bodov tela pomocou MediaPipe Pose, normalizácia a resampling audia, transkripcia reči pomocou OpenAI Whisper.
     \item \textbf{Vizuálna analýza} --- detekcia očného kontaktu cez výpočet uhlov yaw/pitch hlavy, analýza pohybu bokov a pohybov rúk na základe kinematiky zápästí.
     \item \textbf{Hlasová analýza} --- detekcia monotónnosti hlasu algoritmom YIN, analýza hlasitosti cez RMS energiu.
-    \item \textbf{Analýza plynulosti reči} --- detekcia výplňových slov z transkriptu, segmentácia výskytu pomocou algoritmu PELT.
+    \item \textbf{Analýza plynulosti reči} --- detekcia výplňových slov z transkriptu, segmentácia výskytu pomocou bottom-up algoritmu.
     \item \textbf{Hodnotenie prezentácie} --- agregácia čiastkových skóre do celkového hodnotenia s konfigurovateľnými váhami dimenzií.
     \item \textbf{Mobilná aplikácia} --- Flutter aplikácia umožňujúca nahrávanie videa, spustenie analýzy a prezeranie výsledkov.
 \end{itemize}
@@ -20,21 +20,21 @@ Systém pokrýva celý životný cyklus analýzy: od nahrávania videa cez extra
 
 \section{Výsledky výskumnej štúdie}
 
-Súčasťou práce bola používateľská štúdia ($n = 52$) zameraná na empirické overenie predpokladanej hierarchie dimenzií a vplyvu distribúcie výplňových slov na vnímané hodnotenie. Štúdia priniesla tieto hlavné závery:
+Súčasťou práce bola používateľská štúdia ($n = 52$) zameraná na overenie predpokladanej hierarchie dimenzií a vplyvu distribúcie výplňových slov na vnímané hodnotenie. Štúdia priniesla tieto hlavné závery:
 
 \begin{itemize}
     \item \textbf{Hlas dominuje nad vizuálnymi dimenziami.} Viacnásobná lineárna regresia ukázala, že hlas má najvyšší štandardizovaný beta koeficient ($\beta = 0{,}843$) a štatisticky signifikantne dominuje nad vizuálnymi dimenziami ($t = -5{,}238$, $p < 0{,}001$). Predpokladaná hierarchia vizuálne~>~hlasové nebola potvrdená.
     \item \textbf{Rovnomerne rozložené výplňové slová sú vnímané výrazne horšie.} Respondenti hodnotili prezentáciu s rovnomerne rozloženými výplňovými slovami priemerne o 1,8 bodu horšie ako tú istú prezentáciu s rovnakým počtom výplňových slov sústredených v jednom bloku ($t = 5{,}492$, $p < 0{,}001$, $d = 0{,}871$); takto hodnotilo 40 z 52 respondentov (76,9\,\%).
 \end{itemize}
 
-Tieto zistenia boli priamo zapracované do hodnotiaceho modelu. Aktualizácia váh dimenzií z pôvodných odhadov na hodnoty odvodené z regresných koeficientov zvýšila Spearmanovu koreláciu modelu s ľudskými hodnoteniami z $\rho = 0{,}771$ na $\rho = 0{,}943$ ($p = 0{,}005$). Model v3 ďalej rozšíril hodnotenie plynulosti o penalizáciu za rovnomernú distribúciu výplňových slov.
+Tieto zistenia boli priamo zapracované do hodnotiaceho modelu. Aktualizácia váh dimenzií z pôvodných odhadov na hodnoty odvodené z regresných koeficientov zvýšila Spearmanovu koreláciu modelu s ľudskými hodnoteniami z $\rho = 0{,}600$ na $\rho = 0{,}829$ ($p = 0{,}042$). Model v3 ďalej rozšíril hodnotenie plynulosti o penalizáciu za rovnomernú distribúciu výplňových slov.
 
 \section{Obmedzenia systému}
 
 Napriek dosiahnutým výsledkom má systém niekoľko identifikovaných obmedzení:
 
 \begin{itemize}
-    \item \textbf{Kalibrácia absolútnych hodnôt skóre.} Systém systematicky nadhodnocuje kvalitu prezentácie o cca 27 bodov v porovnaní s ľudskými hodnoteniami. Príčinou je, že systém deteguje len merateľné technické javy, zatiaľ čo ľudia vnímajú prezentáciu holisticky --- vrátane nervozity, dikcií a obsahu.
+    \item \textbf{Kalibrácia absolútnych hodnôt skóre.} Systém systematicky nadhodnocuje kvalitu prezentácie o cca 24 bodov v porovnaní s ľudskými hodnoteniami. Príčinou je, že systém deteguje len merateľné technické javy, zatiaľ čo ľudia vnímajú prezentáciu holisticky --- vrátane nervozity, dikcií a obsahu.
     \item \textbf{Detekcia očného kontaktu.} Prahové hodnoty priestoru publika sú nastavené konzervatívne a môžu viesť k falošne pozitívnej detekcii očného kontaktu pri pohľade do poznámok pod kamerou. Kalibrácia prahov zostáva výzvou pre ďalší vývoj.
     \item \textbf{Jazyková závislosť transkripcie.} Zoznam výplňových slov je momentálne nastavený pre slovenský jazyk. Rozšírenie na iné jazyky si vyžaduje manuálnu konfiguráciu.
     \item \textbf{Statická analýza.} Systém pracuje výhradne so záznami prezentácií. Analýza v reálnom čase nie je v súčasnosti podporovaná.
@@ -53,4 +53,5 @@ Na základe skúseností z implementácie a obmedzení systému identifikujem ti
 
 \section{Záverečné zhodnotenie}
 
-Práca preukázala, že automatická analýza prezentačných schopností pomocou moderných metód počítačového videnia, spracovania reči a štatistickej analýzy je realizovateľná na bežnom mobilnom zariadení bez špeciálneho hardvéru. Kľúčovým prínosom je prepojenie empirického výskumu so systémovým návrhom --- výsledky používateľskej štúdie priamo ovplyvnili váhy hodnotiaceho modelu a viedli k merateľnému zlepšeniu jeho validity ($\rho = 0{,}943$). Hodnotenie systému (kapitola~\ref{chap:hodnotenie}) potvrdilo, že detektory dosahujú F1 nad minimálnymi akceptačnými prahmi a opakované používanie systému koreluje so zlepšením prezentačných skóre o priemerne $+17\,\%$ za 5 týždňov. Systém tak nepredstavuje len technickú implementáciu, ale aj príspevok k porozumeniu toho, ako ľudia vnímajú prezentačné schopnosti.
+Práca preukázala, že automatická analýza prezentačných schopností pomocou moderných metód počítačového videnia, spracovania reči a štatistickej analýzy je realizovateľná na bežnom mobilnom zariadení bez špeciálneho hardvéru.
+Kľúčovým prínosom je prepojenie výskumu so systémovým návrhom --- výsledky používateľskej štúdie priamo ovplyvnili váhy hodnotiaceho modelu a viedli k merateľnému zlepšeniu jeho validity ($\rho = 0{,}829$). Hodnotenie systému (kapitola~\ref{chap:hodnotenie}) potvrdilo, že detektory dosahujú F1 nad minimálnymi akceptačnými prahmi a opakované používanie systému koreluje so zlepšením prezentačných skóre o priemerne $+20\,\%$ za 1 týždeň. Systém tak nepredstavuje len technickú implementáciu, ale aj príspevok k porozumeniu toho, ako ľudia vnímajú prezentačné schopnosti.

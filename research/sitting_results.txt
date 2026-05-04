@@ -1,0 +1,27 @@
+P1
+overall	61	65  72  76  75
+voice 	76	84  84  85  85
+fluency 34	31  50  60  55
+body	42	46  60  62  65
+eye	    73	79  82  85  85
+
+P2
+overall	85	87  86  80  85
+voice	94	100 94  80  95
+fluency	100	100 95  90  90
+body	32	34  50  55  62
+eye	    75	75  80  80  76
+
+P3
+overall	71	88  90  90  87
+voice	81	91  98  95  93
+fluency	63	100 90  95  93
+body	38	63  70  72  70
+eye	    75	82  86  85  80
+
+P4
+overall 60  77  76  77  79
+voice   94  97  90  94  92
+fluency 6   44  60  58  66
+body    40  70  60  62  65
+eye     75  86  80  80  82

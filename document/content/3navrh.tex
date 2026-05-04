@@ -37,7 +37,7 @@ Systém je navrhnutý pre podporu viacerých scenárov použitia. Na základe fu
     \item \textbf{Nahratie videa prezentácie} - Používateľ nahrá video svojej prezentácie pomocou mobilnej aplikácie a odošle ho na server
     \item \textbf{Analýza prezentácie} - Systém vykoná komplexnú analýzu všetkých aspektov prezentácie
     \item \textbf{Zobrazenie výsledkov analýzy} - Používateľ si prezerá detailné výsledky analýzy s časovými stopami chýb a odporúčaniami
-    \item \textbf{Správa histórie nahrávok} - Používateľ môže prezerať a spravovať svoje predchádzajúce nahrávky
+    \item \textbf{Správa nahrávok} - Používateľ môže prezerať a spravovať svoje predchádzajúce nahrávky
 \end{itemize}
 
 V nasledujúcich podkapitolách popíšem dva najdôležitejšie prípady použitia. Pre grafické znázornenie som pripravil diagram prípadov použitia pre celý systém.
@@ -86,7 +86,7 @@ Spring Boot poskytuje robustnú platformu pre správu HTTP požiadaviek, multipa
 
 Najdôležitejším nástrojom pre analýzu videa bude knižnica \textbf{MediaPipe} od spoločnosti Google.\cite{mediapipe}
 MediaPipe je open-source framework určený pre real-time spracovanie multimediálneho obsahu.
-V navrhnutom riešení bude využitý modul \textbf{MediaPipe Pose}, ktorý dokáže detekovať 33 kľúčových bodov ľudského tela (landmarks) v každom snímku videa.
+V navrhnutom riešení bude využitý modul \textbf{MediaPipe Pose}, ktorý dokáže detekovať 33 kľúčových bodov ľudského tela v každom snímku videa.
 MediaPipe bude bežať výhradne na serverovej strane v rámci Služby spracovania videa.
 
 Nasledujúci obrázok zobrazuje všetky kľúčové body, ktoré MediaPipe Pose detekuje:
@@ -111,7 +111,7 @@ Pre segmentáciu časových radov bude využitá knižnica \textbf{ruptures}\cit
 
 \subsection{Databáza}
 
-Pre ukladanie dát bude využitá relačná databáza \textbf{PostgreSQL}\cite{postgresql}, ktorá zabezpečuje ACID vlastnosti a podporuje efektívne ukladanie štruktúrovaných dát (landmarks, audio features, výsledky analýz).
+Pre ukladanie dát bude využitá relačná databáza \textbf{PostgreSQL}\cite{postgresql}, ktorá zabezpečuje ACID vlastnosti a podporuje efektívne ukladanie štruktúrovaných dát (kľúčové body tela a detekované slová).
 Pre súborové úložisko videí bude využitý súborový systém servera.
 PostgreSQL bude rozšírené o \textbf{TimescaleDB}\cite{timescaledb} pre efektívnejšie narábanie s časovými radmi.
 
@@ -127,7 +127,7 @@ Nakoľko každá detekovaná dimenzia prezentačných schopností si vyžaduje o
 \begin{itemize}
     \item \textbf{Mobilná aplikácia (Flutter)} - používateľské rozhranie pre nahrávanie videí a zobrazenie výsledkov analýzy
     \item \textbf{API Gateway (Spring Boot/Kotlin)} - vstupný bod systému, ktorý smeruje požiadavky mobilnej aplikácie na príslušné komponenty (orchestrátor analýzy alebo spracovanie videa). Gateway neobsahuje žiadnu analytickú logiku --- jeho úlohou je výhradne smerovanie a správa HTTP požiadaviek. Architektúra Gateway zároveň vytvára základ pre budúce rozšírenie o autentifikáciu a vyvažovanie záťaže.
-    \item \textbf{Služba spracovania videa (Django/Python)} - extrakcia landmarks pomocou MediaPipe Pose a spracovanie video súborov
+    \item \textbf{Služba spracovania videa (Django/Python)} - extrakcia kľúčových bodov tela pomocou MediaPipe Pose a spracovanie video súborov
     \item \textbf{Služba spracovania zvuku (Django/Python)} - extrakcia zvukovej stopy z videa, spolu s úpravou vzorkovacej rýchlosti a redukciou šumu
     \item \textbf{Služba analýzy očného kontaktu (Django/Python)} - analýza smeru pohľadu prezentujúceho. Analýza bude obsahovať:
     \begin{itemize}
@@ -188,7 +188,7 @@ Extrakcia a normalizácia audio signálu & Služba spracovania zvuku \\ \hline
 
 \subsection{Komponentový diagram}
 Pre celkový obraz systému som pripravil nasledujúci komponentový diagram, ktorý zobrazuje všetky vyššie spomínané komponenty.
-
+\newpage
 \begin{figure}[H]
     \begin{centering}
         \includegraphics[width=\textwidth]{assets/images/solution/component_diagram.png}
@@ -201,7 +201,7 @@ V spodnej časti je ešte zobrazené súborové úložisko a databáza, kde sa u
 
 Pre pochopenie som vytvoril sekvenčný diagram, ktorý znázorňuje interakciu používateľa so systémom pri nahrávaní nového videa a jeho automatickým spracovaním na strane servera.
 Pre jednoduchšie pochopenie diagramu som zjednotil mikroslužby spracovania do jednej čiary života. Pod týmto označením teda môžete chápat mikroslužbu pre spracovanie videa, zvuku alebo transkripcie. Tieto služby sa spustia všetky naraz v momente vytvorenia záznamu videa v databáze.
-Dôležité v tomto diagrame je si všimnúť asynchrónne volania medzi jednotlivými mikroslužbami. Výsledkom tohto spracovania bude video uložené v úložisku na serveri, všetky landmarky uložené v databáze a audio súbor so vzorkovacou rýchlosťou 16 kHz.
+Dôležité v tomto diagrame je si všimnúť asynchrónne volania medzi jednotlivými mikroslužbami. Výsledkom tohto spracovania bude video uložené v úložisku na serveri, všetky kľúčové body tela uložené v databáze a audio súbor so vzorkovacou rýchlosťou 16 kHz.
 
 \begin{figure}[H]
     \begin{centering}
