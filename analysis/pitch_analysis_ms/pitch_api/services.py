@@ -6,6 +6,7 @@ import matplotlib
 import numpy as np
 import requests
 from scipy.signal import medfilt
+from scipy.signal import medfilt
 
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
@@ -218,7 +219,7 @@ class PitchAnalysisService:
                 return {'success': False, 'error': f'Recording with ID {recording_id} not found'}
 
             video_filename = recording['filename']
-            processed_filename = Path(video_filename).stem + '.wav'
+            processed_filename = Path(video_filename).stem + '_processed.wav'
             processed_path = Path(settings.VIDEO_STORAGE_PATH) / processed_filename
 
             if not processed_path.exists():

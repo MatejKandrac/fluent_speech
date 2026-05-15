@@ -54,7 +54,7 @@ Táto mikroslužba ponúka úpravu niekoľkých parametrov, a to konkrétne:
     \item \textbf{max\_video\_duration}: Maximálna dĺžka videa v sekundách
 \end{itemize}
 
-Pri konfigurácii týchto parametrov som vyhotovil niekoľko konfiguračných videí a sledoval som jeho presnosť, ako aj to, či je interval rámcov dostatočný.
+Pri konfigurácii týchto parametrov som vyhotovil niekoľko konfiguračných videí a sledoval som presnosť detekcie, ako aj to, či je interval rámcov dostatočný.
 To či je dostatočný som rozhodoval hlavne pri rýchlych pohyboch rúk, ktoré majú medzi rámcami najväčšie zmeny.
 Po testoch na videách som sa rozhodol použiť tieto hodnoty parametrov:
 
@@ -131,7 +131,7 @@ model = whisper.load_model(self.config['whisper_model'])
 result = model.transcribe(audio_path, word_timestamps=True)
 \end{verbatim}
 
-Po získaní transkriptu sa každé slovo získané z transkripcie je uložené do databázy s nasledujúcimi atribútmi:
+Po získaní transkriptu je každé slovo získané z transkripcie uložené do databázy s nasledujúcimi atribútmi:
 \begin{itemize}
     \item \textbf{word} --- transkribovaný text slova
     \item \textbf{start\_time, end\_time} --- časové ohraničenie v sekundách s presnosťou na 2 desatinné miesta
@@ -169,7 +169,7 @@ Prázdne časti sú tie, kedy výška hlasu nemohla byť získaná, napríklad k
 
 Surový výstup YIN algoritmu je pred ďalším spracovaním vyhladzovaný \textbf{mediánovým filtrom} s konfigurovateľnou veľkosťou okna (\texttt{median\_filter\_size}). Mediánový filter potláča jednorámové výkyvy a impulsné chyby YIN, ktoré by inak mohli skresliť detekciu monotónnych segmentov.
 
-Následne sú snímky klasifikované ako \textbf{ozvučené alebo neozvučené} na základe dvoch kritérií: RMS energia snímku musí presiahnuť konfigurovateľný prah (\texttt{energy\_threshold}) a detekovaná pitch musí byť aspoň 70 Hz. Snímky nesplňajúce tieto podmienky sú nahradené hodnotou \texttt{NaN} a nevstupujú do štatistík.
+Následne sú snímky klasifikované ako \textbf{ozvučené alebo neozvučené} na základe dvoch kritérií: RMS energia snímku musí presiahnuť konfigurovateľný prah (\texttt{energy\_threshold}) a detekovaná pitch musí byť aspoň 70 Hz. Snímky nespĺňajúce tieto podmienky sú nahradené hodnotou \texttt{NaN} a nevstupujú do štatistík.
 
 Z takto upraveného signálu následne detekujem monotónnosť. Veľkosť analýzového okna je odvodzovaná z konfigurovateľného parametra \texttt{monotonous\_window\_ms} a vzorkovacej rýchlosti. Pre každé okno sa počítajú štatistiky iba z ozvučených snímkov:
 \begin{itemize}
@@ -226,7 +226,7 @@ Detekcia prebieha pomocou regulárnych výrazov s ohraničeniami slov:
 pattern = r'\b' + re.escape(filler) + r'\b'
 \end{verbatim}
 
-Využitím časové značky na úrovni slov z Whisper modelu je každé detekované slovo lokalizované v čase s presnosťou na úroveň slova.
+Využitím časových značiek na úrovni slov z Whisper modelu je každé detekované slovo lokalizované v čase s presnosťou na úroveň slova.
 
 \subsection{Detekcia neverbálnych zvukov (uhh)}
 
@@ -244,13 +244,13 @@ Táto rýchlosť zmeny zvuku sa nazýva \textbf{spektrálny tok} a vypočíta sa
     \text{flux}_i = \sqrt{\sum_k \bigl(|X_i[k]| - |X_{i-1}[k]|\bigr)^2}
 \end{equation}
 
-kde $X_i[k]$ je amplitúda $k$-tej frekvencie v snímku $i$ (Fourierova transformácia s Hanningovým oknom).
+kde $X_i[k]$ je amplitúda $k$-tej frekvencie v snímku $i$ (Fourierova transformácia s Hanningovým oknom).\cite{flux}
 Nízka hodnota toku znamená, že zvuk je stabilný a pravdepodobne ide o prolongovaný vokál.
 
 Kandidátny úsek je prijatý ako detekovaný \textit{uhh} zvuk ak spĺňa obe kritériá --- stabilný tón aj stabilný zvukový obsah --- a jeho trvanie sa nachádza v rozmedzí $[d_{min}, d_{max}]$.
 
-Nasledujúci graf zobrazuje vyznačených kandidátov a priebeh spektrálneho toku. Všimnite si, že výška hlasu (horná časť) je takmer konštantná pre kandidátov a spektrálny tok (spodná časť) má síce viacerích kandidátov, no iba prvý má nízku hodnotu.
-Práve takýto je kandidát bude vybraný ako výplňový zvuk.
+Nasledujúci graf zobrazuje vyznačených kandidátov a priebeh spektrálneho toku. Všimnite si, že výška hlasu (horná časť) je takmer konštantná pre kandidátov a spektrálny tok (spodná časť) má síce viacerých kandidátov, no iba prvý má nízku hodnotu.
+Práve takýto kandidát bude vybraný ako výplňový zvuk.
 
 \begin{figure}[H]
     \centering
@@ -384,12 +384,12 @@ Kývavý pohyb detekujem pomocou analýzy zmien smeru v laterálnej osi. Os (X a
 
 \begin{enumerate}
     \item Dynamicky vyberiem laterálnu os podľa rozptylu (prezentujúci bude skôr robiť pohyby z boku na bok ako hore dole)
-    \item Z časového radu polôh v tejto osi vypočítam rýchlosť (prvá diferencia) a detetujem miesta, kde rýchlosť mení znamienko (lokálne extrémy --- zmeny smeru pohybu)
+    \item Z časového radu polôh v tejto osi vypočítam rýchlosť (prvá diferencia) a detekujem miesta, kde rýchlosť mení znamienko (lokálne extrémy --- zmeny smeru pohybu)
     \item Extrémy s amplitúdou menšou ako konfigurovateľný minimálny prah sú ignorované ako šum
     \item Ak sa v pohyblivom okne nachádza minimálne \texttt{min\_direction\_changes} platných zmien smeru, segment je označený ako kývanie
 \end{enumerate}
 
-Nasledujúca vizualizácia ukazuje video, v ktorom prezentujúci sa začal po desiatich sekundách pohybovať z boku na bok.
+Nasledujúca vizualizácia ukazuje video, v ktorom sa prezentujúci začal po desiatich sekundách pohybovať z boku na bok.
 
 \begin{figure}[H]
     \centering
@@ -402,7 +402,7 @@ Nasledujúca vizualizácia ukazuje video, v ktorom prezentujúci sa začal po de
 
 Segmentácia je implementovaná ako samostatná mikroslužba \textbf{Segmentation}, ktorú volajú všetky analytické mikroslužby.
 Centralizácia segmentačnej logiky umožňuje konzistentné nastavenia a jednoduchú konfiguráciu citlivosti.
-Táto mikroslužba sa bude snažiť nájsť body zmien ktoré sa následne použijú pri spätnej väzbe
+Táto mikroslužba sa bude snažiť nájsť body zmien, ktoré sa následne použijú pri spätnej väzbe.
 
 \subsection{Algoritmus PELT}
 
@@ -535,7 +535,7 @@ Po vybratí možnosti nového videa sa otvorí obrazovka s kamerou, ktorá prieb
 
 Po dokončení analýzy na serveri aplikácia zobrazí výsledky v niekoľkých pohľadoch. Hlavná obrazovka prezentuje \textbf{celkové skóre} so slovným hodnotením (napr. Dobré, Priemer) a zoznamom textových odporúčaní doplnených o časovú lokalizáciu problému.
 Používateľ si môže ďalej prezrieť \textbf{štatistiky} jednotlivých dimenzií --- čiastkové skóre hlasu, plynulosti, pohybu tela a očného kontaktu, spolu s konkrétnymi číslami ako počet výplňových slov alebo percentuálny podiel monotónnych úsekov.
-Pre vybrané dimenzie sú dostupné aj detailnejšie vizualizácie. Napríklad pri \textbf{očnom kontakte} aplikácia zobrazuje heatmapu rozloženia pohľadu počas celej prezentácie, ktorá dáva používateľovi intuitívny obraz o tom, kam počas prejavy prevažne hľadel.
+Pre vybrané dimenzie sú dostupné aj detailnejšie vizualizácie. Napríklad pri \textbf{očnom kontakte} aplikácia zobrazuje heatmapu rozloženia pohľadu počas celej prezentácie, ktorá dáva používateľovi intuitívny obraz o tom, kam počas prejavu prevažne hľadel.
 Všetky negatívne javy ponúkajú možnosť zobrazenia konkrétneho miesta, kde bola detekovaná chyba. Zároveň sa v zozname chýb objavujú aj miesta, kedy PELT algoritmus našiel kritickú zmenu.
 
 \begin{figure}[H]
@@ -545,4 +545,4 @@ Všetky negatívne javy ponúkajú možnosť zobrazenia konkrétneho miesta, kde
     \label{fig:appScore}
 \end{figure}
 
-Tieto odporúčania, štatistiky, zobrazovanie časových stop vo videu kedy spravil prezentujúci chybu tvorí základ pre trénovanie prezentačných schopností.
+Tieto odporúčania, štatistiky, zobrazovanie časových stop vo videu, kedy spravil prezentujúci chybu tvorí základ pre trénovanie prezentačných schopností.

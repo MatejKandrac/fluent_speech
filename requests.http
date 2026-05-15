@@ -29,14 +29,14 @@ Content-Type: application/json
   "filler_words": false
 }
 ### Video Processing - Extract pose landmarks from video
-POST http://localhost:8001/api/v1/video/1/analyze/
+POST http://localhost:8001/api/v1/video/139/analyze/
 
 ### Audio Processing - Extract, normalize, and resample audio
-POST http://localhost:8004/api/v1/audio/8/analyze/
+POST http://localhost:8004/api/v1/audio/139/analyze/
 
 ### Transcript Processing MS
 # @timeout 60 m
-POST http://localhost:8009/api/v1/126/transcribe/
+POST http://localhost:8009/api/v1/143/transcribe/
 
 ###############################################
 # Health Checks

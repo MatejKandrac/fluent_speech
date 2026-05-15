@@ -1,6 +1,6 @@
-\chapter{Návrh  riešenia}
+\chapter{Návrh riešenia}
 
-Mojim návrhom je implementácia systému, ktorá umožní používateľovi prípravu pred prezentáciou a taktiež aj spracovanie už existujúceho záznamu prezentácie. Rozhodol som sa využiť \textbf{mobilné zariadenia}, ktoré dnes má takmer každý človek a sú vybavené vstavanou kamerou. Tieto zariadenia zároven vedia vytvárať videa požadovanej kvality pre následné spracovanie. Z týchto zariadení vytvorí používateľ video, ktoré následne odošle pomocou mobilnej aplikácie na aplikačný server, ktorý prezentáciu zanalyzuje a poskytne spätnú väzbu. Moja aplikácia teda bude fungovať na \textbf{záznamoch} a nie na živom prenose. Aplikácia bude ponúkať tieto základné funkcie:
+Mojim návrhom je implementácia systému, ktorá umožní používateľovi prípravu pred prezentáciou a taktiež aj spracovanie už existujúceho záznamu prezentácie. Rozhodol som sa využiť \textbf{mobilné zariadenia}, ktoré dnes má takmer každý človek a sú vybavené vstavanou kamerou. Tieto zariadenia zároveň vedia vytvárať videa požadovanej kvality pre následné spracovanie. Z týchto zariadení vytvorí používateľ video, ktoré následne odošle pomocou mobilnej aplikácie na aplikačný server, ktorý prezentáciu zanalyzuje a poskytne spätnú väzbu. Moja aplikácia teda bude fungovať na \textbf{záznamoch} a nie na živom prenose. Aplikácia bude ponúkať tieto základné funkcie:
 \begin{itemize}
     \item Nahrávanie videa
     \item Spustenie analýzy
@@ -17,7 +17,7 @@ Jednoduchý proces používania teda vyzerá nasledovne:
 \end{figure}
 
 \section{Špecifikácia požiadaviek}
-Pred samotnou implementáciou som definoval niekoľko funkčných požiadaviek, ktoré by aplikácia mala spĺňať. Pri rozhodovaní, ktoré údaje budem detekovať som sa odrážal od mojej analýzy a porovnaní existujúcich riešení, ktorý bol bližšie popísaný v kapitole analýzy problematiky.
+Pred samotnou implementáciou som definoval niekoľko funkčných požiadaviek, ktoré by aplikácia mala spĺňať. Pri rozhodovaní, ktoré údaje budem detekovať, som sa odrážal od mojej analýzy a porovnania existujúcich riešení popísaného v kapitole analýzy problematiky.
 \begin{itemize}
     \item \textbf{Detekcia očného kontaktu}: Systém musí vedieť rozpoznať, či sa prezentujúci pozerá smerom do publika a nie je k nemu otočený chrbtom. Pre detekciu tohto javu sa využije viditeľnosť očí voči kamere, ktorá bude pred prezentujúcim.
     \item \textbf{Detekcia pohybu bokov}: Systém musí vedieť detekovať negatívny jav, nazývaný ako tancovanie (pohyb bokov zo strany na stranu). Detekcia bude počítaná akceleráciou stredu medzi bokmi, a bude detekovať kývanie z prava do ľava.
